@@ -1,0 +1,64 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check-version-bump:
+    name: Check Version Bump
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+
+      - name: Get PR version
+        id: pr-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "PR package.json version: $VERSION"
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-branch
+
+      - name: Get main version
+        id: main-version
+        run: |
+          VERSION=$(node -p "require('./main-branch/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Main branch version: $VERSION"
+
+      - name: Compare versions
+        run: |
+          PR_VERSION="${{ steps.pr-version.outputs.version }}"
+          MAIN_VERSION="${{ steps.main-version.outputs.version }}"
+
+          echo "Comparing versions:"
+          echo "  PR version:   $PR_VERSION"
+          echo "  Main version: $MAIN_VERSION"
+
+          if [ "$PR_VERSION" = "$MAIN_VERSION" ]; then
+            echo ""
+            echo "❌ ERROR: Version has not been bumped!"
+            echo ""
+            echo "Please update package.json version before merging:"
+            echo "  1. Edit package.json and bump the version"
+            echo "  2. Commit and push the change"
+            echo ""
+            echo "Version format: MAJOR.MINOR.PATCH"
+            echo "  - Minor bump (e.g., 0.3.0 -> 0.4.0): Increment MINOR for new features"
+            echo "  - Major bump (e.g., 0.3.0 -> 1.0.0): Increment MAJOR for breaking changes"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Version has been bumped: $MAIN_VERSION -> $PR_VERSION"
