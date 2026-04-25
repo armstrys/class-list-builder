@@ -752,6 +752,7 @@ function SettingsModal({
   const [flagCriteriaState, setFlagCriteriaState] = useState(flagCriteria);
   const [error, setError] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(null);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   function validateWeight(val) {
     const num = parseFloat(val);
@@ -924,6 +925,12 @@ function SettingsModal({
     setFlagCriteriaState(DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })));
   }
 
+  function clearSavedSettings() {
+    localStorage.removeItem(STORAGE_KEYS.NUMERIC_CRITERIA);
+    localStorage.removeItem(STORAGE_KEYS.FLAG_CRITERIA);
+    window.location.reload();
+  }
+
   const fileInputRef = useRef(null);
 
   return (
@@ -959,6 +966,7 @@ function SettingsModal({
               onChange={e => { if (e.target.files?.[0]) importConfig(e.target.files[0]); e.target.value = ''; }}
             />
             <button className="btn btn-ghost btn-sm" onClick={resetToDefaults}>Reset to Defaults</button>
+            <button className="btn btn-danger btn-sm" onClick={() => setConfirmClear(true)}>🗑 Clear Cache</button>
           </div>
 
           <div className="settings-tabs">
@@ -1090,6 +1098,26 @@ function SettingsModal({
               >
                 Remove Field
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmClear && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="modal" style={{ maxWidth: 420 }}>
+            <div className="modal-header">
+              <div className="modal-title">Clear Saved Settings?</div>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
+                This will erase your saved criteria configuration and reload the page.
+                Any student data you've entered will not be affected.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setConfirmClear(false)}>Cancel</button>
+              <button className="btn btn-danger" onClick={clearSavedSettings}>Clear Cache & Reload</button>
             </div>
           </div>
         </div>
