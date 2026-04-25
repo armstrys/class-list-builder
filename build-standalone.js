@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const SOURCE_FILE = 'Class List Optimizer.html';
+const SOURCE_FILE = 'class-list-optimizer-source.html';
 const OUTPUT_DIR = 'dist';
 
 // CDN resources to inline
