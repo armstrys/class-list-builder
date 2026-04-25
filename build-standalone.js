@@ -110,15 +110,16 @@ async function build() {
         }
 
         // Replace the external reference with inline content
+        // Use replacer function to avoid $& interpretation in replacement string
         if (info.type === 'css') {
           html = html.replace(
             new RegExp(`<link[^>]*href="${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`, 'i'),
-            inlineTag
+            () => inlineTag
           );
         } else {
           html = html.replace(
             new RegExp(`<script[^>]*src="${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`, 'i'),
-            inlineTag
+            () => inlineTag
           );
         }
 
