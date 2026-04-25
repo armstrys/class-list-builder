@@ -1308,7 +1308,7 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
 // ─────────────────────────────────────────────
 // STUDENT CARD (draggable)
 // ─────────────────────────────────────────────
-function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria }) {
+function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria }) {
   const activeFlags = flagCriteria.filter(c => student[c.key]);
   const [showDetail, setShowDetail] = useState(false);
   const didDrag = useRef(false);
@@ -1348,6 +1348,8 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
           locked={locked}
           onToggleLock={onToggleLock}
           onClose={() => setShowDetail(false)}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
         />
       )}
     </>
@@ -1427,6 +1429,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
                 onDragStart={onDragStart}
                 dragging={draggingId === s.id}
                 flagCriteria={flagCriteria}
+                numericCriteria={numericCriteria}
               />
             </React.Fragment>
           );
