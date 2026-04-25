@@ -266,6 +266,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .settings-section { margin-bottom: 20px; }
 .settings-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
 .criteria-list { display: flex; flex-direction: column; gap: 10px; }
+.criteria-header { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr auto; gap: 10px; padding: 0 12px 6px; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; }
 .criteria-item { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr auto; gap: 10px; align-items: center; background: var(--surface2); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .criteria-item input { background: var(--surface); }
 .criteria-key { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
@@ -343,8 +344,8 @@ const DEFAULT_FLAG_CRITERIA = [
   { key: 'giftedTalented', label: 'Gifted & Talented', short: 'GT', weight: 1.5 },
   { key: 'sped', label: 'SPED', short: 'SPED', weight: 2.0 },
   { key: 'accommodations', label: 'Accommodations', short: 'ACC', weight: 1.5 },
-  { key: 'readingSupport', label: 'Reading Support', short: 'RdgS', weight: 1.5 },
-  { key: 'mathSupport', label: 'Math Support', short: 'MathS', weight: 1.5 },
+  { key: 'readingIntervention', label: 'Reading Intervention', short: 'RdgI', weight: 1.5 },
+  { key: 'mathIntervention', label: 'Math Intervention', short: 'MathI', weight: 1.5 },
   { key: 'englishLanguageLearning', label: 'English Language Learning', short: 'ELL', weight: 1.5 },
   { key: 'medicalPlan', label: 'Medical Plan', short: 'Med', weight: 1.0 },
 ];
@@ -587,16 +588,16 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
     
     // Generate boolean flags
     const accommodations = p(0.07) && !sped;
-    const readingSupport = p(0.18) && !gt;
-    const mathSupport = p(0.16) && !gt;
-    
+    const readingIntervention = p(0.18) && !gt;
+    const mathIntervention = p(0.16) && !gt;
+
     flagCriteria.forEach(({ key }) => {
       if (key === 'giftedTalented') student[key] = gt;
       else if (key === 'sped') student[key] = sped;
       else if (key === 'behavior') student[key] = behavior;
       else if (key === 'accommodations') student[key] = accommodations;
-      else if (key === 'readingSupport') student[key] = readingSupport;
-      else if (key === 'mathSupport') student[key] = mathSupport;
+      else if (key === 'readingIntervention') student[key] = readingIntervention;
+      else if (key === 'mathIntervention') student[key] = mathIntervention;
       else if (key === 'englishLanguageLearning') student[key] = ell;
       else if (key === 'medicalPlan') student[key] = p(0.06);
       else student[key] = p(0.15);
@@ -793,6 +794,12 @@ function SettingsModal({
     return !isNaN(num) && num > 0;
   }
 
+  function validateShort(val) {
+    if (!val || !val.trim()) return false;
+    if (val.includes(',')) return false;
+    return true;
+  }
+
   function updateNumCriteria(index, field, value) {
     setNumCriteria(prev => {
       const next = [...prev];
@@ -866,6 +873,10 @@ function SettingsModal({
         setError('All criteria must have a label');
         return;
       }
+      if (!validateShort(c.short)) {
+        setError(`Invalid short name for "${c.label}". Short name is required and cannot contain commas.`);
+        return;
+      }
       if (!validateWeight(c.weight)) {
         setError(`Invalid weight for "${c.label}". Weight must be a positive number.`);
         return;
@@ -876,6 +887,10 @@ function SettingsModal({
     for (const c of flagCriteriaState) {
       if (!c.label.trim()) {
         setError('All criteria must have a label');
+        return;
+      }
+      if (!validateShort(c.short)) {
+        setError(`Invalid short name for "${c.label}". Short name is required and cannot contain commas.`);
         return;
       }
       if (!validateWeight(c.weight)) {
@@ -1020,6 +1035,12 @@ function SettingsModal({
 
           {activeTab === 'numeric' && (
             <div className="settings-section">
+              <div className="criteria-header">
+                <div>Display Name</div>
+                <div>Short Name</div>
+                <div>Weight</div>
+                <div></div>
+              </div>
               <div className="criteria-list">
                 {numCriteria.map((c, i) => (
                   <div key={i} className="criteria-item">
@@ -1060,6 +1081,12 @@ function SettingsModal({
 
           {activeTab === 'flags' && (
             <div className="settings-section">
+              <div className="criteria-header">
+                <div>Display Name</div>
+                <div>Short Name</div>
+                <div>Weight</div>
+                <div></div>
+              </div>
               <div className="criteria-list">
                 {flagCriteriaState.map((c, i) => (
                   <div key={i} className="criteria-item">
@@ -1602,7 +1629,7 @@ function SampleDataDialog({ defaultCount, onGenerate, onClose }) {
   function handleGenerate() {
     const n = parseInt(count);
     if (!n || n < 2) return;
-    onGenerate(Math.min(500, n));
+    onGenerate(Math.min(10000, n));
   }
 
   return (
@@ -1619,7 +1646,7 @@ function SampleDataDialog({ defaultCount, onGenerate, onClose }) {
               className="form-input"
               type="number"
               min="2"
-              max="500"
+              max="10000"
               value={count}
               onChange={e => setCount(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleGenerate()}
@@ -1661,12 +1688,20 @@ function SetupPage({
   const [sampleCount, setSampleCount] = useState(27);
   const [numTeachers, setNumTeachers] = useState(String(teachers.length || 3));
 
+  function getDefaultClassName(index) {
+    if (index < 26) {
+      return `Class ${String.fromCharCode(65 + index)}`;
+    }
+    const extras = index - 25;
+    return `Class ${'A'.repeat(extras + 1)}`;
+  }
+
   function syncTeachers(val) {
     setNumTeachers(val);
-    const n = Math.max(2, Math.min(10, parseInt(val) || 0));
+    const n = Math.max(2, Math.min(1000, parseInt(val) || 0));
     if (!parseInt(val) || parseInt(val) < 2) return;
     const next = [...teachers];
-    while (next.length < n) next.push({ id: 'T' + (next.length + 1), name: `Class ${String.fromCharCode(65 + next.length)}` });
+    while (next.length < n) next.push({ id: 'T' + (next.length + 1), name: getDefaultClassName(next.length) });
     setTeachers(next.slice(0, n));
   }
 
@@ -1710,7 +1745,7 @@ function SetupPage({
               <label className="form-label">Number of classes</label>
               <input
                 className="form-input"
-                type="number" min="2" max="10"
+                type="number" min="2" max="1000"
                 value={numTeachers}
                 onChange={e => syncTeachers(e.target.value)}
               />
@@ -1723,7 +1758,7 @@ function SetupPage({
                     className="form-input"
                     style={{ flex: 1 }}
                     value={t.name}
-                    placeholder={`Class ${String.fromCharCode(65 + i)}`}
+                    placeholder={getDefaultClassName(i)}
                     onChange={e => setTeachers(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
                   />
                 </div>
