@@ -1,0 +1,128 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get PR info
+        id: pr-info
+        run: |
+          # Get the commit message to find associated PR
+          COMMIT_MSG="$(git log -1 --pretty=%B)"
+          echo "Commit message: $COMMIT_MSG"
+
+          # Check for #major in the commit message (from PR title)
+          if echo "$COMMIT_MSG" | grep -q "#major"; then
+            echo "bump_type=major" >> $GITHUB_OUTPUT
+          else
+            echo "bump_type=minor" >> $GITHUB_OUTPUT
+          fi
+
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
+        id: version
+        run: |
+          CURRENT_VERSION="${{ steps.pr-info.outputs.current_version }}"
+          BUMP_TYPE="${{ steps.pr-info.outputs.bump_type }}"
+
+          # Parse current version
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+
+          # Calculate new version
+          if [ "$BUMP_TYPE" = "major" ]; then
+            NEW_MAJOR=$((MAJOR + 1))
+            NEW_VERSION="${NEW_MAJOR}.0.0"
+            echo "Bumping MAJOR version: $CURRENT_VERSION -> $NEW_VERSION"
+          else
+            NEW_MINOR=$((MINOR + 1))
+            NEW_VERSION="${MAJOR}.${NEW_MINOR}.0"
+            echo "Bumping MINOR version: $CURRENT_VERSION -> $NEW_VERSION"
+          fi
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update package.json version
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('Updated package.json to version $NEW_VERSION');
+          "
+
+      - name: Build standalone file
+        run: |
+          node build-standalone.js
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit version bump
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          git add package.json
+          git commit -m "chore: bump version to v${NEW_VERSION} [skip ci]" || echo "No changes to commit"
+
+      - name: Push changes
+        run: |
+          git push origin main
+
+      - name: Create Git tag
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
+          git push origin "v${NEW_VERSION}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.new_version }}
+          name: Release v${{ steps.version.outputs.new_version }}
+          body: |
+            ## What's Changed
+
+            This release includes the bundled standalone version of Class List Optimizer.
+
+            ### Version v${{ steps.version.outputs.new_version }}
+
+            Bump type: ${{ steps.pr-info.outputs.bump_type }}
+
+            ### Assets
+            - **class-list-optimizer-v${{ steps.version.outputs.new_version }}.html** - Self-contained HTML file with all dependencies inlined. Works offline.
+
+            ### Usage
+            Simply download and open the HTML file in any modern web browser. No internet connection required.
+          files: |
+            dist/class-list-optimizer-v${{ steps.version.outputs.new_version }}.html
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class List Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --surface2: #F0EFE9;
+  --border: #E2E0D8;
+  --text: #1C1B18;
+  --text2: #6B6860;
+  --text3: #A09E98;
+  --accent: oklch(48% 0.13 168);
+  --accent-light: oklch(93% 0.04 168);
+  --accent-fg: #fff;
+  --danger: oklch(50% 0.14 22);
+  --danger-light: oklch(94% 0.04 22);
+  --amber: oklch(62% 0.14 78);
+  --amber-light: oklch(94% 0.04 78);
+  --purple: oklch(52% 0.14 295);
+  --purple-light: oklch(93% 0.04 295);
+  --blue: oklch(52% 0.14 245);
+  --blue-light: oklch(93% 0.04 245);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --radius: 10px;
+  --radius-sm: 6px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Header ── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.app-logo { font-weight: 600; font-size: 15px; letter-spacing: -.3px; }
+.app-logo span { color: var(--accent); }
+.header-steps { display: flex; gap: 4px; margin-left: 8px; }
+.step-pill {
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text3);
+  background: var(--surface2);
+  cursor: pointer;
+  transition: all .15s;
+  border: 1.5px solid transparent;
+}
+.step-pill.active { color: var(--accent); background: var(--accent-light); border-color: var(--accent); }
+.step-pill.done { color: var(--text2); }
+.header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; font-family: inherit;
+  border: 1.5px solid transparent; cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+.btn-secondary:hover { background: var(--surface2); }
+.btn-ghost { background: transparent; color: var(--text2); border-color: transparent; }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-danger { background: var(--danger-light); color: var(--danger); border-color: transparent; }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Forms ── */
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--text2); }
+.form-input, .form-select {
+  padding: 8px 10px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 13px; font-family: inherit;
+  background: var(--surface); color: var(--text);
+  transition: border-color .15s;
+  outline: none;
+}
+.form-input:focus, .form-select:focus { border-color: var(--accent); }
+.form-input.sm { padding: 5px 8px; font-size: 12px; }
+.form-check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.form-check input { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
+.form-row { display: grid; gap: 12px; }
+.form-row.cols2 { grid-template-columns: 1fr 1fr; }
+.form-row.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* ── Cards / Panels ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.panel-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 14px; }
+
+/* ── Setup Page ── */
+.setup-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
+.setup-bottom { padding: 12px 24px; border-top: 1px solid var(--border); background: var(--surface); display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
+.setup-bottom-left { margin-right: auto; display: flex; gap: 8px; }
+
+/* ── Teachers Panel ── */
+.teacher-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.teacher-item { display: flex; gap: 8px; align-items: center; }
+.teacher-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-light); color: var(--accent); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Students Table ── */
+.students-card { display: flex; flex-direction: column; min-height: 0; }
+.students-table-wrap { overflow: auto; flex: 1; }
+.students-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.students-table th { padding: 8px 10px; background: var(--surface2); color: var(--text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; text-align: left; position: sticky; top: 0; z-index: 1; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.students-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.students-table tr:last-child td { border-bottom: none; }
+.students-table tr:hover td { background: var(--surface2); }
+.students-table .col-name { min-width: 130px; font-weight: 500; }
+.students-table .col-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); text-align: right; }
+.students-table .col-check { text-align: center; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 1px 6px; border-radius: 4px;
+  font-size: 10.5px; font-weight: 600; white-space: nowrap;
+  line-height: 1.5;
+}
+.badge-M { background: var(--blue-light); color: var(--blue); }
+.badge-F { background: var(--purple-light); color: var(--purple); }
+.badge-behavior { background: var(--danger-light); color: var(--danger); }
+.badge-gt { background: var(--purple-light); color: var(--purple); }
+.badge-sped { background: var(--amber-light); color: var(--amber); }
+.badge-504 { background: var(--blue-light); color: var(--blue); }
+.badge-rdgint { background: oklch(93% .04 45); color: oklch(50% .14 45); }
+.badge-mathint { background: oklch(93% .04 310); color: oklch(50% .14 310); }
+.badge-ell { background: var(--accent-light); color: var(--accent); }
+.badge-med { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+/* ── Optimize Page ── */
+.optimize-layout { display: flex; flex-direction: column; height: calc(100vh - 56px); }
+.optimize-toolbar { padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 10px; }
+.score-badge { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--surface2); font-size: 12px; }
+.score-badge .label { color: var(--text2); }
+.score-badge .value { font-weight: 600; font-family: 'DM Mono', monospace; font-size: 12px; }
+.classes-area { flex: 1; overflow-x: auto; overflow-y: hidden; display: flex; gap: 0; padding: 16px; }
+
+/* ── Class Column ── */
+.class-col {
+  flex-shrink: 0;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  margin-right: 12px;
+  transition: border-color .15s;
+}
+.class-col.drag-over { border-color: var(--accent); background: var(--accent-light); }
+.class-col-header {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.class-col-name { font-weight: 600; font-size: 14px; flex: 1; }
+.class-col-name-input { font-weight: 600; font-size: 14px; flex: 1; border: none; background: transparent; font-family: inherit; color: var(--text); outline: none; border-bottom: 1.5px solid transparent; }
+.class-col-name-input:focus { border-bottom-color: var(--accent); }
+.class-count { font-size: 11px; color: var(--text3); font-weight: 500; background: var(--surface2); padding: 2px 7px; border-radius: 10px; }
+.class-col-cards { flex: 1; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 3px; min-height: 60px; }
+.class-col-footer { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+.class-stat-row { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.class-stat-label { color: var(--text3); width: 60px; flex-shrink: 0; }
+.class-stat-bar-wrap { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.class-stat-bar { height: 100%; border-radius: 3px; background: var(--accent); transition: width .3s; }
+.class-stat-val { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text2); width: 30px; text-align: right; }
+
+/* ── Student Card ── */
+.student-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  cursor: grab;
+  transition: border-color .15s, opacity .15s;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.student-card:hover { border-color: oklch(70% 0.08 168); }
+.student-card:active { cursor: grabbing; }
+.student-card.dragging { opacity: .4; }
+.student-card.locked { border-left: 3px solid var(--accent); }
+.student-card-top { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.student-name { font-weight: 500; font-size: 12px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+.lock-btn { background: none; border: none; cursor: pointer; padding: 1px; color: var(--text3); font-size: 11px; transition: color .12s; flex-shrink: 0; line-height: 1; }
+.lock-btn:hover { color: var(--accent); }
+.lock-btn.locked { color: var(--accent); }
+.student-scores { display: flex; gap: 5px; flex-shrink: 0; }
+.score-chip { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text2); white-space: nowrap; }
+.score-chip span { color: var(--text3); }
+.student-badges { display: flex; flex-wrap: nowrap; gap: 2px; flex-shrink: 0; }
+
+/* ── Stats Strip ── */
+.stats-strip {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 12px 20px;
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.stat-item { display: flex; flex-direction: column; gap: 4px; min-width: 90px; }
+.stat-item-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text3); }
+.stat-mini-bars { display: flex; gap: 3px; align-items: flex-end; height: 24px; }
+.mini-bar { width: 14px; border-radius: 2px 2px 0 0; transition: height .3s; }
+.stat-variance { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text2); }
+.stat-variance.good { color: var(--accent); }
+.stat-variance.warn { color: var(--amber); }
+.stat-variance.bad { color: var(--danger); }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; backdrop-filter: blur(2px);
+  animation: fadeIn .15s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow), 0 0 0 1px rgba(0,0,0,.06);
+  width: 90%; max-width: 600px;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+  animation: slideUp .18s ease-out;
+}
+.modal-lg { max-width: 780px; }
+@keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+.modal-title { font-size: 16px; font-weight: 600; flex: 1; }
+.modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── Help Modal specific ── */
+.help-section { margin-bottom: 22px; }
+.help-section h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+.help-section p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 8px; }
+.help-formula { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); line-height: 1.7; white-space: pre; overflow-x: auto; }
+.help-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.help-table th { background: var(--surface2); padding: 7px 10px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--text2); }
+.help-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--text2); }
+.help-table td:first-child { font-weight: 500; color: var(--text); }
+
+/* ── CSV Textarea ── */
+.csv-area { width: 100%; height: 180px; font-family: 'DM Mono', monospace; font-size: 11px; padding: 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); resize: vertical; color: var(--text); background: var(--surface); }
+.csv-area:focus { outline: none; border-color: var(--accent); }
+.csv-hint { font-size: 11.5px; color: var(--text3); margin-top: 8px; line-height: 1.5; }
+
+/* ── Misc ── */
+.empty-state { text-align: center; padding: 32px 20px; color: var(--text3); font-size: 13px; }
+.empty-state .icon { font-size: 28px; margin-bottom: 10px; }
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+.tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; }
+
+.lock-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); margin-left: 8px; }
+.locked-count { font-weight: 600; color: var(--accent); }
+</style>
+
+<template id="__bundler_thumbnail" data-bg-color="#F7F6F2">
+  <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="80" fill="#F7F6F2"/>
+    <!-- Three class columns -->
+    <rect x="10" y="22" width="28" height="48" rx="3" fill="#fff" stroke="#E2E0D8" stroke-width="1"/>
+    <rect x="46" y="22" width="28" height="48" rx="3" fill="#fff" stroke="#E2E0D8" stroke-width="1"/>
+    <rect x="82" y="22" width="28" height="48" rx="3" fill="#fff" stroke="#E2E0D8" stroke-width="1"/>
+    <!-- Column headers -->
+    <rect x="10" y="22" width="28" height="10" rx="3" fill="#1a7a5e"/>
+    <rect x="46" y="22" width="28" height="10" rx="3" fill="#1a7a5e"/>
+    <rect x="82" y="22" width="28" height="10" rx="3" fill="#1a7a5e"/>
+    <!-- Student rows -->
+    <rect x="13" y="36" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <rect x="13" y="44" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <rect x="13" y="52" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <rect x="49" y="36" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <rect x="49" y="44" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <rect x="49" y="52" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <rect x="85" y="36" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <rect x="85" y="44" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <rect x="85" y="52" width="22" height="5" rx="2" fill="#E2E0D8"/>
+    <!-- Title -->
+    <rect x="10" y="10" width="60" height="7" rx="2" fill="#1C1B18" opacity=".15"/>
+  </svg>
+</template>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─────────────────────────────────────────────
+// METRIC CONFIG
+// ─────────────────────────────────────────────
+const NUM_METRICS = [
+  { key: 'readingFluency', label: 'Rdg Fluency', short: 'RF', weight: 1.0 },
+  { key: 'elaISAT',        label: 'ELA ISAT',    short: 'ELA', weight: 1.0 },
+  { key: 'mathISAT',       label: 'Math ISAT',   short: 'Math', weight: 1.0 },
+];
+
+const BOOL_METRICS = [
+  { key: 'behavior',   label: 'Behavior',            short: 'BEH',  weight: 2.0, cls: 'badge-behavior', dot: 'oklch(50% .20 22)' },
+  { key: 'gt',         label: 'Gifted & Talented',   short: 'GT',   weight: 1.5, cls: 'badge-gt',       dot: 'oklch(50% .20 295)' },
+  { key: 'sped',       label: 'SPED/HI/Speech',      short: 'SPED', weight: 2.0, cls: 'badge-sped',     dot: 'oklch(60% .20 55)' },
+  { key: 'plan504',    label: '504 Plan',             short: '504',  weight: 1.5, cls: 'badge-504',      dot: 'oklch(50% .20 245)' },
+  { key: 'readingInt', label: 'Reading Intervention', short: 'RdgI', weight: 1.5, cls: 'badge-rdgint',   dot: 'oklch(52% .20 210)' },
+  { key: 'mathInt',    label: 'Math Intervention',    short: 'MthI', weight: 1.5, cls: 'badge-mathint',  dot: 'oklch(52% .20 330)' },
+  { key: 'ell',        label: 'ELL',                  short: 'ELL',  weight: 1.5, cls: 'badge-ell',      dot: 'oklch(48% .18 168)' },
+  { key: 'medPlan',    label: 'Med Plan',             short: 'Med',  weight: 1.0, cls: 'badge-med',      dot: 'oklch(50% .06 250)' },
+];
+
+// ─────────────────────────────────────────────
+// OPTIMIZATION ENGINE
+// ─────────────────────────────────────────────
+function computeCost(students, assignment, numClasses) {
+  if (!students.length || !numClasses) return 0;
+  const classes = Array.from({ length: numClasses }, () => []);
+  students.forEach(s => {
+    const c = assignment[s.id];
+    if (c !== undefined && c >= 0 && c < numClasses) classes[c].push(s);
+  });
+
+  let cost = 0;
+
+  // Numeric metrics: variance of class means, normalized by overall population variance
+  // (scale-agnostic: works regardless of score range or floor)
+  NUM_METRICS.forEach(({ key, weight }) => {
+    const vals = students.map(s => s[key] || 0);
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const popVar = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
+    if (popVar === 0) return; // all identical scores — no imbalance possible
+    const means = classes.map(cls =>
+      cls.length ? cls.reduce((sum, s) => sum + (s[key] || 0), 0) / cls.length : mean
+    );
+    const varianceOfMeans = means.reduce((s, m) => s + (m - mean) ** 2, 0) / numClasses;
+    cost += weight * varianceOfMeans / popVar;
+  });
+
+  // Boolean metrics: variance of proportions across classes
+  BOOL_METRICS.forEach(({ key, weight }) => {
+    const overall = students.filter(s => s[key]).length / students.length;
+    const props = classes.map(cls =>
+      cls.length ? cls.filter(s => s[key]).length / cls.length : overall
+    );
+    const variance = props.reduce((s, p) => s + (p - overall) ** 2, 0) / numClasses;
+    cost += weight * variance;
+  });
+
+  // Gender balance: variance of female proportion
+  const overallF = students.filter(s => s.gender === 'F').length / students.length;
+  const fProps = classes.map(cls =>
+    cls.length ? cls.filter(s => s.gender === 'F').length / cls.length : overallF
+  );
+  const gVariance = fProps.reduce((s, p) => s + (p - overallF) ** 2, 0) / numClasses;
+  cost += 1.0 * gVariance;
+
+  // Class size balance: normalized variance of sizes
+  const meanSize = students.length / numClasses;
+  if (meanSize > 0) {
+    const sVar = classes.reduce((s, cls) => s + (cls.length - meanSize) ** 2, 0) / numClasses;
+    cost += 3.0 * sVar / (meanSize * meanSize);
+  }
+
+  return cost;
+}
+
+function optimize(students, numClasses, lockedAssignments = {}) {
+  if (!students.length || !numClasses) return {};
+  const unlocked = students.filter(s => lockedAssignments[s.id] === undefined);
+
+  // Greedy initial: sort by composite score descending, snake-draft across classes
+  const scored = [...unlocked].sort((a, b) => {
+    const sa = (a.readingFluency || 0) + (a.elaISAT || 0) + (a.mathISAT || 0);
+    const sb = (b.readingFluency || 0) + (b.elaISAT || 0) + (b.mathISAT || 0);
+    return sb - sa;
+  });
+
+  let assignment = { ...lockedAssignments };
+  scored.forEach((s, i) => {
+    const round = Math.floor(i / numClasses);
+    const pos = i % numClasses;
+    assignment[s.id] = round % 2 === 0 ? pos : (numClasses - 1 - pos);
+  });
+
+  let currentCost = computeCost(students, assignment, numClasses);
+
+  // Simulated annealing
+  let temp = 4.0;
+  const cooling = 0.9965;
+  const iters = 10000;
+
+  for (let i = 0; i < iters; i++) {
+    const i1 = Math.floor(Math.random() * unlocked.length);
+    const i2 = Math.floor(Math.random() * unlocked.length);
+    if (i1 === i2) continue;
+
+    const s1 = unlocked[i1], s2 = unlocked[i2];
+    const newAssignment = { ...assignment, [s1.id]: assignment[s2.id], [s2.id]: assignment[s1.id] };
+    const newCost = computeCost(students, newAssignment, numClasses);
+    const delta = newCost - currentCost;
+
+    if (delta < 0 || Math.random() < Math.exp(-delta / temp)) {
+      assignment = newAssignment;
+      currentCost = newCost;
+    }
+    temp *= cooling;
+  }
+
+  return assignment;
+}
+
+// ─────────────────────────────────────────────
+// SAMPLE DATA
+// ─────────────────────────────────────────────
+let _sid = 1;
+function uid() { return 'S' + (_sid++).toString().padStart(3, '0'); }
+
+const FN_F = ['Emma','Olivia','Ava','Sophia','Isabella','Mia','Luna','Harper','Nora','Riley','Zoey','Lily','Hannah','Elena','Maya','Chloe','Leah','Zoe','Aria','Camila'];
+const FN_M = ['Liam','Noah','Oliver','Elijah','James','William','Lucas','Henry','Mason','Ethan','Daniel','Logan','Owen','Leo','Dylan','Nathan','Carter','Julian','Jayden','Aiden'];
+const LN = ['Smith','Johnson','Williams','Brown','Davis','Miller','Wilson','Moore','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Garcia','Martinez','Lewis','Walker','Hall','Allen','Young','King','Wright'];
+
+function rnd(a, b) { return Math.round(a + Math.random() * (b - a)); }
+function p(prob) { return Math.random() < prob; }
+
+function generateSampleStudents(count = 27) {
+  const students = [];
+  for (let i = 0; i < count; i++) {
+    const gender = p(0.5) ? 'F' : 'M';
+    const fn = gender === 'F' ? FN_F[i % FN_F.length] : FN_M[i % FN_M.length];
+    const ln = LN[i % LN.length];
+    // no comma — safe for CSV
+    const gt = p(0.13);
+    const sped = p(0.11);
+    const ell = p(0.14);
+    const behavior = p(0.10);
+    // ISAT scale: 2001–2811 (Level 1: 2001–2366, L2: 2367–2431, L3: 2432–2489, L4: 2490–2811)
+    const isaBase = gt ? rnd(2490, 2700) : sped ? rnd(2001, 2366) : ell ? rnd(2200, 2431) : rnd(2300, 2550);
+    const rfBase  = gt ? rnd(160, 220) : sped ? rnd(60, 110) : ell ? rnd(80, 130) : rnd(100, 180);
+    students.push({
+      id: uid(),
+      name: `${ln} ${fn}`,
+      gender,
+      readingFluency: Math.max(10, Math.min(250, rfBase + rnd(-20, 20))),
+      elaISAT:        Math.max(2001, Math.min(2811, isaBase + rnd(-60, 60))),
+      mathISAT:       Math.max(2001, Math.min(2811, isaBase + rnd(-80, 80))),
+      behavior,
+      gt,
+      sped,
+      plan504: p(0.07) && !sped,
+      readingInt: p(0.18) && !gt,
+      mathInt: p(0.16) && !gt,
+      ell,
+      medPlan: p(0.06),
+    });
+  }
+  return students;
+}
+
+// ─────────────────────────────────────────────
+// CSV PARSING
+// ─────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return { students: [], errors: ['No data rows found'] };
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, ''));
+  const students = [];
+  const errors = [];
+
+  const boolKeys = {
+    behavior: ['behavior','beh'],
+    gt: ['gt','gifted','giftedandtalented','giftedtalented'],
+    sped: ['sped','hi','speech','spedhispeech'],
+    plan504: ['504','plan504','_504'],
+    readingInt: ['readingintervention','rdgint','readingint','rdgi'],
+    mathInt: ['mathintervention','mathint','mthi'],
+    ell: ['ell','englishlanguagelearner'],
+    medPlan: ['medplan','med','medicalplan'],
+  };
+
+  lines.slice(1).forEach((line, i) => {
+    if (!line.trim()) return;
+    const cols = line.split(',').map(c => c.trim());
+    const get = (...keys) => {
+      for (const k of keys) {
+        const idx = headers.indexOf(k);
+        if (idx !== -1 && cols[idx] !== undefined) return cols[idx];
+      }
+      return '';
+    };
+    const getBool = (fieldKeys) => {
+      for (const fk of fieldKeys) {
+        const idx = headers.findIndex(h => fk.includes(h) || h === fk);
+        if (idx !== -1) {
+          const v = cols[idx]?.trim().toLowerCase();
+          return ['1','true','yes','y','x'].includes(v);
+        }
+      }
+      return false;
+    };
+
+    const name = get('name','lastname,firstname','student') || `Student ${i + 2}`;
+    const gender = get('gender','sex').toUpperCase().startsWith('F') ? 'F' : 'M';
+    const rf = parseFloat(get('readingfluency','rf','rdgfluency','reading')) || 150;
+    const ela = parseFloat(get('elaisat','ela','elatest')) || 2400;
+    const math = parseFloat(get('mathisat','math','mathtest')) || 2400;
+
+    const s = { id: uid(), name, gender, readingFluency: rf, elaISAT: ela, mathISAT: math };
+    Object.entries(boolKeys).forEach(([key, aliases]) => { s[key] = getBool(aliases); });
+    students.push(s);
+  });
+
+  return { students, errors };
+}
+
+// ─────────────────────────────────────────────
+// HELP MODAL
+// ─────────────────────────────────────────────
+function HelpModal({ onClose }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal modal-lg">
+        <div className="modal-header">
+          <div className="modal-title">How Optimization Works</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕ Close</button>
+        </div>
+        <div className="modal-body">
+          <div className="help-section">
+            <h3>Goal</h3>
+            <p>The optimizer distributes students across classes so that every class is as similar as possible across all measured dimensions — academic scores, intervention needs, behavior, and gender balance.</p>
+          </div>
+
+          <div className="help-section">
+            <h3>Cost Function</h3>
+            <p>A single <strong>cost score</strong> measures total imbalance. Lower is better. The optimizer finds the assignment that minimizes this cost:</p>
+            <div className="help-formula">{`Cost = Σ_m  weight_m × normalized_variance_m
+
+  For numeric scores (RF, ELA ISAT, Math ISAT):
+    normalized_variance_m = Var(class_means) / Var(all_students)
+
+    This ratio is scale-agnostic: a 5% spread in Reading Fluency
+    contributes the same as a 5% spread in ISAT scores, regardless
+    of their absolute ranges or floors.
+
+  For binary flags (Behavior, GT, SPED, …):
+    normalized_variance_m = Var(class_proportions)
+
+  For gender balance:
+    term = Var(female_proportion per class)
+
+  For class size:
+    term = 3.0 × Var(class_sizes) / mean_size²`}</div>
+          </div>
+
+          <div className="help-section">
+            <h3>Metric Weights</h3>
+            <table className="help-table">
+              <thead>
+                <tr><th>Metric</th><th>Type</th><th>Weight</th><th>Rationale</th></tr>
+              </thead>
+              <tbody>
+                {NUM_METRICS.map(m => (
+                  <tr key={m.key}><td>{m.label}</td><td>Numeric</td><td>{m.weight.toFixed(1)}</td><td>Academic equity</td></tr>
+                ))}
+                {BOOL_METRICS.map(m => (
+                  <tr key={m.key}><td>{m.label}</td><td>Boolean</td><td>{m.weight.toFixed(1)}</td><td>{m.weight >= 2 ? 'High impact — distribute carefully' : 'Moderate impact'}</td></tr>
+                ))}
+                <tr><td>Gender</td><td>Proportion</td><td>1.0</td><td>Balance male/female</td></tr>
+                <tr><td>Class Size</td><td>Count</td><td>3.0</td><td>Equal class sizes (highest priority)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="help-section">
+            <h3>Algorithm: Simulated Annealing</h3>
+            <p>Starting from a snake-draft greedy initialization (best students alternately distributed), the optimizer runs <strong>10,000 iterations</strong> of random student swaps. It accepts any swap that lowers the cost, and occasionally accepts slightly worse swaps (with decreasing probability as temperature cools) to escape local optima.</p>
+          </div>
+
+          <div className="help-section">
+            <h3>Locked Students</h3>
+            <p>Locking a student pins them to their current class. Subsequent optimization only moves unlocked students. Use this for overrides — manually drag a student where you want them, lock them, and re-optimize the rest.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// IMPORT MODAL
+// ─────────────────────────────────────────────
+function ImportModal({ onImport, onClose }) {
+  const [text, setText] = useState('');
+  const [error, setError] = useState('');
+
+  const csvTemplate = `name,gender,readingFluency,elaISAT,mathISAT,behavior,gt,sped,504,readingIntervention,mathIntervention,ell,medPlan
+Smith, Emma,F,142,215,198,0,0,0,0,0,0,0,0
+Johnson, Liam,M,178,245,255,0,1,0,0,0,0,0,0`;
+
+  function handleImport() {
+    const { students, errors } = parseCSV(text);
+    if (!students.length) { setError('No valid students found. Check your CSV format.'); return; }
+    onImport(students);
+    onClose();
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <div className="modal-title">Import Students from CSV</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>
+            Paste CSV data below. First row must be headers. Boolean fields: 1/yes/true = checked.
+          </p>
+          <textarea className="csv-area" value={text} onChange={e => { setText(e.target.value); setError(''); }}
+            placeholder={csvTemplate} />
+          <p className="csv-hint">
+            <strong>Required headers:</strong> name, gender, readingFluency, elaISAT, mathISAT<br />
+            <strong>Optional boolean headers:</strong> behavior, gt, sped, 504, readingIntervention, mathIntervention, ell, medPlan
+          </p>
+          {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8 }}>{error}</p>}
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleImport} disabled={!text.trim()}>Import</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// STUDENT FORM MODAL
+// ─────────────────────────────────────────────
+const EMPTY_STUDENT = {
+  name: '', gender: 'M', readingFluency: '', elaISAT: '', mathISAT: '',
+  behavior: false, gt: false, sped: false, plan504: false,
+  readingInt: false, mathInt: false, ell: false, medPlan: false,
+};
+
+function StudentFormModal({ student, onSave, onClose }) {
+  const [form, setForm] = useState(student ? { ...student } : { ...EMPTY_STUDENT, id: uid() });
+
+  function set(key, val) { setForm(f => ({ ...f, [key]: val })); }
+
+  function handleSave() {
+    if (!form.name.trim()) return;
+    onSave({
+      ...form,
+      readingFluency: parseFloat(form.readingFluency) || 0,
+      elaISAT: parseFloat(form.elaISAT) || 0,
+      mathISAT: parseFloat(form.mathISAT) || 0,
+    });
+    onClose();
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <div className="modal-title">{student ? 'Edit Student' : 'Add Student'}</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="form-row cols2">
+            <div className="form-group">
+              <label className="form-label">Full Name (Last First — no commas)</label>
+              <input className="form-input" value={form.name} onChange={e => set('name', e.target.value.replace(/,/g, ''))} placeholder="Smith Emma" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Gender</label>
+              <select className="form-select" value={form.gender} onChange={e => set('gender', e.target.value)}>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row cols3">
+            <div className="form-group">
+              <label className="form-label">Reading Fluency</label>
+              <input className="form-input" type="number" value={form.readingFluency} onChange={e => set('readingFluency', e.target.value)} placeholder="e.g. 142" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">ELA ISAT</label>
+              <input className="form-input" type="number" value={form.elaISAT} onChange={e => set('elaISAT', e.target.value)} placeholder="e.g. 2415" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Math ISAT</label>
+              <input className="form-input" type="number" value={form.mathISAT} onChange={e => set('mathISAT', e.target.value)} placeholder="e.g. 2398" />
+            </div>
+          </div>
+
+          <div className="divider" />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
+            {BOOL_METRICS.map(m => (
+              <label key={m.key} className="form-check">
+                <input type="checkbox" checked={!!form[m.key]} onChange={e => set(m.key, e.target.checked)} />
+                <span style={{ fontSize: 13 }}>{m.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={!form.name.trim()}>
+            {student ? 'Save Changes' : 'Add Student'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// STUDENT DETAIL MODAL
+// ─────────────────────────────────────────────
+function StudentDetailModal({ student, locked, onToggleLock, onClose }) {
+  const activeBools = BOOL_METRICS.filter(m => student[m.key]);
+  const inactiveBools = BOOL_METRICS.filter(m => !student[m.key]);
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 380 }}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+            <span className={`badge badge-${student.gender}`}>{student.gender}</span>
+            <div className="modal-title">{student.name}</div>
+          </div>
+          <button
+            className={`lock-btn${locked ? ' locked' : ''}`}
+            style={{ fontSize: 18, marginRight: 8 }}
+            onClick={() => onToggleLock(student.id)}
+            title={locked ? 'Unlock student' : 'Lock to this class'}
+          >{locked ? '🔒' : '🔓'}</button>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <div className="panel-title">Academic Scores</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              {NUM_METRICS.map(m => (
+                <div key={m.key} style={{ background: 'var(--surface2)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{m.label}</div>
+                  <div style={{ fontSize: 20, fontFamily: 'DM Mono, monospace', fontWeight: 500 }}>{student[m.key]}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {activeBools.length > 0 && (
+            <div>
+              <div className="panel-title">Active Flags</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {activeBools.map(m => (
+                  <span key={m.key} className={`badge ${m.cls}`} style={{ fontSize: 12, padding: '3px 8px' }}>{m.label}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {inactiveBools.length > 0 && (
+            <div>
+              <div className="panel-title">No Flags</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {inactiveBools.map(m => (
+                  <span key={m.key} style={{ fontSize: 12, color: 'var(--text3)' }}>{m.label}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// STUDENT CARD (draggable)
+// ─────────────────────────────────────────────
+function StudentCard({ student, locked, onToggleLock, onDragStart, dragging }) {
+  const activeBools = BOOL_METRICS.filter(m => student[m.key]);
+  const [showDetail, setShowDetail] = useState(false);
+  const didDrag = useRef(false);
+
+  return (
+    <>
+      <div
+        className={`student-card${locked ? ' locked' : ''}${dragging ? ' dragging' : ''}`}
+        draggable
+        onDragStart={e => { didDrag.current = true; onDragStart(e, student.id); }}
+        onDragEnd={() => { setTimeout(() => { didDrag.current = false; }, 100); }}
+        onClick={() => { if (!didDrag.current) setShowDetail(true); }}
+        style={{ cursor: 'grab' }}
+      >
+        <div className="student-card-top">
+          <span className={`badge badge-${student.gender}`}>{student.gender}</span>
+          <span className="student-name">{student.name}</span>
+          {activeBools.length > 0 && (
+            <span style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+              {activeBools.map(m => (
+                <span key={m.key} style={{ width: 6, height: 6, borderRadius: '50%', background: m.dot, flexShrink: 0 }} title={m.label} />
+              ))}
+            </span>
+          )}
+          <button
+            className={`lock-btn${locked ? ' locked' : ''}`}
+            onClick={e => { e.stopPropagation(); onToggleLock(student.id); }}
+            title={locked ? 'Unlock student' : 'Lock to this class'}
+          >
+            {locked ? '🔒' : '🔓'}
+          </button>
+        </div>
+      </div>
+      {showDetail && (
+        <StudentDetailModal
+          student={student}
+          locked={locked}
+          onToggleLock={onToggleLock}
+          onClose={() => setShowDetail(false)}
+        />
+      )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────
+// CLASS COLUMN
+// ─────────────────────────────────────────────
+function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen }) {
+  const [dragOver, setDragOver] = useState(false);
+
+  const avg = key => students.length
+    ? students.reduce((s, st) => s + (st[key] || 0), 0) / students.length
+    : 0;
+
+  // Normalize bar width to [0,100] based on population min/max — scale-agnostic
+  const popMin = key => allStudents.length ? Math.min(...allStudents.map(s => s[key] || 0)) : 0;
+  const popMax = key => allStudents.length ? Math.max(...allStudents.map(s => s[key] || 0)) : 1;
+
+  const numStats = NUM_METRICS.map(m => {
+    const mn = popMin(m.key), mx = popMax(m.key);
+    const range = mx - mn || 1;
+    const classAvg = avg(m.key);
+    return {
+      label: m.short,
+      val: Math.round(classAvg),
+      pct: Math.min(100, Math.max(4, (classAvg - mn) / range * 100)),
+    };
+  });
+
+  const boolCounts = BOOL_METRICS.map(m => ({
+    label: m.short,
+    val: students.filter(s => s[m.key]).length,
+    cls: m.cls,
+  })).filter(b => b.val > 0);
+
+  return (
+    <div
+      className={`class-col${dragOver ? ' drag-over' : ''}`}
+      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => { e.preventDefault(); setDragOver(false); onDrop(e, classIdx); }}
+    >
+      <div className="class-col-header">
+        <div className="teacher-num">{classIdx + 1}</div>
+        <input
+          className="class-col-name-input"
+          value={name}
+          onChange={e => onNameChange(classIdx, e.target.value)}
+        />
+        <span className="class-count">{students.length}</span>
+      </div>
+
+      <div className="class-col-cards">
+        {students.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text3)', fontSize: 12 }}>
+            Drop students here
+          </div>
+        )}
+        {students.map((s, i) => {
+          const isLocked = locked.has(s.id);
+          const prevLocked = i > 0 && locked.has(students[i - 1].id);
+          const showDivider = isLocked && !prevLocked && i > 0;
+          return (
+            <React.Fragment key={s.id}>
+              {showDivider && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '3px 0' }}>
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                  <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>Locked</span>
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                </div>
+              )}
+              <StudentCard
+                student={s}
+                locked={isLocked}
+                onToggleLock={onToggleLock}
+                onDragStart={onDragStart}
+                dragging={draggingId === s.id}
+                fullscreen={fullscreen}
+              />
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      <div className="class-col-footer" style={fullscreen ? { display: 'none' } : {}}>
+        {numStats.map(stat => (
+          <div key={stat.label} className="class-stat-row">
+            <span className="class-stat-label">{stat.label}</span>
+            <div className="class-stat-bar-wrap">
+              <div className="class-stat-bar" style={{ width: stat.pct + '%' }} />
+            </div>
+            <span className="class-stat-val">{stat.val}</span>
+          </div>
+        ))}
+        {boolCounts.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 4 }}>
+            {boolCounts.map(b => (
+              <span key={b.label} className={`badge ${b.cls}`}>{b.label} {b.val}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// STATS STRIP
+// ─────────────────────────────────────────────
+function StatsStrip({ students, assignment, numClasses, teacherNames }) {
+  if (!students.length) return null;
+
+  const classes = Array.from({ length: numClasses }, (_, i) =>
+    students.filter(s => assignment[s.id] === i)
+  );
+
+  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+
+  function barGroup(vals, maxVal) {
+    return (
+      <div className="stat-mini-bars">
+        {vals.map((v, i) => (
+          <div key={i} className="mini-bar" style={{
+            height: maxVal > 0 ? Math.max(4, (v / maxVal) * 24) + 'px' : '4px',
+            background: colors[i % colors.length],
+            opacity: .8,
+          }} />
+        ))}
+      </div>
+    );
+  }
+
+  function varianceClass(cv) {
+    if (cv < 0.10) return 'good';
+    if (cv < 0.25) return 'warn';
+    return 'bad';
+  }
+
+  const numItems = NUM_METRICS.map(m => {
+    const allVals = students.map(s => s[m.key] || 0);
+    const popMin = Math.min(...allVals);
+    const popMax = Math.max(...allVals);
+    const range = popMax - popMin || 1;
+    const vals = classes.map(cls =>
+      cls.length ? cls.reduce((s, st) => s + (st[m.key] || 0), 0) / cls.length : popMin
+    );
+    const mean = vals.reduce((a, b) => a + b, 0) / numClasses || 1;
+    // CV uses population std dev for scale-agnostic variance measure
+    const popMean = allVals.reduce((a, b) => a + b, 0) / allVals.length;
+    const popVar = allVals.reduce((s, v) => s + (v - popMean) ** 2, 0) / allVals.length;
+    const varOfMeans = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / numClasses;
+    const cv = popVar > 0 ? Math.sqrt(varOfMeans / popVar) : 0;
+    // Normalize bar heights to population range
+    const normVals = vals.map(v => Math.max(0, (v - popMin) / range));
+    return { label: m.label, vals: normVals, maxVal: 1, cv };
+  });
+
+  const boolItems = BOOL_METRICS.map(m => {
+    const vals = classes.map(cls => cls.filter(s => s[m.key]).length);
+    const mean = vals.reduce((a, b) => a + b, 0) / numClasses;
+    const sd = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / numClasses);
+    return { label: m.label, vals, maxVal: Math.max(...vals, 1), cv: mean > 0 ? sd / mean : 0 };
+  }).filter(b => b.vals.some(v => v > 0));
+
+  const allItems = [...numItems, ...boolItems];
+
+  return (
+    <div className="stats-strip">
+      {allItems.map(item => (
+        <div key={item.label} className="stat-item">
+          <div className="stat-item-label">{item.label}</div>
+          {barGroup(item.vals, item.maxVal)}
+          <div className={`stat-variance ${varianceClass(item.cv)}`}>
+            CV {(item.cv * 100).toFixed(1)}%
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// SAMPLE DATA DIALOG
+// ─────────────────────────────────────────────
+function SampleDataDialog({ defaultCount, onGenerate, onClose }) {
+  const [count, setCount] = useState(String(defaultCount));
+
+  function handleGenerate() {
+    const n = parseInt(count);
+    if (!n || n < 2) return;
+    onGenerate(Math.min(500, n));
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 340 }}>
+        <div className="modal-header">
+          <div className="modal-title">Generate Sample Data</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="form-group">
+            <label className="form-label">Number of students</label>
+            <input
+              className="form-input"
+              type="number"
+              min="2"
+              max="500"
+              value={count}
+              onChange={e => setCount(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+              autoFocus
+            />
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text3)' }}>
+            Randomly generates students with realistic score distributions across performance levels.
+          </p>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleGenerate} disabled={!parseInt(count) || parseInt(count) < 2}>
+            Generate
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// SETUP PAGE
+// ─────────────────────────────────────────────
+function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const [showSampleDialog, setShowSampleDialog] = useState(false);
+  const [sampleCount, setSampleCount] = useState(27);
+  const [numTeachers, setNumTeachers] = useState(String(teachers.length || 3));
+
+  function syncTeachers(val) {
+    setNumTeachers(val);
+    const n = Math.max(2, Math.min(10, parseInt(val) || 0));
+    if (!parseInt(val) || parseInt(val) < 2) return; // wait for valid input
+    const next = [...teachers];
+    while (next.length < n) next.push({ id: 'T' + (next.length + 1), name: `Class ${String.fromCharCode(65 + next.length)}` });
+    setTeachers(next.slice(0, n));
+  }
+
+  function handleAddStudent(s) {
+    setStudents(prev => [...prev, s]);
+  }
+  function handleEditStudent(s) {
+    setStudents(prev => prev.map(x => x.id === s.id ? s : x));
+    setEditingStudent(null);
+  }
+  function handleDeleteStudent(id) {
+    setStudents(prev => prev.filter(s => s.id !== id));
+  }
+
+  const canOptimize = students.length >= teachers.length && teachers.length >= 2;
+
+  return (
+    <>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <div className="setup-layout">
+          {/* Teachers */}
+          <div className="card" style={{ alignSelf: 'start' }}>
+            <div className="panel-title">Teachers / Classes</div>
+            <div className="form-group" style={{ marginBottom: 16 }}>
+              <label className="form-label">Number of classes</label>
+              <input
+                className="form-input"
+                type="number" min="2" max="10"
+                value={numTeachers}
+                onChange={e => syncTeachers(e.target.value)}
+              />
+            </div>
+            <div className="teacher-list">
+              {teachers.map((t, i) => (
+                <div key={t.id} className="teacher-item">
+                  <div className="teacher-num">{i + 1}</div>
+                  <input
+                    className="form-input"
+                    style={{ flex: 1 }}
+                    value={t.name}
+                    placeholder={`Class ${String.fromCharCode(65 + i)}`}
+                    onChange={e => setTeachers(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Students */}
+          <div className="card students-card">
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14, gap: 8 }}>
+              <div className="panel-title" style={{ margin: 0 }}>
+                Students
+              </div>
+              <span className="tag">{students.length}</span>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                <button className="btn btn-secondary btn-sm" onClick={() => {
+                  const header = 'name,gender,readingFluency,elaISAT,mathISAT,behavior,gt,sped,504,readingIntervention,mathIntervention,ell,medPlan';
+                  const rows = [
+                    'Smith Emma,F,142,2415,2398,0,0,0,0,0,0,0,0',
+                    'Johnson Liam,M,178,2492,2510,0,1,0,0,0,0,0,0',
+                    'Garcia Sofia,F,95,2210,2180,0,0,1,0,1,0,1,0',
+                    'Williams Noah,M,165,2445,2460,1,0,0,0,0,1,0,0',
+                  ];
+                  const csv = [header, ...rows].join('\n');
+                  const a = document.createElement('a');
+                  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+                  a.download = 'students_template.csv';
+                  a.click();
+                }}>⬇ CSV Template</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Add Student</button>
+              </div>
+            </div>
+
+            {students.length === 0 ? (
+              <div className="empty-state">
+                <div className="icon">👩‍🎓</div>
+                <div>No students yet — import a CSV or add sample data to get started.</div>
+              </div>
+            ) : (
+              <div className="students-table-wrap" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <table className="students-table">
+                  <thead>
+                    <tr>
+                      <th className="col-name">Name</th>
+                      <th>G</th>
+                      <th className="col-num">RF</th>
+                      <th className="col-num">ELA</th>
+                      <th className="col-num">Math</th>
+                      {BOOL_METRICS.map(m => <th key={m.key} className="col-check" title={m.label}>{m.short}</th>)}
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map(s => (
+                      <tr key={s.id}>
+                        <td className="col-name">{s.name}</td>
+                        <td><span className={`badge badge-${s.gender}`}>{s.gender}</span></td>
+                        <td className="col-num">{s.readingFluency}</td>
+                        <td className="col-num">{s.elaISAT}</td>
+                        <td className="col-num">{s.mathISAT}</td>
+                        {BOOL_METRICS.map(m => (
+                          <td key={m.key} className="col-check">
+                            {s[m.key] && <span className={`badge ${m.cls}`}>✓</span>}
+                          </td>
+                        ))}
+                        <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setEditingStudent(s)}>Edit</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteStudent(s.id)}>✕</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="setup-bottom">
+        <div className="setup-bottom-left">
+          {!canOptimize && students.length > 0 && (
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+              Need at least {teachers.length} students and 2+ teachers
+            </span>
+          )}
+        </div>
+        <button className="btn btn-secondary" onClick={() => setShowSampleDialog(true)}>
+          Load Sample Data
+        </button>
+        <button className="btn btn-primary" disabled={!canOptimize} onClick={onOptimize}>
+          Optimize Classes →
+        </button>
+      </div>
+
+      {showForm && (
+        <StudentFormModal
+          student={null}
+          onSave={handleAddStudent}
+          onClose={() => setShowForm(false)}
+        />
+      )}
+      {editingStudent && (
+        <StudentFormModal
+          student={editingStudent}
+          onSave={handleEditStudent}
+          onClose={() => setEditingStudent(null)}
+        />
+      )}
+      {showSampleDialog && (
+        <SampleDataDialog
+          defaultCount={sampleCount}
+          onGenerate={(n) => {
+            setSampleCount(n);
+            setStudents(generateSampleStudents(n));
+            setShowSampleDialog(false);
+          }}
+          onClose={() => setShowSampleDialog(false)}
+        />
+      )}
+      {showImport && (
+        <ImportModal
+          onImport={ss => setStudents(prev => [...prev, ...ss])}
+          onClose={() => setShowImport(false)}
+        />
+      )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────
+// OPTIMIZE PAGE
+// ─────────────────────────────────────────────
+function OptimizePage({ students, teachers, teacherNames, setTeacherNames, onBack }) {
+  const [assignment, setAssignment] = useState({});
+  const [locked, setLocked] = useState(new Set());
+  const [draggingId, setDraggingId] = useState(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const [cost, setCost] = useState(null);
+  const [optimizing, setOptimizing] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape' && fullscreen) setFullscreen(false); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fullscreen]);
+
+  const numClasses = teachers.length;
+
+  function runOptimize(lockedAssignments) {
+    setOptimizing(true);
+    setTimeout(() => {
+      const lockedObj = {};
+      lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
+      const result = optimize(students, numClasses, lockedObj);
+      setAssignment(result);
+      setCost(computeCost(students, result, numClasses));
+      setOptimizing(false);
+    }, 30);
+  }
+
+  useEffect(() => { runOptimize(new Map()); }, []);
+
+  function handleReoptimize() {
+    const lockedObj = new Map();
+    locked.forEach(sid => {
+      if (assignment[sid] !== undefined) lockedObj.set(sid, assignment[sid]);
+    });
+    runOptimize(lockedObj);
+  }
+
+  function handleToggleLock(sid) {
+    setLocked(prev => {
+      const next = new Set(prev);
+      next.has(sid) ? next.delete(sid) : next.add(sid);
+      return next;
+    });
+  }
+
+  function handleLockAll() {
+    setLocked(new Set(students.map(s => s.id)));
+  }
+  function handleUnlockAll() {
+    setLocked(new Set());
+  }
+
+  function handleDragStart(e, sid) {
+    setDraggingId(sid);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', sid);
+  }
+
+  function handleDrop(e, classIdx) {
+    const sid = e.dataTransfer.getData('text/plain') || draggingId;
+    if (!sid) return;
+    setAssignment(prev => ({ ...prev, [sid]: classIdx }));
+    setCost(prev => computeCost(students, { ...assignment, [sid]: classIdx }, numClasses));
+    setDraggingId(null);
+  }
+
+  const classesByIdx = Array.from({ length: numClasses }, (_, i) =>
+    students.filter(s => assignment[s.id] === i)
+      .sort((a, b) => {
+        const aLocked = locked.has(a.id) ? 1 : 0;
+        const bLocked = locked.has(b.id) ? 1 : 0;
+        if (aLocked !== bLocked) return aLocked - bLocked;
+        return a.name.localeCompare(b.name);
+      })
+  );
+
+  const costColor = cost !== null
+    ? (cost < 0.05 ? 'var(--accent)' : cost < 0.15 ? 'var(--amber)' : 'var(--danger)')
+    : 'var(--text3)';
+
+  return (
+    <div className="optimize-layout" style={fullscreen ? { position: 'fixed', inset: 0, zIndex: 500, background: 'var(--bg)' } : {}}>
+      {!fullscreen && <div className="optimize-toolbar">
+        <button className="btn btn-secondary btn-sm" onClick={onBack}>← Setup</button>
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={handleReoptimize}
+          disabled={optimizing}
+        >
+          {optimizing ? '⟳ Optimizing…' : '⟳ Re-Optimize'}
+        </button>
+        <div className="lock-legend">
+          <span className="locked-count">{locked.size}</span>
+          <span>locked</span>
+          <button className="btn btn-ghost btn-sm" onClick={handleLockAll}>Lock All</button>
+          <button className="btn btn-ghost btn-sm" onClick={handleUnlockAll}>Unlock All</button>
+        </div>
+        {cost !== null && (
+          <div className="score-badge">
+            <span className="label">Balance score</span>
+            <span className="value" style={{ color: costColor }}>{cost.toFixed(4)}</span>
+            <span style={{ fontSize: 10, color: 'var(--text3)' }}>(lower is better)</span>
+          </div>
+        )}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', borderRight: '1px solid var(--border)', paddingRight: 10, marginRight: 2 }}>
+            {BOOL_METRICS.map(m => (
+              <span key={m.key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, color: 'var(--text3)' }} title={m.label}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
+                {m.short}
+              </span>
+            ))}
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={() => setFullscreen(true)} title="Fullscreen class lists">⛶ Fullscreen</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowHelp(true)}>? How it works</button>
+        </div>
+      </div>}
+
+      <div className="classes-area" style={{ flex: 1 }}>
+        {classesByIdx.map((classStudents, i) => (
+          <ClassColumn
+            key={i}
+            classIdx={i}
+            name={teacherNames[i] || teachers[i]?.name || `Class ${i + 1}`}
+            onNameChange={(idx, val) => setTeacherNames(prev => {
+              const next = [...prev];
+              next[idx] = val;
+              return next;
+            })}
+            students={classStudents}
+            locked={locked}
+            onToggleLock={handleToggleLock}
+            onDragStart={handleDragStart}
+            onDrop={handleDrop}
+            draggingId={draggingId}
+            allStudents={students}
+            fullscreen={fullscreen}
+          />
+        ))}
+      </div>
+
+      {fullscreen && (
+        <button
+          onClick={() => setFullscreen(false)}
+          style={{
+            position: 'fixed', top: 12, right: 16, zIndex: 200,
+            background: 'var(--surface)', border: '1.5px solid var(--border)',
+            borderRadius: 'var(--radius-sm)', padding: '6px 12px',
+            cursor: 'pointer', fontSize: 13, fontFamily: 'inherit',
+            fontWeight: 500, color: 'var(--text2)',
+            boxShadow: 'var(--shadow)',
+          }}
+        >
+          ✕ Exit Fullscreen (Esc)
+        </button>
+      )}
+
+      {!fullscreen && <StatsStrip
+        students={students}
+        assignment={assignment}
+        numClasses={numClasses}
+        teacherNames={teacherNames}
+      />}
+
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// APP ROOT
+// ─────────────────────────────────────────────
+function App() {
+  const [view, setView] = useState('setup');
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([
+    { id: 'T1', name: 'Class A' },
+    { id: 'T2', name: 'Class B' },
+    { id: 'T3', name: 'Class C' },
+  ]);
+  const [teacherNames, setTeacherNames] = useState(['Class A', 'Class B', 'Class C']);
+
+  function syncTeacherNames(ts) {
+    if (!Array.isArray(ts)) return;
+    setTeachers(ts);
+    setTeacherNames(ts.map(t => t.name));
+  }
+
+  function handleOptimize() {
+    setTeacherNames(teachers.map(t => t.name));
+    setView('optimize');
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <header className="app-header">
+        <div className="app-logo">Class<span>List</span> Optimizer</div>
+        <div className="header-steps">
+          <div className={`step-pill ${view === 'setup' ? 'active' : 'done'}`} onClick={() => setView('setup')}>
+            1 · Setup
+          </div>
+          <div className={`step-pill ${view === 'optimize' ? 'active' : ''}`} onClick={() => students.length >= teachers.length && setView('optimize')}>
+            2 · Optimize
+          </div>
+        </div>
+        <div className="header-right">
+          <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+            {students.length} students · {teachers.length} classes
+          </span>
+        </div>
+      </header>
+
+      {view === 'setup' ? (
+        <SetupPage
+          students={students}
+          setStudents={setStudents}
+          teachers={teachers}
+          setTeachers={syncTeacherNames}
+          onOptimize={handleOptimize}
+        />
+      ) : (
+        <OptimizePage
+          students={students}
+          teachers={teachers}
+          teacherNames={teacherNames}
+          setTeacherNames={setTeacherNames}
+          onBack={() => setView('setup')}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
