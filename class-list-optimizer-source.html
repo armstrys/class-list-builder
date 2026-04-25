@@ -472,18 +472,52 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria);
   const rand = createSeededRNG(seed);
 
-  // Greedy initial: sort by composite score descending, snake-draft across classes
+  // Greedy initial: sort by composite score descending, then distribute
+  // to balance class sizes considering locked students
   const scored = [...unlocked].sort((a, b) => {
     const sa = numericCriteria.reduce((sum, { key }) => sum + (a[key] || 0), 0);
     const sb = numericCriteria.reduce((sum, { key }) => sum + (b[key] || 0), 0);
     return sb - sa;
   });
 
+  // Calculate target size per class and current locked counts
+  const targetSize = students.length / numClasses;
+  const lockedCounts = new Array(numClasses).fill(0);
+  Object.values(lockedAssignments).forEach(classIdx => {
+    if (classIdx >= 0 && classIdx < numClasses) lockedCounts[classIdx]++;
+  });
+
+  // Distribute unlocked students to classes with the fewest total students
   let assignment = { ...lockedAssignments };
-  scored.forEach((s, i) => {
-    const round = Math.floor(i / numClasses);
-    const pos = i % numClasses;
-    assignment[s.id] = round % 2 === 0 ? pos : (numClasses - 1 - pos);
+  scored.forEach((s) => {
+    // Calculate current size of assigned (unlocked) students per class
+    const assignedSizes = new Array(numClasses).fill(0);
+    Object.entries(assignment).forEach(([studentId, classIdx]) => {
+      // Only count if this student is not locked (locked students are in lockedAssignments)
+      if (lockedAssignments[studentId] === undefined && classIdx >= 0 && classIdx < numClasses) {
+        assignedSizes[classIdx]++;
+      }
+    });
+
+    const totalSizes = assignedSizes.map((size, idx) => size + lockedCounts[idx]);
+
+    // Find class(es) with minimum total size
+    const minSize = Math.min(...totalSizes);
+
+    // Among candidates, prefer the class most underfilled relative to target
+    let bestClass = 0;
+    let bestDeficit = -Infinity;
+    for (let i = 0; i < numClasses; i++) {
+      if (totalSizes[i] === minSize) {
+        const deficit = targetSize - totalSizes[i];
+        if (deficit > bestDeficit) {
+          bestDeficit = deficit;
+          bestClass = i;
+        }
+      }
+    }
+
+    assignment[s.id] = bestClass;
   });
 
   let currentCost = computeCost(students, assignment, numClasses, numericCriteria, flagCriteria);
