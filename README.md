@@ -13,6 +13,7 @@ Class List Optimizer uses a smart algorithm to fairly distribute students into c
 - **Behavior Support** – ensure students needing behavioral accommodations are distributed thoughtfully
 - **Gifted & Talented** – spread GT students across classes
 - **Gender Balance** – maintain even boy/girl ratios
+- **Reproducible Results** – same inputs always produce the same balanced class lists
 
 You can also manually adjust assignments and "lock" specific students to certain classes before running the optimizer.
 
