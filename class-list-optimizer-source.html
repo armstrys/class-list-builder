@@ -111,6 +111,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .form-row { display: grid; gap: 12px; }
 .form-row.cols2 { grid-template-columns: 1fr 1fr; }
 .form-row.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.cols4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 
 /* ── Cards / Panels ── */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
@@ -147,14 +148,6 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 }
 .badge-M { background: var(--blue-light); color: var(--blue); }
 .badge-F { background: var(--purple-light); color: var(--purple); }
-.badge-behavior { background: var(--danger-light); color: var(--danger); }
-.badge-gt { background: var(--purple-light); color: var(--purple); }
-.badge-sped { background: var(--amber-light); color: var(--amber); }
-.badge-504 { background: var(--blue-light); color: var(--blue); }
-.badge-rdgint { background: oklch(93% .04 45); color: oklch(50% .14 45); }
-.badge-mathint { background: oklch(93% .04 310); color: oklch(50% .14 310); }
-.badge-ell { background: var(--accent-light); color: var(--accent); }
-.badge-med { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
 
 /* ── Optimize Page ── */
 .optimize-layout { display: flex; flex-direction: column; height: calc(100vh - 56px); }
@@ -258,11 +251,24 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
   animation: slideUp .18s ease-out;
 }
 .modal-lg { max-width: 780px; }
+.modal-xl { max-width: 900px; }
 @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .modal-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
 .modal-title { font-size: 16px; font-weight: 600; flex: 1; }
 .modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
 .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── Settings Modal ── */
+.settings-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.settings-tab { padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; border: 1.5px solid transparent; }
+.settings-tab:hover { background: var(--surface2); }
+.settings-tab.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.settings-section { margin-bottom: 20px; }
+.settings-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+.criteria-list { display: flex; flex-direction: column; gap: 10px; }
+.criteria-item { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr auto; gap: 10px; align-items: center; background: var(--surface2); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.criteria-item input { background: var(--surface); }
+.criteria-key { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
 
 /* ── Help Modal specific ── */
 .help-section { margin-bottom: 22px; }
@@ -287,6 +293,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 
 .lock-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); margin-left: 8px; }
 .locked-count { font-weight: 600; color: var(--accent); }
+
+.config-actions { display: flex; gap: 8px; margin-bottom: 16px; }
 </style>
 
 <template id="__bundler_thumbnail" data-bg-color="#F7F6F2">
@@ -322,29 +330,56 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 const { useState, useEffect, useRef, useCallback } = React;
 
 // ─────────────────────────────────────────────
-// METRIC CONFIG
+// DEFAULT CRITERIA CONFIG
 // ─────────────────────────────────────────────
-const NUM_METRICS = [
-  { key: 'readingFluency', label: 'Rdg Fluency', short: 'RF', weight: 1.0 },
-  { key: 'elaISAT',        label: 'ELA ISAT',    short: 'ELA', weight: 1.0 },
-  { key: 'mathISAT',       label: 'Math ISAT',   short: 'Math', weight: 1.0 },
+const DEFAULT_NUMERIC_CRITERIA = [
+  { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
+  { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
+  { key: 'languageScore', label: 'Language Score', short: 'Lang', weight: 1.0 },
 ];
 
-const BOOL_METRICS = [
-  { key: 'behavior',   label: 'Behavior',            short: 'BEH',  weight: 2.0, cls: 'badge-behavior', dot: 'oklch(50% .20 22)' },
-  { key: 'gt',         label: 'Gifted & Talented',   short: 'GT',   weight: 1.5, cls: 'badge-gt',       dot: 'oklch(50% .20 295)' },
-  { key: 'sped',       label: 'SPED/HI/Speech',      short: 'SPED', weight: 2.0, cls: 'badge-sped',     dot: 'oklch(60% .20 55)' },
-  { key: 'plan504',    label: '504 Plan',             short: '504',  weight: 1.5, cls: 'badge-504',      dot: 'oklch(50% .20 245)' },
-  { key: 'readingInt', label: 'Reading Intervention', short: 'RdgI', weight: 1.5, cls: 'badge-rdgint',   dot: 'oklch(52% .20 210)' },
-  { key: 'mathInt',    label: 'Math Intervention',    short: 'MthI', weight: 1.5, cls: 'badge-mathint',  dot: 'oklch(52% .20 330)' },
-  { key: 'ell',        label: 'ELL',                  short: 'ELL',  weight: 1.5, cls: 'badge-ell',      dot: 'oklch(48% .18 168)' },
-  { key: 'medPlan',    label: 'Med Plan',             short: 'Med',  weight: 1.0, cls: 'badge-med',      dot: 'oklch(50% .06 250)' },
+const DEFAULT_FLAG_CRITERIA = [
+  { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
+  { key: 'giftedTalented', label: 'Gifted & Talented', short: 'GT', weight: 1.5 },
+  { key: 'sped', label: 'SPED', short: 'SPED', weight: 2.0 },
+  { key: 'accommodations', label: 'Accommodations', short: 'ACC', weight: 1.5 },
+  { key: 'readingSupport', label: 'Reading Support', short: 'RdgS', weight: 1.5 },
+  { key: 'mathSupport', label: 'Math Support', short: 'MathS', weight: 1.5 },
+  { key: 'englishLanguageLearning', label: 'English Language Learning', short: 'ELL', weight: 1.5 },
+  { key: 'medicalPlan', label: 'Medical Plan', short: 'Med', weight: 1.0 },
 ];
+
+const STORAGE_KEYS = {
+  NUMERIC_CRITERIA: 'class-optimizer-numeric-criteria',
+  FLAG_CRITERIA: 'class-optimizer-flag-criteria',
+};
+
+// Generate a consistent color from a key string
+function generateColor(key) {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = key.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return {
+    bg: `oklch(93% 0.04 ${hue})`,
+    fg: `oklch(50% 0.14 ${hue})`,
+    dot: `oklch(50% 0.20 ${hue})`,
+  };
+}
+
+// Generate a unique key from label
+function generateKeyFromLabel(label) {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/^(\d)/, '_$1');
+}
 
 // ─────────────────────────────────────────────
 // OPTIMIZATION ENGINE
 // ─────────────────────────────────────────────
-function computeCost(students, assignment, numClasses) {
+function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria) {
   if (!students.length || !numClasses) return 0;
   const classes = Array.from({ length: numClasses }, () => []);
   students.forEach(s => {
@@ -355,8 +390,7 @@ function computeCost(students, assignment, numClasses) {
   let cost = 0;
 
   // Numeric metrics: variance of class means, normalized by overall population variance
-  // (scale-agnostic: works regardless of score range or floor)
-  NUM_METRICS.forEach(({ key, weight }) => {
+  numericCriteria.forEach(({ key, weight }) => {
     const vals = students.map(s => s[key] || 0);
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
     const popVar = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
@@ -369,7 +403,7 @@ function computeCost(students, assignment, numClasses) {
   });
 
   // Boolean metrics: variance of proportions across classes
-  BOOL_METRICS.forEach(({ key, weight }) => {
+  flagCriteria.forEach(({ key, weight }) => {
     const overall = students.filter(s => s[key]).length / students.length;
     const props = classes.map(cls =>
       cls.length ? cls.filter(s => s[key]).length / cls.length : overall
@@ -408,27 +442,20 @@ function createSeededRNG(seed) {
   };
 }
 
-// Compute deterministic seed from input data (students + numClasses + locked assignments)
-function computeSeed(students, numClasses, lockedAssignments) {
-  // Hash students by their IDs and key data
-  let hash = 2166136261; // FNV-1a offset basis
+// Compute deterministic seed from input data
+function computeSeed(students, numClasses, lockedAssignments, numericCriteria) {
+  let hash = 2166136261;
   const fnv = (h, v) => Math.imul(h ^ v, 16777619);
 
-  // Include numClasses
   hash = fnv(hash, numClasses);
 
-  // Include student data in deterministic order (sorted by ID)
   const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id));
   for (const s of sortedStudents) {
     hash = fnv(hash, s.id.split('').reduce((h, c) => fnv(h, c.charCodeAt(0)), hash));
-    hash = fnv(hash, Math.floor(s.readingFluency || 0));
-    hash = fnv(hash, Math.floor(s.elaISAT || 0));
-    hash = fnv(hash, Math.floor(s.mathISAT || 0));
+    numericCriteria.forEach(({ key }) => hash = fnv(hash, Math.floor(s[key] || 0)));
     hash = fnv(hash, s.gender === 'F' ? 1 : 0);
-    BOOL_METRICS.forEach(m => hash = fnv(hash, s[m.key] ? 1 : 0));
   }
 
-  // Include locked assignments
   const lockedIds = Object.keys(lockedAssignments).sort();
   for (const id of lockedIds) {
     hash = fnv(hash, id.split('').reduce((h, c) => fnv(h, c.charCodeAt(0)), hash));
@@ -438,18 +465,17 @@ function computeSeed(students, numClasses, lockedAssignments) {
   return hash >>> 0;
 }
 
-function optimize(students, numClasses, lockedAssignments = {}) {
+function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria) {
   if (!students.length || !numClasses) return {};
   const unlocked = students.filter(s => lockedAssignments[s.id] === undefined);
 
-  // Create seeded RNG for reproducible results
-  const seed = computeSeed(students, numClasses, lockedAssignments);
+  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria);
   const rand = createSeededRNG(seed);
 
   // Greedy initial: sort by composite score descending, snake-draft across classes
   const scored = [...unlocked].sort((a, b) => {
-    const sa = (a.readingFluency || 0) + (a.elaISAT || 0) + (a.mathISAT || 0);
-    const sb = (b.readingFluency || 0) + (b.elaISAT || 0) + (b.mathISAT || 0);
+    const sa = numericCriteria.reduce((sum, { key }) => sum + (a[key] || 0), 0);
+    const sb = numericCriteria.reduce((sum, { key }) => sum + (b[key] || 0), 0);
     return sb - sa;
   });
 
@@ -460,9 +486,9 @@ function optimize(students, numClasses, lockedAssignments = {}) {
     assignment[s.id] = round % 2 === 0 ? pos : (numClasses - 1 - pos);
   });
 
-  let currentCost = computeCost(students, assignment, numClasses);
+  let currentCost = computeCost(students, assignment, numClasses, numericCriteria, flagCriteria);
 
-  // Simulated annealing (now deterministic with seeded RNG)
+  // Simulated annealing
   let temp = 4.0;
   const cooling = 0.9965;
   const iters = 10000;
@@ -474,7 +500,7 @@ function optimize(students, numClasses, lockedAssignments = {}) {
 
     const s1 = unlocked[i1], s2 = unlocked[i2];
     const newAssignment = { ...assignment, [s1.id]: assignment[s2.id], [s2.id]: assignment[s1.id] };
-    const newCost = computeCost(students, newAssignment, numClasses);
+    const newCost = computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria);
     const delta = newCost - currentCost;
 
     if (delta < 0 || rand() < Math.exp(-delta / temp)) {
@@ -500,100 +526,149 @@ const LN = ['Smith','Johnson','Williams','Brown','Davis','Miller','Wilson','Moor
 function rnd(a, b) { return Math.round(a + Math.random() * (b - a)); }
 function p(prob) { return Math.random() < prob; }
 
-function generateSampleStudents(count = 27) {
+function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
   const students = [];
   for (let i = 0; i < count; i++) {
     const gender = p(0.5) ? 'F' : 'M';
     const fn = gender === 'F' ? FN_F[i % FN_F.length] : FN_M[i % FN_M.length];
     const ln = LN[i % LN.length];
-    // no comma — safe for CSV
+    
     const gt = p(0.13);
     const sped = p(0.11);
     const ell = p(0.14);
     const behavior = p(0.10);
-    // ISAT scale: 2001–2811 (Level 1: 2001–2366, L2: 2367–2431, L3: 2432–2489, L4: 2490–2811)
-    const isaBase = gt ? rnd(2490, 2700) : sped ? rnd(2001, 2366) : ell ? rnd(2200, 2431) : rnd(2300, 2550);
-    const rfBase  = gt ? rnd(160, 220) : sped ? rnd(60, 110) : ell ? rnd(80, 130) : rnd(100, 180);
-    students.push({
+    
+    // Generate scores based on criteria
+    const student = {
       id: uid(),
       name: `${ln} ${fn}`,
       gender,
-      readingFluency: Math.max(10, Math.min(250, rfBase + rnd(-20, 20))),
-      elaISAT:        Math.max(2001, Math.min(2811, isaBase + rnd(-60, 60))),
-      mathISAT:       Math.max(2001, Math.min(2811, isaBase + rnd(-80, 80))),
-      behavior,
-      gt,
-      sped,
-      plan504: p(0.07) && !sped,
-      readingInt: p(0.18) && !gt,
-      mathInt: p(0.16) && !gt,
-      ell,
-      medPlan: p(0.06),
+    };
+    
+    // Generate numeric scores
+    numericCriteria.forEach(({ key }) => {
+      const base = gt ? rnd(80, 100) : sped ? rnd(40, 65) : rnd(60, 90);
+      student[key] = Math.max(0, Math.min(100, base + rnd(-10, 10)));
     });
+    
+    // Generate boolean flags
+    const accommodations = p(0.07) && !sped;
+    const readingSupport = p(0.18) && !gt;
+    const mathSupport = p(0.16) && !gt;
+    
+    flagCriteria.forEach(({ key }) => {
+      if (key === 'giftedTalented') student[key] = gt;
+      else if (key === 'sped') student[key] = sped;
+      else if (key === 'behavior') student[key] = behavior;
+      else if (key === 'accommodations') student[key] = accommodations;
+      else if (key === 'readingSupport') student[key] = readingSupport;
+      else if (key === 'mathSupport') student[key] = mathSupport;
+      else if (key === 'englishLanguageLearning') student[key] = ell;
+      else if (key === 'medicalPlan') student[key] = p(0.06);
+      else student[key] = p(0.15);
+    });
+    
+    students.push(student);
   }
   return students;
 }
 
 // ─────────────────────────────────────────────
-// CSV PARSING
+// CSV PARSING / EXPORT
 // ─────────────────────────────────────────────
-function parseCSV(text) {
+function generateCSVHeaders(numericCriteria, flagCriteria) {
+  const numHeaders = numericCriteria.map(c => c.key);
+  const boolHeaders = flagCriteria.map(c => c.key);
+  return ['name', 'gender', ...numHeaders, ...boolHeaders];
+}
+
+function parseCSV(text, numericCriteria, flagCriteria) {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return { students: [], errors: ['No data rows found'] };
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, ''));
+  
+  // Normalize headers by removing spaces and lowercasing
+  const rawHeaders = lines[0].split(',').map(h => h.trim());
+  const headers = rawHeaders.map(h => h.toLowerCase().replace(/\s+/g, ''));
+  
   const students = [];
   const errors = [];
-
-  const boolKeys = {
-    behavior: ['behavior','beh'],
-    gt: ['gt','gifted','giftedandtalented','giftedtalented'],
-    sped: ['sped','hi','speech','spedhispeech'],
-    plan504: ['504','plan504','_504'],
-    readingInt: ['readingintervention','rdgint','readingint','rdgi'],
-    mathInt: ['mathintervention','mathint','mthi'],
-    ell: ['ell','englishlanguagelearner'],
-    medPlan: ['medplan','med','medicalplan'],
-  };
-
+  
+  // Build mapping from criteria keys to CSV column indices
+  const numericKeyMap = {};
+  const flagKeyMap = {};
+  
+  numericCriteria.forEach(({ key }) => {
+    const idx = headers.findIndex(h => h === key.toLowerCase());
+    if (idx !== -1) numericKeyMap[key] = idx;
+  });
+  
+  flagCriteria.forEach(({ key }) => {
+    const idx = headers.findIndex(h => h === key.toLowerCase());
+    if (idx !== -1) flagKeyMap[key] = idx;
+  });
+  
+  // Find name and gender columns
+  const nameIdx = headers.findIndex(h => ['name','student','lastnamefirstname'].includes(h));
+  const genderIdx = headers.findIndex(h => ['gender','sex'].includes(h));
+  
+  if (nameIdx === -1) errors.push('Could not find name column');
+  if (genderIdx === -1) errors.push('Could not find gender column');
+  
   lines.slice(1).forEach((line, i) => {
     if (!line.trim()) return;
     const cols = line.split(',').map(c => c.trim());
-    const get = (...keys) => {
-      for (const k of keys) {
-        const idx = headers.indexOf(k);
-        if (idx !== -1 && cols[idx] !== undefined) return cols[idx];
+    
+    const name = nameIdx !== -1 ? (cols[nameIdx] || `Student ${i + 2}`) : `Student ${i + 2}`;
+    const genderVal = genderIdx !== -1 ? (cols[genderIdx] || '').toUpperCase() : '';
+    const gender = genderVal.startsWith('F') ? 'F' : 'M';
+    
+    const student = { id: uid(), name, gender };
+    
+    // Parse numeric criteria
+    numericCriteria.forEach(({ key }) => {
+      const idx = numericKeyMap[key];
+      if (idx !== undefined) {
+        student[key] = parseFloat(cols[idx]) || 0;
+      } else {
+        student[key] = 0;
       }
-      return '';
-    };
-    const getBool = (fieldKeys) => {
-      for (const fk of fieldKeys) {
-        const idx = headers.findIndex(h => fk.includes(h) || h === fk);
-        if (idx !== -1) {
-          const v = cols[idx]?.trim().toLowerCase();
-          return ['1','true','yes','y','x'].includes(v);
-        }
+    });
+    
+    // Parse flag criteria
+    flagCriteria.forEach(({ key }) => {
+      const idx = flagKeyMap[key];
+      if (idx !== undefined) {
+        const v = cols[idx]?.toLowerCase();
+        student[key] = ['1','true','yes','y','x'].includes(v);
+      } else {
+        student[key] = false;
       }
-      return false;
-    };
-
-    const name = get('name','lastname,firstname','student') || `Student ${i + 2}`;
-    const gender = get('gender','sex').toUpperCase().startsWith('F') ? 'F' : 'M';
-    const rf = parseFloat(get('readingfluency','rf','rdgfluency','reading')) || 150;
-    const ela = parseFloat(get('elaisat','ela','elatest')) || 2400;
-    const math = parseFloat(get('mathisat','math','mathtest')) || 2400;
-
-    const s = { id: uid(), name, gender, readingFluency: rf, elaISAT: ela, mathISAT: math };
-    Object.entries(boolKeys).forEach(([key, aliases]) => { s[key] = getBool(aliases); });
-    students.push(s);
+    });
+    
+    students.push(student);
   });
-
+  
   return { students, errors };
+}
+
+function exportStudentsToCSV(students, numericCriteria, flagCriteria) {
+  const headers = ['name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key)];
+  const lines = [headers.join(',')];
+  
+  students.forEach(s => {
+    const values = [s.name, s.gender];
+    numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
+    flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
+    lines.push(values.join(','));
+  });
+  
+  return lines.join('\n');
 }
 
 // ─────────────────────────────────────────────
 // HELP MODAL
 // ─────────────────────────────────────────────
-function HelpModal({ onClose }) {
+function HelpModal({ onClose, numericCriteria, flagCriteria }) {
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal modal-lg">
@@ -612,12 +687,11 @@ function HelpModal({ onClose }) {
             <p>A single <strong>cost score</strong> measures total imbalance. Lower is better. The optimizer finds the assignment that minimizes this cost:</p>
             <div className="help-formula">{`Cost = Σ_m  weight_m × normalized_variance_m
 
-  For numeric scores (RF, ELA ISAT, Math ISAT):
+  For numeric scores:
     normalized_variance_m = Var(class_means) / Var(all_students)
 
-    This ratio is scale-agnostic: a 5% spread in Reading Fluency
-    contributes the same as a 5% spread in ISAT scores, regardless
-    of their absolute ranges or floors.
+    This ratio is scale-agnostic: a 5% spread in Reading Score
+    contributes the same as a 5% spread in Language Score.
 
   For binary flags (Behavior, GT, SPED, …):
     normalized_variance_m = Var(class_proportions)
@@ -633,29 +707,29 @@ function HelpModal({ onClose }) {
             <h3>Metric Weights</h3>
             <table className="help-table">
               <thead>
-                <tr><th>Metric</th><th>Type</th><th>Weight</th><th>Rationale</th></tr>
+                <tr><th>Metric</th><th>Type</th><th>Weight</th></tr>
               </thead>
               <tbody>
-                {NUM_METRICS.map(m => (
-                  <tr key={m.key}><td>{m.label}</td><td>Numeric</td><td>{m.weight.toFixed(1)}</td><td>Academic equity</td></tr>
+                {numericCriteria.map(m => (
+                  <tr key={m.key}><td>{m.label}</td><td>Numeric</td><td>{m.weight.toFixed(1)}</td></tr>
                 ))}
-                {BOOL_METRICS.map(m => (
-                  <tr key={m.key}><td>{m.label}</td><td>Boolean</td><td>{m.weight.toFixed(1)}</td><td>{m.weight >= 2 ? 'High impact — distribute carefully' : 'Moderate impact'}</td></tr>
+                {flagCriteria.map(m => (
+                  <tr key={m.key}><td>{m.label}</td><td>Boolean</td><td>{m.weight.toFixed(1)}</td></tr>
                 ))}
-                <tr><td>Gender</td><td>Proportion</td><td>1.0</td><td>Balance male/female</td></tr>
-                <tr><td>Class Size</td><td>Count</td><td>3.0</td><td>Equal class sizes (highest priority)</td></tr>
+                <tr><td>Gender</td><td>Proportion</td><td>1.0</td></tr>
+                <tr><td>Class Size</td><td>Count</td><td>3.0</td></tr>
               </tbody>
             </table>
           </div>
 
           <div className="help-section">
             <h3>Algorithm: Simulated Annealing</h3>
-            <p>Starting from a snake-draft greedy initialization (best students alternately distributed), the optimizer runs <strong>10,000 iterations</strong> of random student swaps. It accepts any swap that lowers the cost, and occasionally accepts slightly worse swaps (with decreasing probability as temperature cools) to escape local optima.</p>
+            <p>Starting from a snake-draft greedy initialization, the optimizer runs <strong>10,000 iterations</strong> of random student swaps. It accepts any swap that lowers the cost, and occasionally accepts slightly worse swaps to escape local optima.</p>
           </div>
 
           <div className="help-section">
             <h3>Locked Students</h3>
-            <p>Locking a student pins them to their current class. Subsequent optimization only moves unlocked students. Use this for overrides — manually drag a student where you want them, lock them, and re-optimize the rest.</p>
+            <p>Locking a student pins them to their current class. Subsequent optimization only moves unlocked students. Use this for overrides.</p>
           </div>
         </div>
       </div>
@@ -664,18 +738,379 @@ function HelpModal({ onClose }) {
 }
 
 // ─────────────────────────────────────────────
-// IMPORT MODAL
+// SETTINGS MODAL
 // ─────────────────────────────────────────────
-function ImportModal({ onImport, onClose }) {
+function SettingsModal({ 
+  numericCriteria, 
+  flagCriteria, 
+  onSave, 
+  onClose,
+  hasStudentData
+}) {
+  const [activeTab, setActiveTab] = useState('numeric');
+  const [numCriteria, setNumCriteria] = useState(numericCriteria);
+  const [flagCriteriaState, setFlagCriteriaState] = useState(flagCriteria);
+  const [error, setError] = useState('');
+  const [confirmRemove, setConfirmRemove] = useState(null);
+
+  function validateWeight(val) {
+    const num = parseFloat(val);
+    return !isNaN(num) && num > 0;
+  }
+
+  function updateNumCriteria(index, field, value) {
+    setNumCriteria(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  }
+
+  function updateFlagCriteria(index, field, value) {
+    setFlagCriteriaState(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  }
+
+  function addNumericCriterion() {
+    setNumCriteria(prev => [...prev, { 
+      key: '', 
+      label: '', 
+      short: '', 
+      weight: 1.0 
+    }]);
+  }
+
+  function addFlagCriterion() {
+    setFlagCriteriaState(prev => [...prev, { 
+      key: '', 
+      label: '', 
+      short: '', 
+      weight: 1.5 
+    }]);
+  }
+
+  function requestRemoveNum(index) {
+    if (hasStudentData) {
+      setConfirmRemove({ type: 'numeric', index, label: numCriteria[index].label });
+    } else {
+      removeNumCriterion(index);
+    }
+  }
+
+  function requestRemoveFlag(index) {
+    if (hasStudentData) {
+      setConfirmRemove({ type: 'flag', index, label: flagCriteriaState[index].label });
+    } else {
+      removeFlagCriterion(index);
+    }
+  }
+
+  function removeNumCriterion(index) {
+    setNumCriteria(prev => prev.filter((_, i) => i !== index));
+    setConfirmRemove(null);
+  }
+
+  function removeFlagCriterion(index) {
+    setFlagCriteriaState(prev => prev.filter((_, i) => i !== index));
+    setConfirmRemove(null);
+  }
+
+  function generateKey(label) {
+    return generateKeyFromLabel(label);
+  }
+
+  function handleSave() {
+    setError('');
+
+    // Validate numeric criteria
+    for (const c of numCriteria) {
+      if (!c.label.trim()) {
+        setError('All criteria must have a label');
+        return;
+      }
+      if (!validateWeight(c.weight)) {
+        setError(`Invalid weight for "${c.label}". Weight must be a positive number.`);
+        return;
+      }
+    }
+
+    // Validate flag criteria
+    for (const c of flagCriteriaState) {
+      if (!c.label.trim()) {
+        setError('All criteria must have a label');
+        return;
+      }
+      if (!validateWeight(c.weight)) {
+        setError(`Invalid weight for "${c.label}". Weight must be a positive number.`);
+        return;
+      }
+    }
+
+    // Check for duplicate keys
+    const allKeys = [...numCriteria.map(c => generateKey(c.label)), ...flagCriteriaState.map(c => generateKey(c.label))];
+    const uniqueKeys = new Set(allKeys);
+    if (uniqueKeys.size !== allKeys.length) {
+      setError('Duplicate field labels are not allowed. Labels must be unique.');
+      return;
+    }
+
+    // Finalize criteria with generated keys
+    const finalNumCriteria = numCriteria.map(c => ({
+      ...c,
+      key: generateKey(c.label),
+      weight: parseFloat(c.weight),
+    }));
+
+    const finalFlagCriteria = flagCriteriaState.map(c => ({
+      ...c,
+      key: generateKey(c.label),
+      weight: parseFloat(c.weight),
+    }));
+
+    onSave(finalNumCriteria, finalFlagCriteria);
+    onClose();
+  }
+
+  function exportConfig() {
+    const config = {
+      version: 1,
+      numericCriteria: numCriteria.map(c => ({ ...c, key: generateKey(c.label) })),
+      flagCriteria: flagCriteriaState.map(c => ({ ...c, key: generateKey(c.label) })),
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'class-optimizer-config.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importConfig(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const config = JSON.parse(e.target.result);
+        if (!config.numericCriteria || !config.flagCriteria) {
+          setError('Invalid config file: missing criteria arrays');
+          return;
+        }
+        if (hasStudentData) {
+          // Check for mismatches with existing data
+          const existingNumKeys = new Set(numericCriteria.map(c => c.key));
+          const existingFlagKeys = new Set(flagCriteria.map(c => c.key));
+          const newNumKeys = new Set(config.numericCriteria.map(c => c.key));
+          const newFlagKeys = new Set(config.flagCriteria.map(c => c.key));
+          
+          if (existingNumKeys.size > 0 || existingFlagKeys.size > 0) {
+            setError('Cannot import config while student data exists. Clear student data first, or use this config on a fresh session.');
+            return;
+          }
+        }
+        setNumCriteria(config.numericCriteria);
+        setFlagCriteriaState(config.flagCriteria);
+      } catch (err) {
+        setError('Invalid JSON file');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function resetToDefaults() {
+    setNumCriteria(DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })));
+    setFlagCriteriaState(DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })));
+  }
+
+  const fileInputRef = useRef(null);
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && !confirmRemove && onClose()}>
+      <div className="modal modal-xl">
+        <div className="modal-header">
+          <div className="modal-title">Criteria Settings</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          {hasStudentData && (
+            <div style={{ 
+              background: 'var(--amber-light)', 
+              border: '1px solid var(--amber)', 
+              borderRadius: 'var(--radius-sm)', 
+              padding: '10px 14px',
+              marginBottom: 16,
+              fontSize: 13,
+              color: 'var(--text)'
+            }}>
+              ⚠️ Student data exists. Removing fields with data will require confirmation.
+            </div>
+          )}
+
+          <div className="config-actions">
+            <button className="btn btn-secondary btn-sm" onClick={exportConfig}>⬇ Export Config</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>⬆ Import Config</button>
+            <input 
+              ref={fileInputRef}
+              type="file" 
+              accept=".json" 
+              style={{ display: 'none' }}
+              onChange={e => { if (e.target.files?.[0]) importConfig(e.target.files[0]); e.target.value = ''; }}
+            />
+            <button className="btn btn-ghost btn-sm" onClick={resetToDefaults}>Reset to Defaults</button>
+          </div>
+
+          <div className="settings-tabs">
+            <div 
+              className={`settings-tab ${activeTab === 'numeric' ? 'active' : ''}`}
+              onClick={() => setActiveTab('numeric')}
+            >
+              Numeric Fields ({numCriteria.length})
+            </div>
+            <div 
+              className={`settings-tab ${activeTab === 'flags' ? 'active' : ''}`}
+              onClick={() => setActiveTab('flags')}
+            >
+              Flag Fields ({flagCriteriaState.length})
+            </div>
+          </div>
+
+          {activeTab === 'numeric' && (
+            <div className="settings-section">
+              <div className="criteria-list">
+                {numCriteria.map((c, i) => (
+                  <div key={i} className="criteria-item">
+                    <input 
+                      className="form-input"
+                      placeholder="Label (e.g., Reading Score)"
+                      value={c.label}
+                      onChange={e => updateNumCriteria(i, 'label', e.target.value)}
+                    />
+                    <input 
+                      className="form-input"
+                      placeholder="Short (e.g., Read)"
+                      value={c.short}
+                      onChange={e => updateNumCriteria(i, 'short', e.target.value)}
+                    />
+                    <input 
+                      className="form-input"
+                      placeholder="Weight"
+                      value={c.weight}
+                      onChange={e => updateNumCriteria(i, 'weight', e.target.value)}
+                    />
+                    <button 
+                      className="btn btn-danger btn-sm"
+                      onClick={() => requestRemoveNum(i)}
+                      disabled={numCriteria.length <= 1}
+                      title={numCriteria.length <= 1 ? 'Must have at least one numeric field' : 'Remove'}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={addNumericCriterion} style={{ marginTop: 12 }}>
+                + Add Numeric Field
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'flags' && (
+            <div className="settings-section">
+              <div className="criteria-list">
+                {flagCriteriaState.map((c, i) => (
+                  <div key={i} className="criteria-item">
+                    <input 
+                      className="form-input"
+                      placeholder="Label (e.g., Behavior)"
+                      value={c.label}
+                      onChange={e => updateFlagCriteria(i, 'label', e.target.value)}
+                    />
+                    <input 
+                      className="form-input"
+                      placeholder="Short (e.g., BEH)"
+                      value={c.short}
+                      onChange={e => updateFlagCriteria(i, 'short', e.target.value)}
+                    />
+                    <input 
+                      className="form-input"
+                      placeholder="Weight"
+                      value={c.weight}
+                      onChange={e => updateFlagCriteria(i, 'weight', e.target.value)}
+                    />
+                    <button 
+                      className="btn btn-danger btn-sm"
+                      onClick={() => requestRemoveFlag(i)}
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={addFlagCriterion} style={{ marginTop: 12 }}>
+                + Add Flag Field
+              </button>
+            </div>
+          )}
+
+          {error && (
+            <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12 }}>
+              {error}
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave}>Save Settings</button>
+        </div>
+      </div>
+
+      {confirmRemove && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="modal" style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <div className="modal-title">Confirm Removal</div>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
+                Student data exists. Removing "{confirmRemove.label}" will delete this data from all student records.
+                This cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>Cancel</button>
+              <button 
+                className="btn btn-danger" 
+                onClick={() => confirmRemove.type === 'numeric' 
+                  ? removeNumCriterion(confirmRemove.index) 
+                  : removeFlagCriterion(confirmRemove.index)
+                }
+              >
+                Remove Field
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// IMPORT STUDENTS MODAL
+// ─────────────────────────────────────────────
+function ImportModal({ onImport, onClose, numericCriteria, flagCriteria }) {
   const [text, setText] = useState('');
   const [error, setError] = useState('');
 
-  const csvTemplate = `name,gender,readingFluency,elaISAT,mathISAT,behavior,gt,sped,504,readingIntervention,mathIntervention,ell,medPlan
-Smith, Emma,F,142,215,198,0,0,0,0,0,0,0,0
-Johnson, Liam,M,178,245,255,0,1,0,0,0,0,0,0`;
+  const csvTemplate = generateCSVHeaders(numericCriteria, flagCriteria).join(',') + '\n' +
+    'Smith Emma,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') + '\n' +
+    'Johnson Liam,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',');
 
   function handleImport() {
-    const { students, errors } = parseCSV(text);
+    const { students, errors } = parseCSV(text, numericCriteria, flagCriteria);
     if (!students.length) { setError('No valid students found. Check your CSV format.'); return; }
     onImport(students);
     onClose();
@@ -695,8 +1130,8 @@ Johnson, Liam,M,178,245,255,0,1,0,0,0,0,0,0`;
           <textarea className="csv-area" value={text} onChange={e => { setText(e.target.value); setError(''); }}
             placeholder={csvTemplate} />
           <p className="csv-hint">
-            <strong>Required headers:</strong> name, gender, readingFluency, elaISAT, mathISAT<br />
-            <strong>Optional boolean headers:</strong> behavior, gt, sped, 504, readingIntervention, mathIntervention, ell, medPlan
+            <strong>Required headers:</strong> name, gender<br />
+            <strong>Current criteria headers:</strong> {generateCSVHeaders(numericCriteria, flagCriteria).slice(2).join(', ')}
           </p>
           {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8 }}>{error}</p>}
         </div>
@@ -712,25 +1147,27 @@ Johnson, Liam,M,178,245,255,0,1,0,0,0,0,0,0`;
 // ─────────────────────────────────────────────
 // STUDENT FORM MODAL
 // ─────────────────────────────────────────────
-const EMPTY_STUDENT = {
-  name: '', gender: 'M', readingFluency: '', elaISAT: '', mathISAT: '',
-  behavior: false, gt: false, sped: false, plan504: false,
-  readingInt: false, mathInt: false, ell: false, medPlan: false,
-};
+function StudentFormModal({ student, onSave, onClose, numericCriteria, flagCriteria }) {
+  const initialForm = { 
+    name: '', 
+    gender: 'M',
+    ...Object.fromEntries(numericCriteria.map(c => [c.key, ''])),
+    ...Object.fromEntries(flagCriteria.map(c => [c.key, false])),
+  };
 
-function StudentFormModal({ student, onSave, onClose }) {
-  const [form, setForm] = useState(student ? { ...student } : { ...EMPTY_STUDENT, id: uid() });
+  const [form, setForm] = useState(student ? { ...student } : { ...initialForm, id: uid() });
 
   function set(key, val) { setForm(f => ({ ...f, [key]: val })); }
 
   function handleSave() {
     if (!form.name.trim()) return;
-    onSave({
-      ...form,
-      readingFluency: parseFloat(form.readingFluency) || 0,
-      elaISAT: parseFloat(form.elaISAT) || 0,
-      mathISAT: parseFloat(form.mathISAT) || 0,
+    
+    const result = { ...form };
+    numericCriteria.forEach(({ key }) => {
+      result[key] = parseFloat(form[key]) || 0;
     });
+    
+    onSave(result);
     onClose();
   }
 
@@ -756,31 +1193,40 @@ function StudentFormModal({ student, onSave, onClose }) {
             </div>
           </div>
 
-          <div className="form-row cols3">
-            <div className="form-group">
-              <label className="form-label">Reading Fluency</label>
-              <input className="form-input" type="number" value={form.readingFluency} onChange={e => set('readingFluency', e.target.value)} placeholder="e.g. 142" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">ELA ISAT</label>
-              <input className="form-input" type="number" value={form.elaISAT} onChange={e => set('elaISAT', e.target.value)} placeholder="e.g. 2415" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Math ISAT</label>
-              <input className="form-input" type="number" value={form.mathISAT} onChange={e => set('mathISAT', e.target.value)} placeholder="e.g. 2398" />
-            </div>
-          </div>
+          {numericCriteria.length > 0 && (
+            <>
+              <div className="divider" />
+              <div className="panel-title" style={{ marginBottom: 8 }}>Numeric Scores</div>
+              <div className="form-row" style={{ gridTemplateColumns: `repeat(${Math.min(numericCriteria.length, 3)}, 1fr)` }}>
+                {numericCriteria.map(c => (
+                  <div key={c.key} className="form-group">
+                    <label className="form-label">{c.label}</label>
+                    <input 
+                      className="form-input" 
+                      type="number" 
+                      value={form[c.key]} 
+                      onChange={e => set(c.key, e.target.value)} 
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
-          <div className="divider" />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
-            {BOOL_METRICS.map(m => (
-              <label key={m.key} className="form-check">
-                <input type="checkbox" checked={!!form[m.key]} onChange={e => set(m.key, e.target.checked)} />
-                <span style={{ fontSize: 13 }}>{m.label}</span>
-              </label>
-            ))}
-          </div>
+          {flagCriteria.length > 0 && (
+            <>
+              <div className="divider" />
+              <div className="panel-title" style={{ marginBottom: 8 }}>Flags</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
+                {flagCriteria.map(c => (
+                  <label key={c.key} className="form-check">
+                    <input type="checkbox" checked={!!form[c.key]} onChange={e => set(c.key, e.target.checked)} />
+                    <span style={{ fontSize: 13 }}>{c.label}</span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
         </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
@@ -796,9 +1242,10 @@ function StudentFormModal({ student, onSave, onClose }) {
 // ─────────────────────────────────────────────
 // STUDENT DETAIL MODAL
 // ─────────────────────────────────────────────
-function StudentDetailModal({ student, locked, onToggleLock, onClose }) {
-  const activeBools = BOOL_METRICS.filter(m => student[m.key]);
-  const inactiveBools = BOOL_METRICS.filter(m => !student[m.key]);
+function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria }) {
+  const activeFlags = flagCriteria.filter(c => student[c.key]);
+  const inactiveFlags = flagCriteria.filter(c => !student[c.key]);
+  
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 380 }}>
@@ -816,33 +1263,38 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose }) {
           <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <div className="panel-title">Academic Scores</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-              {NUM_METRICS.map(m => (
-                <div key={m.key} style={{ background: 'var(--surface2)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{m.label}</div>
-                  <div style={{ fontSize: 20, fontFamily: 'DM Mono, monospace', fontWeight: 500 }}>{student[m.key]}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {activeBools.length > 0 && (
+          {numericCriteria.length > 0 && (
             <div>
-              <div className="panel-title">Active Flags</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {activeBools.map(m => (
-                  <span key={m.key} className={`badge ${m.cls}`} style={{ fontSize: 12, padding: '3px 8px' }}>{m.label}</span>
+              <div className="panel-title">Scores</div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(numericCriteria.length, 3)}, 1fr)`, gap: 10 }}>
+                {numericCriteria.map(c => (
+                  <div key={c.key} style={{ background: 'var(--surface2)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{c.label}</div>
+                    <div style={{ fontSize: 20, fontFamily: 'DM Mono, monospace', fontWeight: 500 }}>{student[c.key] || 0}</div>
+                  </div>
                 ))}
               </div>
             </div>
           )}
-          {inactiveBools.length > 0 && (
+          {activeFlags.length > 0 && (
+            <div>
+              <div className="panel-title">Active Flags</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {activeFlags.map(c => {
+                  const colors = generateColor(c.key);
+                  return (
+                    <span key={c.key} className="badge" style={{ fontSize: 12, padding: '3px 8px', background: colors.bg, color: colors.fg }}>{c.label}</span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {inactiveFlags.length > 0 && (
             <div>
               <div className="panel-title">No Flags</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {inactiveBools.map(m => (
-                  <span key={m.key} style={{ fontSize: 12, color: 'var(--text3)' }}>{m.label}</span>
+                {inactiveFlags.map(c => (
+                  <span key={c.key} style={{ fontSize: 12, color: 'var(--text3)' }}>{c.label}</span>
                 ))}
               </div>
             </div>
@@ -856,8 +1308,8 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose }) {
 // ─────────────────────────────────────────────
 // STUDENT CARD (draggable)
 // ─────────────────────────────────────────────
-function StudentCard({ student, locked, onToggleLock, onDragStart, dragging }) {
-  const activeBools = BOOL_METRICS.filter(m => student[m.key]);
+function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria }) {
+  const activeFlags = flagCriteria.filter(c => student[c.key]);
   const [showDetail, setShowDetail] = useState(false);
   const didDrag = useRef(false);
 
@@ -874,10 +1326,10 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging }) {
         <div className="student-card-top">
           <span className={`badge badge-${student.gender}`}>{student.gender}</span>
           <span className="student-name">{student.name}</span>
-          {activeBools.length > 0 && (
+          {activeFlags.length > 0 && (
             <span style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-              {activeBools.map(m => (
-                <span key={m.key} style={{ width: 6, height: 6, borderRadius: '50%', background: m.dot, flexShrink: 0 }} title={m.label} />
+              {activeFlags.map(c => (
+                <span key={c.key} style={{ width: 6, height: 6, borderRadius: '50%', background: generateColor(c.key).dot, flexShrink: 0 }} title={c.label} />
               ))}
             </span>
           )}
@@ -905,18 +1357,17 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging }) {
 // ─────────────────────────────────────────────
 // CLASS COLUMN
 // ─────────────────────────────────────────────
-function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen }) {
+function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen, numericCriteria, flagCriteria }) {
   const [dragOver, setDragOver] = useState(false);
 
   const avg = key => students.length
     ? students.reduce((s, st) => s + (st[key] || 0), 0) / students.length
     : 0;
 
-  // Normalize bar width to [0,100] based on population min/max — scale-agnostic
   const popMin = key => allStudents.length ? Math.min(...allStudents.map(s => s[key] || 0)) : 0;
   const popMax = key => allStudents.length ? Math.max(...allStudents.map(s => s[key] || 0)) : 1;
 
-  const numStats = NUM_METRICS.map(m => {
+  const numStats = numericCriteria.map(m => {
     const mn = popMin(m.key), mx = popMax(m.key);
     const range = mx - mn || 1;
     const classAvg = avg(m.key);
@@ -927,10 +1378,10 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
     };
   });
 
-  const boolCounts = BOOL_METRICS.map(m => ({
+  const boolCounts = flagCriteria.map(m => ({
     label: m.short,
     val: students.filter(s => s[m.key]).length,
-    cls: m.cls,
+    colors: generateColor(m.key),
   })).filter(b => b.val > 0);
 
   return (
@@ -975,7 +1426,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
                 onToggleLock={onToggleLock}
                 onDragStart={onDragStart}
                 dragging={draggingId === s.id}
-                fullscreen={fullscreen}
+                flagCriteria={flagCriteria}
               />
             </React.Fragment>
           );
@@ -995,7 +1446,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
         {boolCounts.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 4 }}>
             {boolCounts.map(b => (
-              <span key={b.label} className={`badge ${b.cls}`}>{b.label} {b.val}</span>
+              <span key={b.label} className="badge" style={{ background: b.colors.bg, color: b.colors.fg }}>{b.label} {b.val}</span>
             ))}
           </div>
         )}
@@ -1007,7 +1458,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
 // ─────────────────────────────────────────────
 // STATS STRIP
 // ─────────────────────────────────────────────
-function StatsStrip({ students, assignment, numClasses, teacherNames }) {
+function StatsStrip({ students, assignment, numClasses, teacherNames, numericCriteria, flagCriteria }) {
   if (!students.length) return null;
 
   const classes = Array.from({ length: numClasses }, (_, i) =>
@@ -1036,7 +1487,7 @@ function StatsStrip({ students, assignment, numClasses, teacherNames }) {
     return 'bad';
   }
 
-  const numItems = NUM_METRICS.map(m => {
+  const numItems = numericCriteria.map(m => {
     const allVals = students.map(s => s[m.key] || 0);
     const popMin = Math.min(...allVals);
     const popMax = Math.max(...allVals);
@@ -1045,17 +1496,15 @@ function StatsStrip({ students, assignment, numClasses, teacherNames }) {
       cls.length ? cls.reduce((s, st) => s + (st[m.key] || 0), 0) / cls.length : popMin
     );
     const mean = vals.reduce((a, b) => a + b, 0) / numClasses || 1;
-    // CV uses population std dev for scale-agnostic variance measure
     const popMean = allVals.reduce((a, b) => a + b, 0) / allVals.length;
     const popVar = allVals.reduce((s, v) => s + (v - popMean) ** 2, 0) / allVals.length;
     const varOfMeans = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / numClasses;
     const cv = popVar > 0 ? Math.sqrt(varOfMeans / popVar) : 0;
-    // Normalize bar heights to population range
     const normVals = vals.map(v => Math.max(0, (v - popMin) / range));
     return { label: m.label, vals: normVals, maxVal: 1, cv };
   });
 
-  const boolItems = BOOL_METRICS.map(m => {
+  const boolItems = flagCriteria.map(m => {
     const vals = classes.map(cls => cls.filter(s => s[m.key]).length);
     const mean = vals.reduce((a, b) => a + b, 0) / numClasses;
     const sd = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / numClasses);
@@ -1113,7 +1562,7 @@ function SampleDataDialog({ defaultCount, onGenerate, onClose }) {
             />
           </div>
           <p style={{ fontSize: 12, color: 'var(--text3)' }}>
-            Randomly generates students with realistic score distributions across performance levels.
+            Randomly generates students with realistic score distributions.
           </p>
         </div>
         <div className="modal-footer">
@@ -1130,7 +1579,16 @@ function SampleDataDialog({ defaultCount, onGenerate, onClose }) {
 // ─────────────────────────────────────────────
 // SETUP PAGE
 // ─────────────────────────────────────────────
-function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize }) {
+function SetupPage({ 
+  students, 
+  setStudents, 
+  teachers, 
+  setTeachers, 
+  onOptimize,
+  numericCriteria,
+  flagCriteria,
+  onOpenSettings,
+}) {
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [showImport, setShowImport] = useState(false);
@@ -1141,7 +1599,7 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
   function syncTeachers(val) {
     setNumTeachers(val);
     const n = Math.max(2, Math.min(10, parseInt(val) || 0));
-    if (!parseInt(val) || parseInt(val) < 2) return; // wait for valid input
+    if (!parseInt(val) || parseInt(val) < 2) return;
     const next = [...teachers];
     while (next.length < n) next.push({ id: 'T' + (next.length + 1), name: `Class ${String.fromCharCode(65 + next.length)}` });
     setTeachers(next.slice(0, n));
@@ -1159,6 +1617,22 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
   }
 
   const canOptimize = students.length >= teachers.length && teachers.length >= 2;
+
+  function downloadCSVTemplate() {
+    const header = generateCSVHeaders(numericCriteria, flagCriteria).join(',');
+    const rows = [
+      'Smith Emma,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(','),
+      'Johnson Liam,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(','),
+    ];
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'students_template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <>
@@ -1200,20 +1674,7 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
               </div>
               <span className="tag">{students.length}</span>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => {
-                  const header = 'name,gender,readingFluency,elaISAT,mathISAT,behavior,gt,sped,504,readingIntervention,mathIntervention,ell,medPlan';
-                  const rows = [
-                    'Smith Emma,F,142,2415,2398,0,0,0,0,0,0,0,0',
-                    'Johnson Liam,M,178,2492,2510,0,1,0,0,0,0,0,0',
-                    'Garcia Sofia,F,95,2210,2180,0,0,1,0,1,0,1,0',
-                    'Williams Noah,M,165,2445,2460,1,0,0,0,0,1,0,0',
-                  ];
-                  const csv = [header, ...rows].join('\n');
-                  const a = document.createElement('a');
-                  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-                  a.download = 'students_template.csv';
-                  a.click();
-                }}>⬇ CSV Template</button>
+                <button className="btn btn-secondary btn-sm" onClick={downloadCSVTemplate}>⬇ CSV Template</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
                 <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Add Student</button>
@@ -1224,6 +1685,9 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
               <div className="empty-state">
                 <div className="icon">👩‍🎓</div>
                 <div>No students yet — import a CSV or add sample data to get started.</div>
+                <div style={{ marginTop: 16 }}>
+                  <button className="btn btn-secondary" onClick={onOpenSettings}>⚙️ Configure Criteria First</button>
+                </div>
               </div>
             ) : (
               <div className="students-table-wrap" style={{ maxHeight: 'calc(100vh - 260px)' }}>
@@ -1232,10 +1696,8 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
                     <tr>
                       <th className="col-name">Name</th>
                       <th>G</th>
-                      <th className="col-num">RF</th>
-                      <th className="col-num">ELA</th>
-                      <th className="col-num">Math</th>
-                      {BOOL_METRICS.map(m => <th key={m.key} className="col-check" title={m.label}>{m.short}</th>)}
+                      {numericCriteria.map(c => <th key={c.key} className="col-num" title={c.label}>{c.short}</th>)}
+                      {flagCriteria.map(c => <th key={c.key} className="col-check" title={c.label}>{c.short}</th>)}
                       <th></th>
                     </tr>
                   </thead>
@@ -1244,12 +1706,10 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
                       <tr key={s.id}>
                         <td className="col-name">{s.name}</td>
                         <td><span className={`badge badge-${s.gender}`}>{s.gender}</span></td>
-                        <td className="col-num">{s.readingFluency}</td>
-                        <td className="col-num">{s.elaISAT}</td>
-                        <td className="col-num">{s.mathISAT}</td>
-                        {BOOL_METRICS.map(m => (
-                          <td key={m.key} className="col-check">
-                            {s[m.key] && <span className={`badge ${m.cls}`}>✓</span>}
+                        {numericCriteria.map(c => <td key={c.key} className="col-num">{s[c.key] || 0}</td>)}
+                        {flagCriteria.map(c => (
+                          <td key={c.key} className="col-check">
+                            {s[c.key] && <span className="badge" style={{ background: generateColor(c.key).bg, color: generateColor(c.key).fg }}>✓</span>}
                           </td>
                         ))}
                         <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
@@ -1287,6 +1747,8 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
           student={null}
           onSave={handleAddStudent}
           onClose={() => setShowForm(false)}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
         />
       )}
       {editingStudent && (
@@ -1294,6 +1756,8 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
           student={editingStudent}
           onSave={handleEditStudent}
           onClose={() => setEditingStudent(null)}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
         />
       )}
       {showSampleDialog && (
@@ -1301,7 +1765,7 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
           defaultCount={sampleCount}
           onGenerate={(n) => {
             setSampleCount(n);
-            setStudents(generateSampleStudents(n));
+            setStudents(generateSampleStudents(n, numericCriteria, flagCriteria));
             setShowSampleDialog(false);
           }}
           onClose={() => setShowSampleDialog(false)}
@@ -1311,6 +1775,8 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
         <ImportModal
           onImport={ss => setStudents(prev => [...prev, ...ss])}
           onClose={() => setShowImport(false)}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
         />
       )}
     </>
@@ -1320,7 +1786,15 @@ function SetupPage({ students, setStudents, teachers, setTeachers, onOptimize })
 // ─────────────────────────────────────────────
 // OPTIMIZE PAGE
 // ─────────────────────────────────────────────
-function OptimizePage({ students, teachers, teacherNames, setTeacherNames, onBack }) {
+function OptimizePage({ 
+  students, 
+  teachers, 
+  teacherNames, 
+  setTeacherNames, 
+  onBack,
+  numericCriteria,
+  flagCriteria,
+}) {
   const [assignment, setAssignment] = useState({});
   const [locked, setLocked] = useState(new Set());
   const [draggingId, setDraggingId] = useState(null);
@@ -1342,9 +1816,9 @@ function OptimizePage({ students, teachers, teacherNames, setTeacherNames, onBac
     setTimeout(() => {
       const lockedObj = {};
       lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
-      const result = optimize(students, numClasses, lockedObj);
+      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria);
       setAssignment(result);
-      setCost(computeCost(students, result, numClasses));
+      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria));
       setOptimizing(false);
     }, 30);
   }
@@ -1384,7 +1858,7 @@ function OptimizePage({ students, teachers, teacherNames, setTeacherNames, onBac
     const sid = e.dataTransfer.getData('text/plain') || draggingId;
     if (!sid) return;
     setAssignment(prev => ({ ...prev, [sid]: classIdx }));
-    setCost(prev => computeCost(students, { ...assignment, [sid]: classIdx }, numClasses));
+    setCost(prev => computeCost(students, { ...assignment, [sid]: classIdx }, numClasses, numericCriteria, flagCriteria));
     setDraggingId(null);
   }
 
@@ -1428,10 +1902,10 @@ function OptimizePage({ students, teachers, teacherNames, setTeacherNames, onBac
         )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', borderRight: '1px solid var(--border)', paddingRight: 10, marginRight: 2 }}>
-            {BOOL_METRICS.map(m => (
-              <span key={m.key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, color: 'var(--text3)' }} title={m.label}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
-                {m.short}
+            {flagCriteria.map(c => (
+              <span key={c.key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, color: 'var(--text3)' }} title={c.label}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: generateColor(c.key).dot, flexShrink: 0 }} />
+                {c.short}
               </span>
             ))}
           </div>
@@ -1459,6 +1933,8 @@ function OptimizePage({ students, teachers, teacherNames, setTeacherNames, onBac
             draggingId={draggingId}
             allStudents={students}
             fullscreen={fullscreen}
+            numericCriteria={numericCriteria}
+            flagCriteria={flagCriteria}
           />
         ))}
       </div>
@@ -1484,9 +1960,11 @@ function OptimizePage({ students, teachers, teacherNames, setTeacherNames, onBac
         assignment={assignment}
         numClasses={numClasses}
         teacherNames={teacherNames}
+        numericCriteria={numericCriteria}
+        flagCriteria={flagCriteria}
       />}
 
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} numericCriteria={numericCriteria} flagCriteria={flagCriteria} />}
     </div>
   );
 }
@@ -1503,6 +1981,28 @@ function App() {
     { id: 'T3', name: 'Class C' },
   ]);
   const [teacherNames, setTeacherNames] = useState(['Class A', 'Class B', 'Class C']);
+  
+  // Criteria state with localStorage persistence
+  const [numericCriteria, setNumericCriteria] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.NUMERIC_CRITERIA);
+    return saved ? JSON.parse(saved) : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c }));
+  });
+  
+  const [flagCriteria, setFlagCriteria] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.FLAG_CRITERIA);
+    return saved ? JSON.parse(saved) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c }));
+  });
+  
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Persist criteria to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.NUMERIC_CRITERIA, JSON.stringify(numericCriteria));
+  }, [numericCriteria]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.FLAG_CRITERIA, JSON.stringify(flagCriteria));
+  }, [flagCriteria]);
 
   function syncTeacherNames(ts) {
     if (!Array.isArray(ts)) return;
@@ -1513,6 +2013,31 @@ function App() {
   function handleOptimize() {
     setTeacherNames(teachers.map(t => t.name));
     setView('optimize');
+  }
+
+  function handleSaveSettings(newNumCriteria, newFlagCriteria) {
+    // Check if criteria changed - if so, we need to warn or clear student data
+    const oldNumKeys = new Set(numericCriteria.map(c => c.key));
+    const newNumKeys = new Set(newNumCriteria.map(c => c.key));
+    const oldFlagKeys = new Set(flagCriteria.map(c => c.key));
+    const newFlagKeys = new Set(newFlagCriteria.map(c => c.key));
+    
+    // Check if any fields were removed
+    const removedNum = [...oldNumKeys].filter(k => !newNumKeys.has(k));
+    const removedFlag = [...oldFlagKeys].filter(k => !newFlagKeys.has(k));
+    
+    if (removedNum.length > 0 || removedFlag.length > 0) {
+      // Remove those fields from all students
+      setStudents(prev => prev.map(s => {
+        const updated = { ...s };
+        removedNum.forEach(k => delete updated[k]);
+        removedFlag.forEach(k => delete updated[k]);
+        return updated;
+      }));
+    }
+    
+    setNumericCriteria(newNumCriteria);
+    setFlagCriteria(newFlagCriteria);
   }
 
   return (
@@ -1531,6 +2056,11 @@ function App() {
           <span style={{ fontSize: 12, color: 'var(--text3)' }}>
             {students.length} students · {teachers.length} classes
           </span>
+          {view === 'setup' && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} title="Configure criteria">
+              ⚙️ Settings
+            </button>
+          )}
         </div>
       </header>
 
@@ -1541,6 +2071,9 @@ function App() {
           teachers={teachers}
           setTeachers={syncTeacherNames}
           onOptimize={handleOptimize}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
+          onOpenSettings={() => setShowSettings(true)}
         />
       ) : (
         <OptimizePage
@@ -1549,6 +2082,18 @@ function App() {
           teacherNames={teacherNames}
           setTeacherNames={setTeacherNames}
           onBack={() => setView('setup')}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
+        />
+      )}
+
+      {showSettings && (
+        <SettingsModal
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
+          onSave={handleSaveSettings}
+          onClose={() => setShowSettings(false)}
+          hasStudentData={students.length > 0}
         />
       )}
     </div>
