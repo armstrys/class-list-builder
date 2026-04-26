@@ -18,6 +18,9 @@ function App() {
     return saved ? JSON.parse(saved) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c }));
   });
 
+  // Keep apart constraints: array of [studentId1, studentId2] pairs
+  const [keepApart, setKeepApart] = useState([]);
+
   const [showSettings, setShowSettings] = useState(false);
 
   // Persist criteria to localStorage
@@ -31,6 +34,30 @@ function App() {
 
   function handleOptimize() {
     setView('optimize');
+  }
+
+  // Add a keep-apart constraint between two students
+  function addKeepApart(id1, id2) {
+    if (id1 === id2) return;
+    // Ensure consistent ordering (smaller ID first)
+    const pair = id1 < id2 ? [id1, id2] : [id2, id1];
+    setKeepApart(prev => {
+      // Don't add duplicates
+      const exists = prev.some(p => p[0] === pair[0] && p[1] === pair[1]);
+      if (exists) return prev;
+      return [...prev, pair];
+    });
+  }
+
+  // Remove a keep-apart constraint
+  function removeKeepApart(id1, id2) {
+    const pair = id1 < id2 ? [id1, id2] : [id2, id1];
+    setKeepApart(prev => prev.filter(p => !(p[0] === pair[0] && p[1] === pair[1])));
+  }
+
+  // Remove all constraints involving a student (when student is deleted)
+  function removeStudentConstraints(studentId) {
+    setKeepApart(prev => prev.filter(p => p[0] !== studentId && p[1] !== studentId));
   }
 
   function handleSaveSettings(newNumCriteria, newFlagCriteria) {
@@ -96,6 +123,10 @@ function App() {
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
           onOpenSettings={() => setShowSettings(true)}
+          keepApart={keepApart}
+          onAddKeepApart={addKeepApart}
+          onRemoveKeepApart={removeKeepApart}
+          onRemoveStudentConstraints={removeStudentConstraints}
         />
       ) : (
         <OptimizePage
@@ -105,6 +136,7 @@ function App() {
           onBack={() => setView('setup')}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          keepApart={keepApart}
         />
       )}
 
