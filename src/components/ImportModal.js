@@ -2,18 +2,18 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, onImpor
   const [text, setText] = useState('');
   const [error, setError] = useState('');
 
-  const csvTemplate = generateCSVHeaders(numericCriteria, flagCriteria).join(',') + ',keep_apart_group\n' +
-    'Smith Emma,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') + ',\n' +
-    'Johnson Liam,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',') + ',';
+  const csvTemplate = generateCSVHeaders(numericCriteria, flagCriteria).join(',') + ',keep_apart_group,keep_together_group\n' +
+    'Smith Emma,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') + ',,\n' +
+    'Johnson Liam,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',') + ',,';
 
   function handleImport() {
-    const { students, errors, keepApart } = parseCSV(text, numericCriteria, flagCriteria);
+    const { students, errors, keepApart, keepTogether } = parseCSV(text, numericCriteria, flagCriteria);
     if (!students.length) {
       setError(errors.length ? errors.join('; ') : 'No valid students found. Check your CSV format.');
       return;
     }
     if (errors.length) setError(`Imported ${students.length} students with warnings: ${errors.join('; ')}`);
-    onImport(students, keepApart);
+    onImport(students, keepApart, keepTogether);
     if (!errors.length) onClose();
   }
 

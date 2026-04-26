@@ -553,4 +553,175 @@ describe('Optimizer', () => {
       expect(assignmentWithConstraint).toEqual(assignmentWithoutConstraint);
     });
   });
+
+  describe('Keep Together Constraints', () => {
+    test('keep together constraint encourages students to be in same class', () => {
+      // Arrange - small class count so togetherness is easier to achieve
+      const students = createMockStudents(6);
+      const numClasses = 2;
+      // Force two students to be kept together
+      const keepTogether = [[students[0].id, students[1].id]];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+
+      // Assert - with high penalty weight, optimizer should usually keep them together
+      // Note: This is a soft constraint, not a guarantee
+      const cost = computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, [], keepTogether);
+
+      // The cost should be reasonably low, indicating the optimizer tried to respect the constraint
+      expect(cost).toBeLessThan(500); // Very high cost would indicate ignoring the constraint
+    });
+
+    test('cost includes penalty for keep-together violations', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepTogether = [[students[0].id, students[1].id]];
+
+      // Create an assignment with violation
+      const violatingAssignment = {
+        [students[0].id]: 0,
+        [students[1].id]: 1, // Different class - violation!
+        [students[2].id]: 0,
+        [students[3].id]: 1,
+      };
+
+      // Create an assignment without violation
+      const validAssignment = {
+        [students[0].id]: 0,
+        [students[1].id]: 0, // Same class - no violation
+        [students[2].id]: 1,
+        [students[3].id]: 1,
+      };
+
+      // Act
+      const violatingCost = computeCost(students, violatingAssignment, numClasses, numericCriteria, flagCriteria, [], keepTogether);
+      const validCost = computeCost(students, validAssignment, numClasses, numericCriteria, flagCriteria, [], keepTogether);
+
+      // Assert - violating cost should be higher by approximately 200 (penalty weight)
+      expect(violatingCost).toBeGreaterThan(validCost + 190);
+    });
+
+    test('determinism holds with keep together constraints', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 2;
+      const keepTogether = [[students[0].id, students[1].id], [students[2].id, students[3].id]];
+
+      // Act - run twice with same inputs
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+
+      // Assert - should be identical
+      expect(assignment1).toEqual(assignment2);
+    });
+
+    test('computeSeed includes keep together constraints', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepTogether1 = [[students[0].id, students[1].id]];
+      const keepTogether2 = [[students[0].id, students[2].id]]; // Different constraint
+
+      // Act
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether1);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether2);
+
+      // Assert - different constraints should produce different seeds
+      expect(seed1).not.toBe(seed2);
+    });
+
+    test('same keep together constraints produce same seed', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepTogether = [[students[0].id, students[1].id]];
+
+      // Act
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+
+      // Assert - same constraints should produce same seed
+      expect(seed1).toBe(seed2);
+    });
+
+    test('multiple keep together groups are respected', () => {
+      // Arrange
+      const students = createMockStudents(8);
+      const numClasses = 4;
+      const keepTogether = [
+        [students[0].id, students[1].id],
+        [students[2].id, students[3].id],
+      ];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+
+      // Assert - check all groups are together
+      expect(assignment[students[0].id]).toBe(assignment[students[1].id]);
+      expect(assignment[students[2].id]).toBe(assignment[students[3].id]);
+    });
+
+    test('empty keep together array works normally', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 2;
+
+      // Act
+      const assignmentWithConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], []);
+      const assignmentWithoutConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, []);
+
+      // Assert - should produce same results
+      expect(assignmentWithConstraint).toEqual(assignmentWithoutConstraint);
+    });
+
+    test('group of size 1 is ignored', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepTogether = [[students[0].id]]; // Single student group
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+
+      // Assert - should work normally
+      students.forEach(s => {
+        expect(assignment[s.id]).toBeDefined();
+      });
+    });
+  });
+
+  describe('Combined Constraints', () => {
+    test('keep apart and keep together work together', () => {
+      // Arrange
+      const students = createMockStudents(8);
+      const numClasses = 2;
+      const keepApart = [[students[0].id, students[2].id]];
+      const keepTogether = [[students[0].id, students[1].id]];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether);
+
+      // Assert - students 0 and 1 should be together
+      expect(assignment[students[0].id]).toBe(assignment[students[1].id]);
+      // student 0 and 2 should be apart
+      expect(assignment[students[0].id]).not.toBe(assignment[students[2].id]);
+    });
+
+    test('determinism holds with both constraint types', () => {
+      // Arrange
+      const students = createMockStudents(8);
+      const numClasses = 2;
+      const keepApart = [[students[0].id, students[2].id]];
+      const keepTogether = [[students[0].id, students[1].id]];
+
+      // Act
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether);
+
+      // Assert - should be identical
+      expect(assignment1).toEqual(assignment2);
+    });
+  });
 });
