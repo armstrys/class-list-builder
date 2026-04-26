@@ -34,7 +34,7 @@ That's it. No installation, no account, no internet connection required.
 
 ### Step 1 — Configure Your Criteria
 
-> **Do this before importing students.** The CSV template you download will match your active criteria.
+> **Do this before importing students.** Your criteria configuration determines what columns the optimizer expects in your CSV.
 
 Click **⚙ Settings** in the top-right corner to configure what the optimizer balances.
 
@@ -61,11 +61,11 @@ In the **Teachers / Classes** panel on the left:
 
 **Option A: Import a CSV** *(recommended for most rosters)*
 
-1. Click **⬇ CSV Template** to download a template pre-filled with the right column headers for your current criteria
-2. Fill in your student data, one student per row
-3. Click **⬆ Import CSV** and paste or upload your data
+1. Click **⬆ Import CSV** and paste your data
 
 Your CSV needs at minimum a `name` column and a `gender` column (`M` or `F`). All score and flag columns are optional — leave them blank if you don't have that data. For flag columns, use `1` or `yes` (or `true`, `y`, `x`) for yes, and `0` or leave blank for no.
+
+**Import appends** to your current student list. Use the **Clear All** button first if you want to replace your entire list.
 
 **Constraint Columns (optional):**
 - `keep_apart_group` — students with the same value will be kept in different classes
@@ -86,7 +86,11 @@ Click **+ Add Student** to enter students one at a time using a form.
 
 **Option C: Try sample data**
 
-Click **Sample Data** to generate a randomized roster for testing or demonstration.
+Click **Sample Data** to generate a randomized roster for testing or demonstration. This creates realistic test data so you can see how the optimizer works before entering your real students.
+
+**Need a template?**
+
+Generate sample data first, then click **⬇ Export Students** to download a CSV with the correct column headers for your criteria configuration. Use that as a template for your real data.
 
 ---
 
@@ -156,7 +160,12 @@ Constraints are cleared when you import new students. Use the `keep_apart_group`
 
 ### Export
 
-When you're happy with your class lists, click **⬇ Export Lists** in the toolbar to download a CSV with every student's name, class assignment, and all their data. Open the CSV in Excel or Google Sheets to format it, print it, or share it with your principal.
+At any time, you can export your student data:
+
+- **On the Setup page:** Click **⬇ Export Students** to download a CSV with all student data (useful as a template or for backup)
+- **After optimizing:** Click **⬇ Export Lists** in the toolbar to download class assignments with all student data
+
+Open the CSV in Excel or Google Sheets to format it, print it, or share it with your principal.
 
 ---
 

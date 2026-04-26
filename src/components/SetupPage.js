@@ -56,13 +56,22 @@ function SetupPage({
 
   const canOptimize = students.length >= teachers.length && teachers.length >= 2;
 
-  function downloadCSVTemplate() {
-    const header = generateCSVHeaders(numericCriteria, flagCriteria).join(',');
-    const rows = [
-      'Smith Emma,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(','),
-      'Johnson Liam,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(','),
-    ];
-    triggerDownload([header, ...rows].join('\n'), 'students_template.csv', 'text/csv');
+  function downloadStudentsCSV() {
+    if (students.length === 0) return;
+    const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart, keepTogether);
+    triggerDownload(csv, 'students.csv', 'text/csv');
+  }
+
+  function clearAllStudents() {
+    if (students.length === 0) return;
+    const confirmClear = window.confirm(`Clear all ${students.length} students? This cannot be undone.`);
+    if (confirmClear) {
+      setStudents([]);
+      // Clear constraints when clearing students
+      if (onRemoveStudentConstraints) {
+        students.forEach(s => onRemoveStudentConstraints(s.id));
+      }
+    }
   }
 
   return (
@@ -105,9 +114,14 @@ function SetupPage({
               </div>
               <span className="tag">{students.length}</span>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                <button className="btn btn-secondary btn-sm" onClick={downloadCSVTemplate}>⬇ CSV Template</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
+                {students.length > 0 && (
+                  <button className="btn btn-secondary btn-sm" onClick={downloadStudentsCSV}>⬇ Export Students</button>
+                )}
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
+                {students.length > 0 && (
+                  <button className="btn btn-danger btn-sm" onClick={clearAllStudents}>Clear All</button>
+                )}
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowConstraintModal(true)}>
                   🔗 Constraints {(keepApart.length + keepTogether.length) > 0 && `(${keepApart.length + keepTogether.length})`}
                 </button>
@@ -219,6 +233,8 @@ function SetupPage({
           onClose={() => setShowImport(false)}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          students={students}
+          onClearAll={clearAllStudents}
         />
       )}
       {showConstraintModal && (
