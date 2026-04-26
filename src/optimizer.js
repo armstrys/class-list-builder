@@ -408,3 +408,8 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
 
   return assignment;
 }
+
+// Export for Node.js testing (conditional to not break browser)
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { optimize, computeCost, computeSeed, createSeededRNG };
+}
