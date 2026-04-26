@@ -1,3 +1,8 @@
+// uid generator for Node.js testing (falls back to this if uid not already defined)
+function _uid() {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
 function generateCSVHeaders(numericCriteria, flagCriteria) {
   const numHeaders = numericCriteria.map(c => c.key);
   const boolHeaders = flagCriteria.map(c => c.key);
@@ -69,7 +74,9 @@ function parseCSV(text, numericCriteria, flagCriteria) {
     const genderVal = genderIdx !== -1 ? (cols[genderIdx] || '').toUpperCase() : '';
     const gender = genderVal.startsWith('F') ? 'F' : genderVal.startsWith('M') ? 'M' : 'U';
 
-    const student = { id: uid(), name, gender };
+    // Use global uid if available (browser), otherwise use local _uid (Node.js tests)
+    const generateId = typeof uid !== 'undefined' ? uid : _uid;
+    const student = { id: generateId(), name, gender };
 
     numericCriteria.forEach(({ key }) => {
       const idx = numericKeyMap[key];
@@ -138,4 +145,16 @@ function triggerDownload(content, filename, mimeType) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// Export for Node.js testing (conditional to not break browser)
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    generateCSVHeaders,
+    parseCSVLine,
+    parseCSV,
+    exportStudentsToCSV,
+    exportClassListsToCSV,
+    triggerDownload
+  };
 }
