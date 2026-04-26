@@ -169,6 +169,8 @@ When you're happy with your class lists, click **⬇ Export Lists** in the toolb
 - No accounts, no logins, no tracking
 - Works completely offline
 
+For detailed security information, architecture details, and verification steps for IT professionals, see [docs/SECURITY.md](docs/SECURITY.md).
+
 ---
 
 ## System Requirements
