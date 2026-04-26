@@ -233,6 +233,8 @@ function SetupPage({
           onClose={() => setShowImport(false)}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          students={students}
+          onClearAll={clearAllStudents}
         />
       )}
       {showConstraintModal && (
