@@ -1,6 +1,6 @@
 {
   "name": "class-list-optimizer",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "A tool for optimizing class list distributions",
   "scripts": {
     "build": "node build-standalone.js"
