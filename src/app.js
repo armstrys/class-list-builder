@@ -179,6 +179,25 @@ function App() {
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
           hasStudentData={students.length > 0}
+          onExportStudents={() => {
+            // Export current students before clearing
+            // exportStudentsToCSV is globally available from csv.js
+            const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart, keepTogether);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'students-backup.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }}
+          onClearStudents={() => {
+            setStudents([]);
+            setKeepApart([]);
+            setKeepTogether([]);
+          }}
         />
       )}
     </div>
