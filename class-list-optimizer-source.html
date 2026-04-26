@@ -423,6 +423,53 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
   const gVariance = fProps.reduce((s, p) => s + (p - overallF) ** 2, 0) / numClasses;
   cost += 1.0 * gVariance;
 
+  // Total flags balance: variance of mean total flags per class
+  const studentTotalFlags = students.map(s => 
+    flagCriteria.reduce((sum, { key }) => sum + (s[key] ? 1 : 0), 0)
+  );
+  const overallMeanTotalFlags = studentTotalFlags.reduce((a, b) => a + b, 0) / studentTotalFlags.length;
+  const classMeanTotalFlags = classes.map(cls => {
+    if (!cls.length) return overallMeanTotalFlags;
+    const total = cls.reduce((sum, s) => {
+      const tf = flagCriteria.reduce((fSum, { key }) => fSum + (s[key] ? 1 : 0), 0);
+      return sum + tf;
+    }, 0);
+    return total / cls.length;
+  });
+  const tfVariance = classMeanTotalFlags.reduce((s, m) => s + (m - overallMeanTotalFlags) ** 2, 0) / numClasses;
+  cost += 2.0 * tfVariance;
+
+  // Total score balance: variance of mean z-score per class
+  // Calculate z-scores for each numeric criterion
+  const zScoreMeans = numericCriteria.map(({ key }) => {
+    const vals = students.map(s => s[key] || 0);
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
+    const stdDev = Math.sqrt(variance);
+    return { key, mean, stdDev };
+  });
+  
+  const studentTotalScores = students.map(s => 
+    zScoreMeans.reduce((sum, { key, mean, stdDev }) => {
+      if (stdDev === 0) return sum;
+      return sum + ((s[key] || 0) - mean) / stdDev;
+    }, 0)
+  );
+  const overallMeanTotalScore = studentTotalScores.reduce((a, b) => a + b, 0) / studentTotalScores.length;
+  const classMeanTotalScores = classes.map(cls => {
+    if (!cls.length) return overallMeanTotalScore;
+    const total = cls.reduce((sum, s) => {
+      const ts = zScoreMeans.reduce((tsSum, { key, mean, stdDev }) => {
+        if (stdDev === 0) return tsSum;
+        return tsSum + ((s[key] || 0) - mean) / stdDev;
+      }, 0);
+      return sum + ts;
+    }, 0);
+    return total / cls.length;
+  });
+  const tsVariance = classMeanTotalScores.reduce((s, m) => s + (m - overallMeanTotalScore) ** 2, 0) / numClasses;
+  cost += 1.5 * tsVariance;
+
   // Class size balance: normalized variance of sizes
   const meanSize = students.length / numClasses;
   if (meanSize > 0) {
@@ -515,11 +562,31 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   const nk = numericCriteria.length;
   const fk = flagCriteria.length;
 
+  // Compute total flags per student (sum of all boolean flags)
+  const studentTotalFlags = new Map();
+  students.forEach(s => {
+    const total = flagCriteria.reduce((sum, { key }) => sum + (s[key] ? 1 : 0), 0);
+    studentTotalFlags.set(s.id, total);
+  });
+
+  // Compute z-score based total score per student (sum of z-scores across numeric criteria)
   const popNumeric = numericCriteria.map(({ key }) => {
     const vals = students.map(s => s[key] || 0);
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
     const popVar = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
-    return { key, mean, popVar };
+    const stdDev = Math.sqrt(popVar);
+    return { key, mean, popVar, stdDev };
+  });
+
+  // Calculate total score (sum of z-scores) for each student
+  const studentTotalScore = new Map();
+  students.forEach(s => {
+    const totalZScore = popNumeric.reduce((sum, { key, mean, stdDev }) => {
+      if (stdDev === 0) return sum; // skip if no variance
+      const zScore = ((s[key] || 0) - mean) / stdDev;
+      return sum + zScore;
+    }, 0);
+    studentTotalScore.set(s.id, totalZScore);
   });
   const popFlag = flagCriteria.map(({ key }) => ({
     key,
@@ -528,11 +595,21 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   const overallF = students.filter(s => s.gender === 'F').length / students.length;
   const meanSize = students.length / numClasses;
 
+  // Total flags distribution stats
+  const allTotalFlags = students.map(s => studentTotalFlags.get(s.id));
+  const overallMeanTotalFlags = allTotalFlags.reduce((a, b) => a + b, 0) / allTotalFlags.length;
+
+  // Total score distribution stats (z-scores should sum to ~0 across population)
+  const allTotalScores = students.map(s => studentTotalScore.get(s.id));
+  const overallMeanTotalScore = allTotalScores.reduce((a, b) => a + b, 0) / allTotalScores.length;
+
   // ── Initialize per-class running sums ───────────────────────────
   const classSizes = new Array(numClasses).fill(0);
   const classNumSums = Array.from({ length: numClasses }, () => new Float64Array(nk));
   const classFlagCounts = Array.from({ length: numClasses }, () => new Int32Array(fk));
   const classFemale = new Int32Array(numClasses);
+  const classTotalFlags = new Float64Array(numClasses);
+  const classTotalScore = new Float64Array(numClasses);
 
   for (const s of students) {
     const c = assignment[s.id];
@@ -541,6 +618,8 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     popNumeric.forEach(({ key }, ki) => { classNumSums[c][ki] += s[key] || 0; });
     popFlag.forEach(({ key }, ki) => { if (s[key]) classFlagCounts[c][ki]++; });
     if (s.gender === 'F') classFemale[c]++;
+    classTotalFlags[c] += studentTotalFlags.get(s.id);
+    classTotalScore[c] += studentTotalScore.get(s.id);
   }
 
   // ── Compute cost from running sums: O(numClasses × criteria) ────
@@ -571,6 +650,20 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       gVar += (fp - overallF) ** 2;
     }
     cost += gVar / numClasses;
+    // Total flags balance: variance of mean total flags per class (weight 2.0)
+    let tfVar = 0;
+    for (let c = 0; c < numClasses; c++) {
+      const tfMean = classSizes[c] > 0 ? classTotalFlags[c] / classSizes[c] : overallMeanTotalFlags;
+      tfVar += (tfMean - overallMeanTotalFlags) ** 2;
+    }
+    cost += 2.0 * tfVar / numClasses;
+    // Total score balance: variance of mean total score per class (weight 1.5)
+    let tsVar = 0;
+    for (let c = 0; c < numClasses; c++) {
+      const tsMean = classSizes[c] > 0 ? classTotalScore[c] / classSizes[c] : overallMeanTotalScore;
+      tsVar += (tsMean - overallMeanTotalScore) ** 2;
+    }
+    cost += 1.5 * tsVar / numClasses;
     if (meanSize > 0) {
       const sVar = classSizes.reduce((s, sz) => s + (sz - meanSize) ** 2, 0) / numClasses;
       cost += 3.0 * sVar / (meanSize ** 2);
@@ -619,6 +712,28 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       (newGP1 - overallF) ** 2 + (newGP2 - overallF) ** 2 -
       (oldGP1 - overallF) ** 2 - (oldGP2 - overallF) ** 2
     );
+    // Total flags balance (weight 2.0)
+    const oldTF1 = sz1 > 0 ? classTotalFlags[c1] / sz1 : overallMeanTotalFlags;
+    const oldTF2 = sz2 > 0 ? classTotalFlags[c2] / sz2 : overallMeanTotalFlags;
+    const tf1 = studentTotalFlags.get(s1.id);
+    const tf2 = studentTotalFlags.get(s2.id);
+    const newTF1 = (classTotalFlags[c1] - tf1 + tf2) / sz1;
+    const newTF2 = (classTotalFlags[c2] - tf2 + tf1) / sz2;
+    delta += 2.0 / numClasses * (
+      (newTF1 - overallMeanTotalFlags) ** 2 + (newTF2 - overallMeanTotalFlags) ** 2 -
+      (oldTF1 - overallMeanTotalFlags) ** 2 - (oldTF2 - overallMeanTotalFlags) ** 2
+    );
+    // Total score balance (weight 1.5)
+    const oldTS1 = sz1 > 0 ? classTotalScore[c1] / sz1 : overallMeanTotalScore;
+    const oldTS2 = sz2 > 0 ? classTotalScore[c2] / sz2 : overallMeanTotalScore;
+    const ts1 = studentTotalScore.get(s1.id);
+    const ts2 = studentTotalScore.get(s2.id);
+    const newTS1 = (classTotalScore[c1] - ts1 + ts2) / sz1;
+    const newTS2 = (classTotalScore[c2] - ts2 + ts1) / sz2;
+    delta += 1.5 / numClasses * (
+      (newTS1 - overallMeanTotalScore) ** 2 + (newTS2 - overallMeanTotalScore) ** 2 -
+      (oldTS1 - overallMeanTotalScore) ** 2 - (oldTS2 - overallMeanTotalScore) ** 2
+    );
     // Class sizes don't change in a same-depth swap
     return delta;
   }
@@ -637,6 +752,16 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     const gf1 = s1.gender === 'F' ? 1 : 0, gf2 = s2.gender === 'F' ? 1 : 0;
     classFemale[c1] += gf2 - gf1;
     classFemale[c2] += gf1 - gf2;
+    // Update total flags counts
+    const tf1 = studentTotalFlags.get(s1.id);
+    const tf2 = studentTotalFlags.get(s2.id);
+    classTotalFlags[c1] += tf2 - tf1;
+    classTotalFlags[c2] += tf1 - tf2;
+    // Update total score counts
+    const ts1 = studentTotalScore.get(s1.id);
+    const ts2 = studentTotalScore.get(s2.id);
+    classTotalScore[c1] += ts2 - ts1;
+    classTotalScore[c2] += ts1 - ts2;
     assignment[s1.id] = c2;
     assignment[s2.id] = c1;
   }
@@ -904,6 +1029,14 @@ function HelpModal({ onClose, numericCriteria, flagCriteria }) {
   For binary flags (Behavior, GT, SPED, …):
     normalized_variance_m = Var(class_proportions)
 
+  For total flags (composite):
+    normalized_variance = Var(mean_total_flags_per_class)
+    (penalizes one teacher getting many flagged students)
+
+  For total score (composite):
+    normalized_variance = Var(mean_zscore_sum_per_class)
+    (uses z-score normalization to balance overall academic strength)
+
   For gender balance:
     term = Var(female_proportion per class)
 
@@ -924,6 +1057,8 @@ function HelpModal({ onClose, numericCriteria, flagCriteria }) {
                 {flagCriteria.map(m => (
                   <tr key={m.key}><td>{m.label}</td><td>Boolean</td><td>{m.weight.toFixed(1)}</td></tr>
                 ))}
+                <tr><td>Total Flags</td><td>Composite</td><td>2.0</td></tr>
+                <tr><td>Total Score</td><td>Composite</td><td>1.5</td></tr>
                 <tr><td>Gender</td><td>Proportion</td><td>1.0</td></tr>
                 <tr><td>Class Size</td><td>Count</td><td>3.0</td></tr>
               </tbody>
