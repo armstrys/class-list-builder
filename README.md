@@ -6,6 +6,8 @@ Create balanced class lists in minutes. No more spreadsheet juggling.
 
 Class List Optimizer automatically distributes students across classrooms while balancing academic scores, intervention needs, gender, and more. It runs entirely in your browser: **your student data never leaves your computer.**
 
+**New in v1.4:** Student constraints — keep specific students together in the same class or apart in different classes, with clear feedback when constraints can't be satisfied.
+
 ---
 
 ## Why Use It?
@@ -14,6 +16,7 @@ Building fair class lists by hand is time-consuming and hard to get right when y
 
 - **Saves hours.** Go from a student roster to balanced class lists in minutes.
 - Balances scores, SPED, GT, ELL, behavior, interventions, gender, and class size all at once. No more juggling factors one at a time.
+- **Handles constraints:** Keep specific students together (siblings, support pairs) or apart (conflicts, separations).
 - **Consistent and defensible:** the same data always produces the same result.
 - Runs entirely in your browser with no uploads and no accounts.
 
@@ -30,6 +33,13 @@ That's it. No installation, no account, no internet connection required.
 ---
 
 ## Walkthrough
+
+1. [Configure Your Criteria](#step-1--configure-your-criteria)
+2. [Set Up Your Classes](#step-2--set-up-your-classes)
+3. [Add Your Students](#step-3--add-your-students)
+4. [Optimize](#step-4--optimize)
+5. [Set Up Constraints](#student-constraints) *(optional)*
+6. [Fine-Tuning](#fine-tuning)
 
 ### Step 1 — Configure Your Criteria
 
@@ -65,6 +75,19 @@ In the **Teachers / Classes** panel on the left:
 3. Click **⬆ Import CSV** and paste or upload your data
 
 Your CSV needs at minimum a `name` column and a `gender` column (`M` or `F`). All score and flag columns are optional — leave them blank if you don't have that data. For flag columns, use `1` or `yes` (or `true`, `y`, `x`) for yes, and `0` or leave blank for no.
+
+**Constraint Columns (optional):**
+- `keep_apart_group` — students with the same value will be kept in different classes
+- `keep_together_group` — students with the same value will be kept in the same class
+
+Example: To keep Alice and Bob apart while keeping Charlie and Diana together:
+```
+name,gender,readingScore,keep_apart_group,keep_together_group
+Alice,F,85,1,
+Bob,M,78,1,
+Charlie,M,70,,1
+Diana,F,92,,1
+```
 
 **Option B: Add students manually**
 
@@ -130,7 +153,48 @@ You can also use **Lock All** and **Unlock All** in the toolbar for bulk changes
 
 When you're happy with your class lists, click **⬇ Export Lists** in the toolbar to download a CSV with every student's name, class assignment, and all their data. Open the CSV in Excel or Google Sheets to format it, print it, or share it with your principal.
 
-> **Note:** The tool does not currently support "keep together" or "keep apart" requests between specific students. The workaround is to manually drag one of the students to the right class after optimizing, then lock them in place.
+---
+
+## Student Constraints
+
+Sometimes you need to ensure certain students end up in the same class (siblings who work well together, support pairs) or in different classes (behavior conflicts, separations). You can now specify these requirements before optimizing.
+
+### Setting Up Constraints
+
+On the Setup page, click **🔗 Constraints** to open the constraint manager.
+
+**Keep Apart** — students who must be in *different* classes (separation requests, behavioral conflicts)
+- Select 2+ students. Every pair among them will be kept apart
+- The optimizer creates all pairwise constraints automatically
+
+**Keep Together** — students who must be in the *same* class (siblings, co-taught support pairs)
+- Select 2+ students. They'll be treated as a group and placed together
+
+### How Constraints Work
+
+**Soft Constraints:** The optimizer treats constraints as high-priority requests, not absolute rules. Sometimes constraints conflict with each other or with other balance criteria. When that happens, the optimizer does its best but may not satisfy every constraint perfectly.
+
+**Understanding Violations:**
+
+If some constraints can't be satisfied, you'll see a **⚠️ X violations** badge on the Optimize page. Click it to see:
+- Which specific pairs are together when they should be apart
+- Which groups got split across classes
+- Suggestions for resolving conflicts
+
+**Why Constraints Might Be Violated:**
+
+- **Conflicting constraints:** If Alice must be apart from Bob, and Bob must be apart from Charlie, but Alice and Charlie must be together — there's no valid solution
+- **Class size limits:** If you ask 15 students to stay together but classes max at 12, the optimizer must split them
+- **Balance trade-offs:** Sometimes satisfying a constraint would make classes extremely unbalanced on other criteria
+
+### Managing Constraints
+
+- **From Setup:** Click **🔗 Constraints** anytime to add or remove constraints
+- **From Optimize:** The Constraints button is also available on the results page
+- **Constraints are cleared** when you import new students or clear the roster
+- **CSV Import/Export:** Save constraints in your CSV using the `keep_apart_group` and `keep_together_group` columns
+
+> **Pro tip:** Start with your most important constraints first. The fewer constraints you have, the more likely they'll all be satisfied. You can always add more and re-optimize.
 
 ---
 
