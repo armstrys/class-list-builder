@@ -206,6 +206,8 @@ function OptimizePage({
             fullscreen={fullscreen}
             numericCriteria={numericCriteria}
             flagCriteria={flagCriteria}
+            keepApart={keepApart}
+            keepTogether={keepTogether}
           />
         ))}
       </div>

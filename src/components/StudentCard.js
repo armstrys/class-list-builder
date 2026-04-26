@@ -1,7 +1,16 @@
-function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria }) {
+function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], allStudents = [] }) {
   const activeFlags = flagCriteria.filter(c => student[c.key]);
   const [showDetail, setShowDetail] = useState(false);
   const didDrag = useRef(false);
+
+  // Check if student has any constraints
+  const hasKeepApart = keepApart.some(([id1, id2]) => id1 === student.id || id2 === student.id);
+  const hasKeepTogether = keepTogether.some(group => group.includes(student.id));
+  const hasConstraints = hasKeepApart || hasKeepTogether;
+
+  // Get constraint details for this student
+  const studentKeepApart = keepApart.filter(([id1, id2]) => id1 === student.id || id2 === student.id);
+  const studentKeepTogether = keepTogether.filter(group => group.includes(student.id));
 
   return (
     <>
@@ -23,6 +32,18 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
               ))}
             </span>
           )}
+          {hasConstraints && (
+            <span
+              style={{ fontSize: 14, cursor: 'help' }}
+              title={hasKeepApart && hasKeepTogether
+                ? 'Has keep-apart and keep-together constraints'
+                : hasKeepApart
+                  ? 'Has keep-apart constraint(s)'
+                  : 'Has keep-together constraint(s)'}
+            >
+              🔗
+            </span>
+          )}
           <button
             className={`lock-btn${locked ? ' locked' : ''}`}
             onClick={e => { e.stopPropagation(); onToggleLock(student.id); }}
@@ -40,6 +61,9 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
           onClose={() => setShowDetail(false)}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          keepApart={studentKeepApart}
+          keepTogether={studentKeepTogether}
+          allStudents={allStudents}
         />
       )}
     </>
