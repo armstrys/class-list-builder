@@ -3,19 +3,38 @@
 ## Project Structure
 
 ```
-class-list-optimizer-source.html   # Source file (edit this one)
-build-standalone.js                # Inlines CDN resources into a self-contained file
+class-list-optimizer-source.html   # HTML shell — references files in src/
+src/
+  styles.css                       # All component styles
+  defaults.js                      # Default criteria, color/key helpers, React destructure
+  optimizer.js                     # computeCost + simulated-annealing optimize()
+  sample-data.js                   # uid() and generateSampleStudents()
+  csv.js                           # CSV parse/export and triggerDownload()
+  app.js                           # App root + ReactDOM.render
+  components/                      # One file per React component
+build-standalone.js                # Bundles src/ + CDN resources into a single dist file
 dist/                              # Built releases
 docs/images/                       # Screenshots and assets
 ```
 
-The entire app is a single HTML file using vanilla HTML/CSS and React (loaded from CDN in development, inlined in releases). There are no build steps required to develop — just open `class-list-optimizer-source.html` in a browser.
+The app uses vanilla HTML/CSS and React (loaded from CDN in development, inlined in releases). No bundler — Babel-standalone transforms JSX in the browser at load time.
+
+## Running Locally
+
+The source HTML loads JS modules via `<script type="text/babel" src="src/...">`, which Babel-standalone fetches over XHR. Chrome blocks XHR between `file://` URLs, so you need to serve the directory:
+
+```bash
+npm run dev
+# Opens a static server on http://localhost:3000
+```
+
+Then open <http://localhost:3000/class-list-optimizer-source.html> in your browser. Firefox is more permissive and will also load the source from `file://` directly, but `npm run dev` is the recommended path.
 
 ## Making Changes
 
 1. Fork the repository
-2. Edit `class-list-optimizer-source.html`
-3. Test by opening the file directly in a browser
+2. Edit the relevant file in `src/` (or `class-list-optimizer-source.html` for HTML/structure changes)
+3. Reload the page in your browser to see changes
 4. Submit a pull request
 
 PR titles can include `#major` to trigger a major version bump; otherwise minor versions are automatically incremented on merge to `main`.

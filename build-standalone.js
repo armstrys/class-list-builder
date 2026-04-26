@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /**
- * Build standalone HTML file by inlining external CDN resources
+ * Build standalone HTML file by inlining local source files and external CDN resources.
+ *
+ * Step 1: Inline `<link rel="stylesheet" href="src/...">` tags as `<style>` blocks.
+ * Step 2: Concatenate all `<script type="text/babel" src="src/...">` tags into one
+ *         inline `<script type="text/babel">` (preserving load order).
+ * Step 3: Inline CDN-hosted CSS, JS, and Google Fonts as data URIs.
  */
 
 const fs = require('fs');
@@ -17,6 +22,52 @@ const RESOURCES = {
   'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js': { type: 'js' },
   'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js': { type: 'js' },
 };
+
+// Inline local <link rel="stylesheet" href="src/..."> tags
+function inlineLocalStyles(html) {
+  // Match <link ... rel="stylesheet" ... href="src/..."> in any attribute order
+  const regex = /<link\b[^>]*rel="stylesheet"[^>]*href="(src\/[^"]+)"[^>]*>|<link\b[^>]*href="(src\/[^"]+)"[^>]*rel="stylesheet"[^>]*>/gi;
+  return html.replace(regex, (match, href1, href2) => {
+    const href = href1 || href2;
+    const filePath = path.resolve(href);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Local stylesheet not found: ${href}`);
+    }
+    const content = fs.readFileSync(filePath, 'utf8');
+    console.log(`  Inlined local CSS: ${href}`);
+    return `<style>/* Inlined from ${href} */\n${content}</style>`;
+  });
+}
+
+// Concatenate local <script type="text/babel" src="src/..."> tags into one inline block
+function inlineLocalScripts(html) {
+  const regex = /[ \t]*<script\b[^>]*type="text\/babel"[^>]*src="(src\/[^"]+)"[^>]*><\/script>\n?/gi;
+  const sources = [];
+  html = html.replace(regex, (_match, src) => {
+    sources.push(src);
+    return '';  // remove individual tag
+  });
+
+  if (!sources.length) return html;
+
+  const concatenated = sources.map(src => {
+    const filePath = path.resolve(src);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Local script not found: ${src}`);
+    }
+    const body = fs.readFileSync(filePath, 'utf8');
+    console.log(`  Inlined local JS:  ${src}`);
+    return `// ─── ${src} ───\n${body}`;
+  }).join('\n');
+
+  // Insert the combined block where the first <script src="src/..."> was
+  // (we removed all of them, so append before </body>)
+  const inlineBlock = `<script type="text/babel">\n${concatenated}\n</script>`;
+  if (html.includes('</body>')) {
+    return html.replace('</body>', `${inlineBlock}\n</body>`);
+  }
+  return html + '\n' + inlineBlock;
+}
 
 // Fetch a URL and return the content as a Buffer (binary-safe)
 function fetchUrl(url, redirectDepth = 0) {
@@ -91,6 +142,11 @@ async function build() {
     // Read source HTML
     console.log(`Reading source file: ${SOURCE_FILE}`);
     let html = fs.readFileSync(SOURCE_FILE, 'utf8');
+
+    // Inline local sources (CSS + JS) before fetching CDN resources
+    console.log('Inlining local source files…');
+    html = inlineLocalStyles(html);
+    html = inlineLocalScripts(html);
 
     // Fetch and inline each resource
     for (const [url, info] of Object.entries(RESOURCES)) {

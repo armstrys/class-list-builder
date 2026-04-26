@@ -1,0 +1,204 @@
+function SetupPage({
+  students,
+  setStudents,
+  teachers,
+  setTeachers,
+  onOptimize,
+  numericCriteria,
+  flagCriteria,
+  onOpenSettings,
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const [showSampleDialog, setShowSampleDialog] = useState(false);
+  const [sampleCount, setSampleCount] = useState(27);
+  const [numTeachers, setNumTeachers] = useState(String(teachers.length || 3));
+
+  function getDefaultClassName(index) {
+    if (index < 26) {
+      return `Class ${String.fromCharCode(65 + index)}`;
+    }
+    const extras = index - 25;
+    return `Class ${'A'.repeat(extras + 1)}`;
+  }
+
+  function syncTeachers(val) {
+    setNumTeachers(val);
+    const n = Math.max(2, Math.min(1000, parseInt(val) || 0));
+    if (!parseInt(val) || parseInt(val) < 2) return;
+    const next = [...teachers];
+    while (next.length < n) next.push({ id: 'T' + (next.length + 1), name: getDefaultClassName(next.length) });
+    setTeachers(next.slice(0, n));
+  }
+
+  function handleAddStudent(s) {
+    setStudents(prev => [...prev, s]);
+  }
+  function handleEditStudent(s) {
+    setStudents(prev => prev.map(x => x.id === s.id ? s : x));
+    setEditingStudent(null);
+  }
+  function handleDeleteStudent(id) {
+    setStudents(prev => prev.filter(s => s.id !== id));
+  }
+
+  const canOptimize = students.length >= teachers.length && teachers.length >= 2;
+
+  function downloadCSVTemplate() {
+    const header = generateCSVHeaders(numericCriteria, flagCriteria).join(',');
+    const rows = [
+      'Smith Emma,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(','),
+      'Johnson Liam,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(','),
+    ];
+    triggerDownload([header, ...rows].join('\n'), 'students_template.csv', 'text/csv');
+  }
+
+  return (
+    <>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <div className="setup-layout">
+          {/* Teachers */}
+          <div className="card" style={{ alignSelf: 'start' }}>
+            <div className="panel-title">Teachers / Classes</div>
+            <div className="form-group" style={{ marginBottom: 16 }}>
+              <label className="form-label">Number of classes</label>
+              <input
+                className="form-input"
+                type="number" min="2" max="1000"
+                value={numTeachers}
+                onChange={e => syncTeachers(e.target.value)}
+              />
+            </div>
+            <div className="teacher-list">
+              {teachers.map((t, i) => (
+                <div key={t.id} className="teacher-item">
+                  <div className="teacher-num">{i + 1}</div>
+                  <input
+                    className="form-input"
+                    style={{ flex: 1 }}
+                    value={t.name}
+                    placeholder={getDefaultClassName(i)}
+                    onChange={e => setTeachers(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Students */}
+          <div className="card students-card">
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14, gap: 8 }}>
+              <div className="panel-title" style={{ margin: 0 }}>
+                Students
+              </div>
+              <span className="tag">{students.length}</span>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                <button className="btn btn-secondary btn-sm" onClick={downloadCSVTemplate}>⬇ CSV Template</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Add Student</button>
+              </div>
+            </div>
+
+            {students.length === 0 ? (
+              <div className="empty-state">
+                <div className="icon">👩‍🎓</div>
+                <div>No students yet — import a CSV or add sample data to get started.</div>
+                <div style={{ marginTop: 16 }}>
+                  <button className="btn btn-secondary" onClick={onOpenSettings}>⚙️ Configure Criteria First</button>
+                </div>
+              </div>
+            ) : (
+              <div className="students-table-wrap" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <table className="students-table">
+                  <thead>
+                    <tr>
+                      <th className="col-name">Name</th>
+                      <th>G</th>
+                      {numericCriteria.map(c => <th key={c.key} className="col-num" title={c.label}>{c.short}</th>)}
+                      {flagCriteria.map(c => <th key={c.key} className="col-check" title={c.label}>{c.short}</th>)}
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map(s => (
+                      <tr key={s.id}>
+                        <td className="col-name">{s.name}</td>
+                        <td><span className={`badge badge-${s.gender}`}>{s.gender}</span></td>
+                        {numericCriteria.map(c => <td key={c.key} className="col-num">{s[c.key] || 0}</td>)}
+                        {flagCriteria.map(c => (
+                          <td key={c.key} className="col-check">
+                            {s[c.key] && <span className="badge" style={{ background: generateColor(c.key).bg, color: generateColor(c.key).fg }}>✓</span>}
+                          </td>
+                        ))}
+                        <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setEditingStudent(s)}>Edit</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteStudent(s.id)}>✕</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="setup-bottom">
+        <div className="setup-bottom-left">
+          {!canOptimize && students.length > 0 && (
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+              Need at least {teachers.length} students and 2+ teachers
+            </span>
+          )}
+        </div>
+        <button className="btn btn-secondary" onClick={() => setShowSampleDialog(true)}>
+          Load Sample Data
+        </button>
+        <button className="btn btn-primary" disabled={!canOptimize} onClick={onOptimize}>
+          Optimize Classes →
+        </button>
+      </div>
+
+      {showForm && (
+        <StudentFormModal
+          student={null}
+          onSave={handleAddStudent}
+          onClose={() => setShowForm(false)}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
+        />
+      )}
+      {editingStudent && (
+        <StudentFormModal
+          student={editingStudent}
+          onSave={handleEditStudent}
+          onClose={() => setEditingStudent(null)}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
+        />
+      )}
+      {showSampleDialog && (
+        <SampleDataDialog
+          defaultCount={sampleCount}
+          onGenerate={(n) => {
+            setSampleCount(n);
+            setStudents(generateSampleStudents(n, numericCriteria, flagCriteria));
+            setShowSampleDialog(false);
+          }}
+          onClose={() => setShowSampleDialog(false)}
+        />
+      )}
+      {showImport && (
+        <ImportModal
+          onImport={ss => setStudents(prev => [...prev, ...ss])}
+          onClose={() => setShowImport(false)}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
+        />
+      )}
+    </>
+  );
+}
