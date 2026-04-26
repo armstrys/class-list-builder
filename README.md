@@ -1,21 +1,136 @@
 # Class List Optimizer
 
-A web application that helps teachers and administrators automatically create balanced class lists based on student data.
+Create balanced class lists in minutes. No more spreadsheet juggling.
 
 ![App Screenshot](docs/images/app-screenshot.png)
 
-## What It Does
+Class List Optimizer automatically distributes students across classrooms while balancing academic scores, intervention needs, gender, and more. It runs entirely in your browser: **your student data never leaves your computer.**
 
-Class List Optimizer uses a smart algorithm to fairly distribute students into classrooms while balancing multiple factors:
+---
 
-- **Academic Performance** – evenly distribute reading and math scores
-- **Intervention Needs** – balance students requiring 504 plans, IEPs, speech services, ELL support, etc.
-- **Behavior Support** – ensure students needing behavioral accommodations are distributed thoughtfully
-- **Gifted & Talented** – spread GT students across classes
-- **Gender Balance** – maintain even boy/girl ratios
-- **Reproducible Results** – same inputs always produce the same balanced class lists
+## Why Use It?
 
-You can also manually adjust assignments and "lock" specific students to certain classes before running the optimizer.
+Building fair class lists by hand is time-consuming and hard to get right when you're balancing a dozen factors at once. This tool:
+
+- **Saves hours.** Go from a student roster to balanced class lists in minutes.
+- Balances scores, SPED, GT, ELL, behavior, interventions, gender, and class size all at once. No more juggling factors one at a time.
+- **Consistent and defensible:** the same data always produces the same result.
+- Runs entirely in your browser with no uploads and no accounts.
+
+---
+
+## Download & Open
+
+1. Go to the **[Releases](../../releases)** page
+2. Download the latest `class-list-optimizer-vX.Y.Z.html` file
+3. **Double-click** to open in any modern browser (Chrome, Safari, Firefox, Edge)
+
+That's it. No installation, no account, no internet connection required.
+
+---
+
+## Walkthrough
+
+### Step 1 — Configure Your Criteria
+
+> **Do this before importing students.** The CSV template you download will match your active criteria.
+
+Click **⚙ Settings** in the top-right corner to configure what the optimizer balances.
+
+**Numeric criteria** are score columns where a higher number means stronger performance (e.g., reading, math, or language scores on a 0–100 scale). The optimizer balances the average score of each class. **Scores are optional.** If you don't have them, simply remove those criteria or leave the columns blank.
+
+**Flag criteria** are yes/no attributes (e.g., GT, SPED, ELL, behavior). The optimizer spreads students with each flag evenly across classes.
+
+The optimizer also always balances **gender** and **class size** automatically. You don't need to configure those.
+
+**Weights** control how hard the optimizer works to balance each factor. A weight of `2.0` means that criterion is twice as important as one with weight `1.0`. The defaults are a reasonable starting point for most schools. Raise a weight if one factor matters most to you.
+
+---
+
+### Step 2 — Set Up Your Classes
+
+In the **Teachers / Classes** panel on the left:
+
+- Set the **number of classes**
+- Give each class a name: teacher names, room numbers, or anything you like
+
+---
+
+### Step 3 — Add Your Students
+
+**Option A: Import a CSV** *(recommended for most rosters)*
+
+1. Click **⬇ CSV Template** to download a template pre-filled with the right column headers for your current criteria
+2. Fill in your student data, one student per row
+3. Click **⬆ Import CSV** and paste or upload your data
+
+Your CSV needs at minimum a `name` column and a `gender` column (`M` or `F`). All score and flag columns are optional — leave them blank if you don't have that data. For flag columns, use `1` or `yes` (or `true`, `y`, `x`) for yes, and `0` or leave blank for no.
+
+**Option B: Add students manually**
+
+Click **+ Add Student** to enter students one at a time using a form.
+
+**Option C: Try sample data**
+
+Click **Sample Data** to generate a randomized roster for testing or demonstration.
+
+---
+
+### Step 4 — Optimize
+
+Click **Optimize Classes →** at the bottom of the screen. The optimizer runs automatically (usually in under a second) and takes you straight to your results.
+
+---
+
+## Understanding Your Results
+
+### Balance Score
+
+The **Balance score** in the toolbar tells you how evenly your classes are distributed across all criteria combined. Lower is better.
+
+| Score | Color | What it means |
+|-------|-------|---------------|
+| < 0.05 | 🟢 Green | Excellent — classes are very evenly balanced |
+| 0.05–0.15 | 🟡 Amber | Good — minor imbalances remain |
+| > 0.15 | 🔴 Red | Notable imbalance — consider re-optimizing or reviewing manually |
+
+With a typical roster, the optimizer usually reaches green.
+
+### Per-Class Stats
+
+At the bottom of each class column you'll see:
+- **Score bars:** each bar shows how that class's average compares across all classes. All bars at the same height means perfect balance.
+- **Flag badges:** a count of students with each active flag (e.g., "GT 3", "SPED 2")
+
+### Stats Strip
+
+The strip at the bottom of the screen shows a mini bar chart for every criterion across all classes. The **CV%** number under each chart is a technical measure of how spread out the classes are. You don't need to understand the math. Just know that lower is better, and green means you're in good shape.
+
+---
+
+## Fine-Tuning
+
+### Drag and Drop
+
+Drag any student card to move them to a different class. The balance score updates live so you can see the impact of each move. There is no undo for drag-and-drop. If you move someone by mistake, just drag them back, or click **⟳ Re-Optimize** to start fresh from the current locked assignments.
+
+Click on any student card to view their full detail.
+
+### Locking Students
+
+Sometimes a student must be in a specific class (a separation request, a particular teacher, a support need). Use the 🔒 button on any student card to **lock** them to their current class.
+
+Once you've locked the students who need to stay put, click **⟳ Re-Optimize** to redistribute only the unlocked students around them.
+
+You can also use **Lock All** and **Unlock All** in the toolbar for bulk changes.
+
+> **Recommended workflow:** Run the initial optimization first. Then lock any students where you need to override the placement, and click Re-Optimize to let the optimizer work around your manual decisions.
+
+### Export
+
+When you're happy with your class lists, click **⬇ Export Lists** in the toolbar to download a CSV with every student's name, class assignment, and all their data. Open the CSV in Excel or Google Sheets to format it, print it, or share it with your principal.
+
+> **Note:** The tool does not currently support "keep together" or "keep apart" requests between specific students. The workaround is to manually drag one of the students to the right class after optimizing, then lock them in place.
 
 ---
 
@@ -23,105 +138,25 @@ You can also manually adjust assignments and "lock" specific students to certain
 
 **Your data never leaves your computer.**
 
-- Runs entirely in your browser – no internet connection required
-- No data is uploaded to any server
-- No accounts, logins, or tracking
-- Works completely offline after downloading
-
----
-
-## Download & Use
-
-### Option 1: Download Release (Recommended)
-
-1. Go to the [Releases](../../releases) page
-2. Download the latest `class-list-optimizer-vX.Y.Z.html` file
-3. **Double-click to open** in any modern web browser (Chrome, Safari, Firefox, Edge)
-4. That's it – no installation required!
-
-### Option 2: Build from Source
-
-If you prefer to build it yourself:
-
-```bash
-# Clone the repository
-git clone https://github.com/armstrys/class-list-optimizer.git
-cd class-list-optimizer
-
-# Build the standalone file
-node build-standalone.js
-
-# The output will be in dist/class-list-optimizer-vX.Y.Z.html
-```
-
----
-
-## Quick Start
-
-1. **Import your data** – Upload a CSV with student information (or add manually)
-2. **Set class count** – Specify how many classes you need
-3. **Lock students** (optional) – Drag and drop to assign students who must be in specific classes
-4. **Run optimizer** – Click "Re-Optimize" to automatically balance all classes
-5. **Fine-tune** – Manually adjust any assignments as needed
-6. **Export** – Download your final class lists as CSV
-
----
-
-## CSV Import Format
-
-Your CSV should have columns for:
-- Student name
-- Gender (M/F)
-- Reading/Math scores (optional)
-- Any flags/attributes (GT, SPED, 504, ELL, etc.)
-
-See the app for a complete template.
+- Runs entirely in your browser. No internet connection needed after download.
+- No data is sent to any server
+- No accounts, no logins, no tracking
+- Works completely offline
 
 ---
 
 ## System Requirements
 
-- **Any modern web browser** (Chrome, Safari, Firefox, Edge)
-- **No internet connection needed** after download
-- **No installation required**
-
----
-
-## For Developers & Contributors
-
-This project is built with vanilla HTML, CSS, and React (via Babel standalone). The standalone release bundles everything into a single HTML file.
-
-### Project Structure
-
-```
-class-list-optimizer-source.html   # Source file with CDN dependencies
-build-standalone.js                # Build script that inlines all resources
-dist/                              # Output directory for releases
-```
-
-### Building Locally
-
-```bash
-node build-standalone.js
-```
-
-This fetches React, ReactDOM, Babel, and Google Fonts from CDNs and inlines them as data URIs.
-
-### Contributing
-
-1. Fork the repository
-2. Make changes to `class-list-optimizer-source.html`
-3. Test by opening the file in a browser
-4. Submit a pull request
-
-PR titles can include `#major` to trigger a major version bump; otherwise, minor versions are automatically incremented on merge to `main`.
+Any modern web browser (Chrome, Safari, Firefox, Edge) on Mac, Windows, or Linux. No installation required.
 
 ---
 
 ## License
 
-MIT License – feel free to use, modify, and distribute.
+MIT. Free to use, modify, and share.
 
-## Support
+## Questions or Bugs?
 
-Found a bug or have a feature request? [Open an issue](../../issues) on GitHub.
+Found an issue or have a feature request? [Open an issue](../../issues) on GitHub.
+
+Interested in contributing? See [CONTRIBUTING.md](CONTRIBUTING.md).
