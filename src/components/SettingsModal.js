@@ -192,18 +192,12 @@ function SettingsModal({
     reader.readAsText(file);
   }
 
-  function handleExportAndClear() {
+  function handleExportOnly() {
     if (onExportStudents) onExportStudents();
-    if (onClearStudents) onClearStudents();
-    setConfigConflict(null);
-    // Apply the config after clearing
-    if (configConflict?.config) {
-      setNumCriteria(configConflict.config.numericCriteria);
-      setFlagCriteriaState(configConflict.config.flagCriteria);
-    }
+    // Don't close modal or clear - let user decide next step
   }
 
-  function handleClearOnly() {
+  function handleClearAndApply() {
     if (onClearStudents) onClearStudents();
     setConfigConflict(null);
     // Apply the config after clearing
@@ -458,11 +452,11 @@ function SettingsModal({
                 fontSize: 13
               }}>
                 <strong>What you can do:</strong>
-                <ul style={{ margin: '8px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
-                  <li><strong>Export & Clear:</strong> Download your current students as CSV, then clear student data and apply the new config</li>
-                  <li><strong>Clear Only:</strong> Remove all student data without downloading, then apply the new config</li>
-                  <li><strong>Cancel:</strong> Keep current setup and student data</li>
-                </ul>
+                <ol style={{ margin: '8px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
+                  <li><strong>Export</strong> your current students as CSV (optional backup)</li>
+                  <li><strong>Clear</strong> student data to remove the conflict</li>
+                  <li>The new config will be applied automatically</li>
+                </ol>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>
                 Tip: You can re-import your student data later if the fields match the new config.
@@ -470,8 +464,8 @@ function SettingsModal({
             </div>
             <div className="modal-footer" style={{ flexWrap: 'wrap', gap: 8 }}>
               <button className="btn btn-secondary" onClick={() => setConfigConflict(null)}>Cancel</button>
-              <button className="btn btn-danger" onClick={handleClearOnly}>Clear Student Data</button>
-              <button className="btn btn-primary" onClick={handleExportAndClear}>⬇ Export & Clear</button>
+              <button className="btn btn-secondary" onClick={handleExportOnly}>⬇ Export Students</button>
+              <button className="btn btn-danger" onClick={handleClearAndApply}>Clear & Apply Config</button>
             </div>
           </div>
         </div>
