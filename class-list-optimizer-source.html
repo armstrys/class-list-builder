@@ -485,20 +485,30 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
 
   const targetSize = students.length / numClasses;
   const totalSizes = new Array(numClasses).fill(0);
-  Object.values(lockedAssignments).forEach(c => { if (c >= 0 && c < numClasses) totalSizes[c]++; });
+  const greedyScoreSums = new Array(numClasses).fill(0);
+  const studentById = Object.fromEntries(students.map(s => [s.id, s]));
+  Object.entries(lockedAssignments).forEach(([sid, c]) => {
+    if (c >= 0 && c < numClasses) {
+      totalSizes[c]++;
+      const s = studentById[sid];
+      if (s) greedyScoreSums[c] += numericCriteria.reduce((sum, { key }) => sum + (s[key] || 0), 0);
+    }
+  });
 
   const assignment = { ...lockedAssignments };
   for (const s of scored) {
+    const sScore = numericCriteria.reduce((sum, { key }) => sum + (s[key] || 0), 0);
     const minSize = Math.min(...totalSizes);
-    let bestClass = 0, bestDeficit = -Infinity;
+    let bestClass = 0, bestMean = Infinity;
     for (let i = 0; i < numClasses; i++) {
       if (totalSizes[i] === minSize) {
-        const deficit = targetSize - totalSizes[i];
-        if (deficit > bestDeficit) { bestDeficit = deficit; bestClass = i; }
+        const mean = totalSizes[i] > 0 ? greedyScoreSums[i] / totalSizes[i] : 0;
+        if (mean < bestMean) { bestMean = mean; bestClass = i; }
       }
     }
     assignment[s.id] = bestClass;
     totalSizes[bestClass]++;
+    greedyScoreSums[bestClass] += sScore;
   }
 
   // ── Pre-compute global population stats (constant throughout annealing) ──
@@ -635,8 +645,8 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
 
   // ── Simulated annealing: O(criteria) per iteration ──────────────
   let temp = 4.0;
-  const cooling = 0.9965;
-  const iters = 10000;
+  const cooling = 0.99965;
+  const iters = 100000;
 
   for (let i = 0; i < iters; i++) {
     const i1 = Math.floor(rand() * unlocked.length);
