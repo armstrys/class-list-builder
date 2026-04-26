@@ -1,0 +1,27 @@
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
+# Session/temp files
+.tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Agent files
+CLAUDE.md
+.opencode/
+.tmp/
