@@ -8,9 +8,9 @@ const DEFAULT_NUMERIC_CRITERIA = [
 
 const DEFAULT_FLAG_CRITERIA = [
   { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
-  { key: 'giftedTalented', label: 'Gifted & Talented', short: 'GT', weight: 1.5 },
+  { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.5 },
   { key: 'sped', label: 'SPED', short: 'SPED', weight: 2.0 },
-  { key: 'accommodations', label: 'Accommodations', short: 'ACC', weight: 1.5 },
+  { key: '504', label: '504', short: '504', weight: 1.5 },
   { key: 'readingIntervention', label: 'Reading Intervention', short: 'RdgI', weight: 1.5 },
   { key: 'mathIntervention', label: 'Math Intervention', short: 'MathI', weight: 1.5 },
   { key: 'englishLanguageLearning', label: 'English Language Learning', short: 'ELL', weight: 1.5 },

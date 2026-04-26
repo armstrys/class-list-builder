@@ -18,6 +18,12 @@ function App() {
     return saved ? JSON.parse(saved) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c }));
   });
 
+  // Keep apart constraints: array of [studentId1, studentId2] pairs
+  const [keepApart, setKeepApart] = useState([]);
+
+  // Keep together constraints: array of student ID groups
+  const [keepTogether, setKeepTogether] = useState([]);
+
   const [showSettings, setShowSettings] = useState(false);
 
   // Persist criteria to localStorage
@@ -31,6 +37,51 @@ function App() {
 
   function handleOptimize() {
     setView('optimize');
+  }
+
+  // Add a keep-apart constraint between two students
+  function addKeepApart(id1, id2) {
+    if (id1 === id2) return;
+    // Ensure consistent ordering (smaller ID first)
+    const pair = id1 < id2 ? [id1, id2] : [id2, id1];
+    setKeepApart(prev => {
+      // Don't add duplicates
+      const exists = prev.some(p => p[0] === pair[0] && p[1] === pair[1]);
+      if (exists) return prev;
+      return [...prev, pair];
+    });
+  }
+
+  // Remove a keep-apart constraint
+  function removeKeepApart(id1, id2) {
+    const pair = id1 < id2 ? [id1, id2] : [id2, id1];
+    setKeepApart(prev => prev.filter(p => !(p[0] === pair[0] && p[1] === pair[1])));
+  }
+
+  // Add a keep-together group
+  function addKeepTogether(studentIds) {
+    if (studentIds.length < 2) return;
+    const sortedIds = [...studentIds].sort();
+    setKeepTogether(prev => {
+      // Don't add duplicates (check if same group already exists)
+      const exists = prev.some(group =>
+        group.length === sortedIds.length &&
+        group.every((id, i) => id === sortedIds[i])
+      );
+      if (exists) return prev;
+      return [...prev, sortedIds];
+    });
+  }
+
+  // Remove a keep-together group
+  function removeKeepTogether(groupIndex) {
+    setKeepTogether(prev => prev.filter((_, i) => i !== groupIndex));
+  }
+
+  // Remove all constraints involving a student (when student is deleted)
+  function removeStudentConstraints(studentId) {
+    setKeepApart(prev => prev.filter(p => p[0] !== studentId && p[1] !== studentId));
+    setKeepTogether(prev => prev.filter(group => !group.includes(studentId)));
   }
 
   function handleSaveSettings(newNumCriteria, newFlagCriteria) {
@@ -96,6 +147,13 @@ function App() {
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
           onOpenSettings={() => setShowSettings(true)}
+          keepApart={keepApart}
+          onAddKeepApart={addKeepApart}
+          onRemoveKeepApart={removeKeepApart}
+          keepTogether={keepTogether}
+          onAddKeepTogether={addKeepTogether}
+          onRemoveKeepTogether={removeKeepTogether}
+          onRemoveStudentConstraints={removeStudentConstraints}
         />
       ) : (
         <OptimizePage
@@ -105,6 +163,12 @@ function App() {
           onBack={() => setView('setup')}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          keepApart={keepApart}
+          onAddKeepApart={addKeepApart}
+          onRemoveKeepApart={removeKeepApart}
+          keepTogether={keepTogether}
+          onAddKeepTogether={addKeepTogether}
+          onRemoveKeepTogether={removeKeepTogether}
         />
       )}
 
@@ -115,6 +179,25 @@ function App() {
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
           hasStudentData={students.length > 0}
+          onExportStudents={() => {
+            // Export current students before clearing
+            // exportStudentsToCSV is globally available from csv.js
+            const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart, keepTogether);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'students-backup.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }}
+          onClearStudents={() => {
+            setStudents([]);
+            setKeepApart([]);
+            setKeepTogether([]);
+          }}
         />
       )}
     </div>

@@ -34,15 +34,15 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
     });
 
     // Generate boolean flags
-    const accommodations = p(0.07) && !sped;
+    const flag504 = p(0.07) && !sped;
     const readingIntervention = p(0.18) && !gt;
     const mathIntervention = p(0.16) && !gt;
 
     flagCriteria.forEach(({ key }) => {
-      if (key === 'giftedTalented') student[key] = gt;
+      if (key === 'extendedLearning') student[key] = gt;
       else if (key === 'sped') student[key] = sped;
       else if (key === 'behavior') student[key] = behavior;
-      else if (key === 'accommodations') student[key] = accommodations;
+      else if (key === '504') student[key] = flag504;
       else if (key === 'readingIntervention') student[key] = readingIntervention;
       else if (key === 'mathIntervention') student[key] = mathIntervention;
       else if (key === 'englishLanguageLearning') student[key] = ell;

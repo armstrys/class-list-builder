@@ -3,7 +3,9 @@ function SettingsModal({
   flagCriteria,
   onSave,
   onClose,
-  hasStudentData
+  hasStudentData,
+  onExportStudents,
+  onClearStudents
 }) {
   const [activeTab, setActiveTab] = useState('numeric');
   const [numCriteria, setNumCriteria] = useState(numericCriteria);
@@ -11,6 +13,7 @@ function SettingsModal({
   const [error, setError] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [configConflict, setConfigConflict] = useState(null);
 
   function validateWeight(val) {
     const num = parseFloat(val);
@@ -172,7 +175,11 @@ function SettingsModal({
             [...existingFlagKeys].some(k => !newFlagKeys.has(k)) ||
             [...newFlagKeys].some(k => !existingFlagKeys.has(k));
           if (keysChanged) {
-            setError('Cannot import a config with different fields while student data exists. Clear student data first.');
+            // Show helpful modal instead of just an error
+            setConfigConflict({
+              config,
+              message: 'The config file has different fields than your current setup. Student data is incompatible with the new config.'
+            });
             return;
           }
         }
@@ -183,6 +190,21 @@ function SettingsModal({
       }
     };
     reader.readAsText(file);
+  }
+
+  function handleExportOnly() {
+    if (onExportStudents) onExportStudents();
+    // Don't close modal or clear - let user decide next step
+  }
+
+  function handleClearAndApply() {
+    if (onClearStudents) onClearStudents();
+    setConfigConflict(null);
+    // Apply the config after clearing
+    if (configConflict?.config) {
+      setNumCriteria(configConflict.config.numericCriteria);
+      setFlagCriteriaState(configConflict.config.flagCriteria);
+    }
   }
 
   function resetToDefaults() {
@@ -405,6 +427,45 @@ function SettingsModal({
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setConfirmClear(false)}>Cancel</button>
               <button className="btn btn-danger" onClick={clearSavedSettings}>Reset to Defaults</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {configConflict && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setConfigConflict(null)}>
+          <div className="modal" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">⚠️ Config Import Blocked</div>
+              <button className="btn btn-ghost btn-sm" onClick={() => setConfigConflict(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>
+                {configConflict.message}
+              </p>
+              <div style={{
+                background: 'var(--surface2)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '12px 16px',
+                marginBottom: 16,
+                fontSize: 13
+              }}>
+                <strong>What you can do:</strong>
+                <ol style={{ margin: '8px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
+                  <li><strong>Export</strong> your current students as CSV (optional backup)</li>
+                  <li><strong>Clear</strong> student data to remove the conflict</li>
+                  <li>The new config will be applied automatically</li>
+                </ol>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>
+                Tip: You can re-import your student data later if the fields match the new config.
+              </p>
+            </div>
+            <div className="modal-footer" style={{ flexWrap: 'wrap', gap: 8 }}>
+              <button className="btn btn-secondary" onClick={() => setConfigConflict(null)}>Cancel</button>
+              <button className="btn btn-secondary" onClick={handleExportOnly}>⬇ Export Students</button>
+              <button className="btn btn-danger" onClick={handleClearAndApply}>Clear & Apply Config</button>
             </div>
           </div>
         </div>

@@ -5,11 +5,19 @@ function OptimizePage({
   onBack,
   numericCriteria,
   flagCriteria,
+  keepApart = [],
+  onAddKeepApart,
+  onRemoveKeepApart,
+  keepTogether = [],
+  onAddKeepTogether,
+  onRemoveKeepTogether,
 }) {
   const [assignment, setAssignment] = useState({});
   const [locked, setLocked] = useState(new Set());
   const [draggingId, setDraggingId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [showConstraints, setShowConstraints] = useState(false);
+  const [showViolations, setShowViolations] = useState(false);
   const [cost, setCost] = useState(null);
   const [optimizing, setOptimizing] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -27,9 +35,9 @@ function OptimizePage({
     setTimeout(() => {
       const lockedObj = {};
       lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
-      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria);
+      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether);
       setAssignment(result);
-      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria));
+      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether));
       setOptimizing(false);
     }, 30);
   }
@@ -70,9 +78,30 @@ function OptimizePage({
     if (!sid) return;
     const newAssignment = { ...assignment, [sid]: classIdx };
     setAssignment(newAssignment);
-    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria));
+    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether));
     setDraggingId(null);
   }
+
+  // Calculate keep-apart violations for display
+  const apartViolations = keepApart.filter(([id1, id2]) => {
+    const c1 = assignment[id1];
+    const c2 = assignment[id2];
+    return c1 !== undefined && c2 !== undefined && c1 === c2;
+  });
+
+  // Calculate keep-together violations for display
+  const togetherViolations = keepTogether.filter(group => {
+    if (group.length < 2) return false;
+    const classes = new Set();
+    for (const id of group) {
+      const c = assignment[id];
+      if (c !== undefined) classes.add(c);
+    }
+    return classes.size > 1;
+  });
+
+  // Total violations
+  const totalViolations = apartViolations.length + togetherViolations.length;
 
   const classesByIdx = Array.from({ length: numClasses }, (_, i) =>
     students.filter(s => assignment[s.id] === i)
@@ -112,6 +141,28 @@ function OptimizePage({
             <span style={{ fontSize: 10, color: 'var(--text3)' }}>(lower is better)</span>
           </div>
         )}
+        {totalViolations > 0 && (
+          <button
+            className="violations-badge"
+            onClick={() => setShowViolations(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: 'var(--radius-sm)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+            title="Click to see violated constraints"
+          >
+            <span style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 500 }}>
+              ⚠️ {totalViolations} violation{totalViolations === 1 ? '' : 's'}
+            </span>
+            <span style={{ fontSize: 10, color: 'var(--text3)' }}>ℹ️</span>
+          </button>
+        )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', borderRight: '1px solid var(--border)', paddingRight: 10, marginRight: 2 }}>
             {flagCriteria.map(c => (
@@ -121,6 +172,13 @@ function OptimizePage({
               </span>
             ))}
           </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowConstraints(true)}
+            title="View and edit constraints"
+          >
+            🔗 Constraints {(keepApart.length + keepTogether.length) > 0 && `(${keepApart.length + keepTogether.length})`}
+          </button>
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria), 'class-lists.csv', 'text/csv')}
@@ -148,6 +206,8 @@ function OptimizePage({
             fullscreen={fullscreen}
             numericCriteria={numericCriteria}
             flagCriteria={flagCriteria}
+            keepApart={keepApart}
+            keepTogether={keepTogether}
           />
         ))}
       </div>
@@ -177,6 +237,223 @@ function OptimizePage({
       />}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} numericCriteria={numericCriteria} flagCriteria={flagCriteria} />}
+
+      {showConstraints && (
+        <ConstraintManager
+          students={students}
+          keepApart={keepApart}
+          onAddKeepApart={onAddKeepApart}
+          onRemoveKeepApart={onRemoveKeepApart}
+          keepTogether={keepTogether}
+          onAddKeepTogether={onAddKeepTogether}
+          onRemoveKeepTogether={onRemoveKeepTogether}
+          onClose={() => setShowConstraints(false)}
+        />
+      )}
+
+      {showViolations && (
+        <ViolationsModal
+          apartViolations={apartViolations}
+          togetherViolations={togetherViolations}
+          students={students}
+          assignment={assignment}
+          teachers={teachers}
+          onClose={() => setShowViolations(false)}
+          onOpenConstraints={() => {
+            setShowViolations(false);
+            setShowConstraints(true);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Modal to display constraint violations in detail
+function ViolationsModal({ apartViolations, togetherViolations, students, assignment, teachers, onClose, onOpenConstraints }) {
+  const studentById = Object.fromEntries(students.map(s => [s.id, s]));
+
+  // Get class name for a student
+  function getClassName(studentId) {
+    const classIdx = assignment[studentId];
+    if (classIdx === undefined) return 'Unassigned';
+    return teachers[classIdx]?.name || `Class ${classIdx + 1}`;
+  }
+
+  const hasApart = apartViolations.length > 0;
+  const hasTogether = togetherViolations.length > 0;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 600, width: '90%' }}>
+        <div className="modal-header">
+          <h3 style={{ margin: 0 }}>Constraint Violations</h3>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="modal-body" style={{ padding: 20 }}>
+          {/* Explanation */}
+          <div style={{
+            padding: 12,
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: 20,
+            fontSize: 13,
+            color: 'var(--text2)',
+            border: '1px solid var(--border)',
+          }}>
+            <strong>Why are constraints violated?</strong>
+            <p style={{ margin: '8px 0 0 0' }}>
+              The optimizer tries to balance all criteria while respecting your constraints. 
+              Sometimes constraints conflict with each other or make class balance impossible. 
+              Consider removing some constraints or manually adjusting the results.
+            </p>
+          </div>
+
+          {/* Keep Apart Violations */}
+          {hasApart && (
+            <div style={{ marginBottom: 24 }}>
+              <h4 style={{
+                margin: '0 0 12px 0',
+                fontSize: 14,
+                fontWeight: 500,
+                color: 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}>
+                <span>🚫</span>
+                Keep-Apart Violations ({apartViolations.length})
+              </h4>
+              <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--text3)' }}>
+                These students should be in different classes but ended up together:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {apartViolations.map(([id1, id2], idx) => (
+                  <div key={idx} style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '10px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="badge" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+                        {studentById[id1]?.name || id1}
+                      </span>
+                      <span style={{ color: 'var(--text3)' }}>↔</span>
+                      <span className="badge" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+                        {studentById[id2]?.name || id2}
+                      </span>
+                    </div>
+                    <span style={{
+                      marginLeft: 'auto',
+                      fontSize: 11,
+                      color: 'var(--danger)',
+                      fontWeight: 500,
+                    }}>
+                      Both in: {getClassName(id1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Keep Together Violations */}
+          {hasTogether && (
+            <div style={{ marginBottom: 24 }}>
+              <h4 style={{
+                margin: '0 0 12px 0',
+                fontSize: 14,
+                fontWeight: 500,
+                color: 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}>
+                <span>🔗</span>
+                Keep-Together Violations ({togetherViolations.length})
+              </h4>
+              <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--text3)' }}>
+                These students should be in the same class but were split up:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {togetherViolations.map((group, idx) => {
+                  const classDistribution = {};
+                  group.forEach(id => {
+                    const className = getClassName(id);
+                    if (!classDistribution[className]) classDistribution[className] = [];
+                    classDistribution[className].push(studentById[id]?.name || id);
+                  });
+
+                  return (
+                    <div key={idx} style={{
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '10px 12px',
+                    }}>
+                      <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>
+                        Group {idx + 1}:
+                      </div>
+                      {Object.entries(classDistribution).map(([className, names]) => (
+                        <div key={className} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          marginBottom: 4,
+                          flexWrap: 'wrap',
+                        }}>
+                          <span style={{
+                            fontSize: 11,
+                            color: 'var(--danger)',
+                            fontWeight: 500,
+                            minWidth: 80,
+                          }}>
+                            {className}:
+                          </span>
+                          <span style={{ fontSize: 13 }}>
+                            {names.join(', ')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Suggestions */}
+          <div style={{
+            padding: 12,
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border)',
+          }}>
+            <h5 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 500 }}>
+              What can you do?
+            </h5>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--text2)' }}>
+              <li>Click "Edit Constraints" below to remove conflicting constraints</li>
+              <li>Try re-optimizing with fewer constraints</li>
+              <li>Manually drag students to fix violations (locked students stay in place)</li>
+              <li>Consider if some constraints are truly necessary</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+          <button className="btn btn-secondary" onClick={onClose}>Close</button>
+          <button className="btn btn-primary" onClick={onOpenConstraints}>
+            Edit Constraints
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

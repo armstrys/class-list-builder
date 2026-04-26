@@ -1,6 +1,22 @@
-function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria }) {
+function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], allStudents = [] }) {
   const activeFlags = flagCriteria.filter(c => student[c.key]);
   const inactiveFlags = flagCriteria.filter(c => !student[c.key]);
+
+  // Build student lookup
+  const studentById = Object.fromEntries(allStudents.map(s => [s.id, s]));
+
+  // Get names for constraint pairs/groups
+  const apartWithNames = keepApart.map(([id1, id2]) => ({
+    otherId: id1 === student.id ? id2 : id1,
+    otherName: studentById[id1 === student.id ? id2 : id1]?.name || (id1 === student.id ? id2 : id1)
+  }));
+
+  const togetherWithNames = keepTogether.map(group => ({
+    group,
+    otherNames: group.filter(id => id !== student.id).map(id => studentById[id]?.name || id)
+  }));
+
+  const hasConstraints = keepApart.length > 0 || keepTogether.length > 0;
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -53,6 +69,35 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
                   <span key={c.key} style={{ fontSize: 12, color: 'var(--text3)' }}>{c.label}</span>
                 ))}
               </div>
+            </div>
+          )}
+          {hasConstraints && (
+            <div>
+              <div className="panel-title">🔗 Constraints</div>
+              {keepApart.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>Keep Apart From:</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {apartWithNames.map(({ otherName }, idx) => (
+                      <div key={idx} style={{ fontSize: 13, color: 'var(--text1)', padding: '4px 8px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
+                        {otherName}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {keepTogether.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>Keep Together With:</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {togetherWithNames.map(({ otherNames }, idx) => (
+                      <div key={idx} style={{ fontSize: 13, color: 'var(--text1)', padding: '4px 8px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
+                        {otherNames.join(', ')}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

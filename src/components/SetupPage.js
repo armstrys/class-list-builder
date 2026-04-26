@@ -7,11 +7,19 @@ function SetupPage({
   numericCriteria,
   flagCriteria,
   onOpenSettings,
+  keepApart,
+  onAddKeepApart,
+  onRemoveKeepApart,
+  keepTogether,
+  onAddKeepTogether,
+  onRemoveKeepTogether,
+  onRemoveStudentConstraints,
 }) {
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [showImport, setShowImport] = useState(false);
   const [showSampleDialog, setShowSampleDialog] = useState(false);
+  const [showConstraintModal, setShowConstraintModal] = useState(false);
   const [sampleCount, setSampleCount] = useState(27);
   const [numTeachers, setNumTeachers] = useState(String(teachers.length || 3));
 
@@ -41,6 +49,9 @@ function SetupPage({
   }
   function handleDeleteStudent(id) {
     setStudents(prev => prev.filter(s => s.id !== id));
+    if (onRemoveStudentConstraints) {
+      onRemoveStudentConstraints(id);
+    }
   }
 
   const canOptimize = students.length >= teachers.length && teachers.length >= 2;
@@ -97,6 +108,9 @@ function SetupPage({
                 <button className="btn btn-secondary btn-sm" onClick={downloadCSVTemplate}>⬇ CSV Template</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowConstraintModal(true)}>
+                  🔗 Constraints {(keepApart.length + keepTogether.length) > 0 && `(${keepApart.length + keepTogether.length})`}
+                </button>
                 <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Add Student</button>
               </div>
             </div>
@@ -193,10 +207,30 @@ function SetupPage({
       )}
       {showImport && (
         <ImportModal
-          onImport={ss => setStudents(prev => [...prev, ...ss])}
+          onImport={(ss, importedKeepApart, importedKeepTogether) => {
+            setStudents(prev => [...prev, ...ss]);
+            if (importedKeepApart && importedKeepApart.length > 0) {
+              importedKeepApart.forEach(pair => onAddKeepApart(pair[0], pair[1]));
+            }
+            if (importedKeepTogether && importedKeepTogether.length > 0) {
+              importedKeepTogether.forEach(group => onAddKeepTogether(group));
+            }
+          }}
           onClose={() => setShowImport(false)}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+        />
+      )}
+      {showConstraintModal && (
+        <ConstraintManager
+          students={students}
+          keepApart={keepApart}
+          onAddKeepApart={onAddKeepApart}
+          onRemoveKeepApart={onRemoveKeepApart}
+          keepTogether={keepTogether}
+          onAddKeepTogether={onAddKeepTogether}
+          onRemoveKeepTogether={onRemoveKeepTogether}
+          onClose={() => setShowConstraintModal(false)}
         />
       )}
     </>

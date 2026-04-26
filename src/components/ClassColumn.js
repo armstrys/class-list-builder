@@ -1,4 +1,4 @@
-function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen, numericCriteria, flagCriteria }) {
+function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen, numericCriteria, flagCriteria, keepApart = [], keepTogether = [] }) {
   const [dragOver, setDragOver] = useState(false);
 
   const avg = key => students.length
@@ -75,6 +75,9 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
                 dragging={draggingId === s.id}
                 flagCriteria={flagCriteria}
                 numericCriteria={numericCriteria}
+                keepApart={keepApart}
+                keepTogether={keepTogether}
+                allStudents={allStudents}
               />
             </React.Fragment>
           );
