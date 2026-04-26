@@ -1,4 +1,4 @@
-function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = []) {
+function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = []) {
   if (!students.length || !numClasses) return 0;
   const classes = Array.from({ length: numClasses }, () => []);
   students.forEach(s => {
@@ -101,6 +101,20 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
   }, 0);
   cost += 100.0 * keepApartPenalty;
 
+  // Keep Together penalty: count of groups split across classes (very high weight)
+  // Note: This is a soft constraint - high penalty encourages togetherness but doesn't guarantee it
+  const keepTogetherPenalty = keepTogether.reduce((penalty, group) => {
+    if (group.length < 2) return penalty;
+    const classes = new Set();
+    for (const id of group) {
+      const c = assignment[id];
+      if (c !== undefined) classes.add(c);
+    }
+    // Penalty if group members are in more than 1 class
+    return classes.size > 1 ? penalty + 1 : penalty;
+  }, 0);
+  cost += 200.0 * keepTogetherPenalty;
+
   return cost;
 }
 
@@ -117,7 +131,7 @@ function createSeededRNG(seed) {
 }
 
 // Compute deterministic seed from input data
-function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart = []) {
+function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart = [], keepTogether = []) {
   let hash = 2166136261;
   const fnv = (h, v) => Math.imul(h ^ v, 16777619);
 
@@ -147,14 +161,26 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
     hash = fnv(hash, pair[1].split('').reduce((h, c) => fnv(h, c.charCodeAt(0)), hash));
   }
 
+  // Hash keepTogether constraints for determinism
+  const sortedKeepTogether = [...keepTogether].map(group => [...group].sort()).sort((a, b) => {
+    if (a[0] !== b[0]) return a[0].localeCompare(b[0]);
+    return a[1]?.localeCompare(b[1]) || 0;
+  });
+  for (const group of sortedKeepTogether) {
+    hash = fnv(hash, group.length);
+    for (const id of group) {
+      hash = fnv(hash, id.split('').reduce((h, c) => fnv(h, c.charCodeAt(0)), hash));
+    }
+  }
+
   return hash >>> 0;
 }
 
-function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = []) {
+function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = [], keepTogether = []) {
   if (!students.length || !numClasses) return {};
   const unlocked = students.filter(s => lockedAssignments[s.id] === undefined);
 
-  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart);
+  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether);
   const rand = createSeededRNG(seed);
 
   // ── Greedy init: O(n) with running size counters ────────────────
@@ -309,6 +335,21 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       return (c1 !== undefined && c2 !== undefined && c1 === c2) ? penalty + 1 : penalty;
     }, 0);
     cost += 100.0 * keepApartPenalty;
+
+    // Keep Together penalty: count of groups split across classes (very high weight)
+    // Note: This is a soft constraint - high penalty encourages togetherness but doesn't guarantee it
+    const keepTogetherPenalty = keepTogether.reduce((penalty, group) => {
+      if (group.length < 2) return penalty;
+      const classes = new Set();
+      for (const id of group) {
+        const c = assignment[id];
+        if (c !== undefined) classes.add(c);
+      }
+      // Penalty if group members are in more than 1 class
+      return classes.size > 1 ? penalty + 1 : penalty;
+    }, 0);
+    cost += 200.0 * keepTogetherPenalty;
+
     return cost;
   }
 
@@ -390,6 +431,40 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       else if (!wasViolating && isViolating) keepApartDelta += 1;
     }
     delta += 100.0 * keepApartDelta;
+
+    // Keep Together delta: changes if swap splits or joins a group
+    let keepTogetherDelta = 0;
+    for (const group of keepTogether) {
+      if (group.length < 2) continue;
+      // Check if group is affected by this swap
+      const isS1InGroup = group.includes(s1.id);
+      const isS2InGroup = group.includes(s2.id);
+      if (!isS1InGroup && !isS2InGroup) continue; // Group unchanged
+
+      // Calculate old state: are all group members in the same class?
+      const oldClasses = new Set();
+      for (const id of group) {
+        const c = assignment[id];
+        if (c !== undefined) oldClasses.add(c);
+      }
+      const wasSplit = oldClasses.size > 1;
+
+      // Calculate new classes after swap
+      const newClasses = new Set();
+      for (const id of group) {
+        let c = assignment[id];
+        if (id === s1.id) c = c2;
+        else if (id === s2.id) c = c1;
+        if (c !== undefined) newClasses.add(c);
+      }
+      const isSplit = newClasses.size > 1;
+
+      // Delta: +1 if newly split, -1 if newly joined
+      if (!wasSplit && isSplit) keepTogetherDelta += 1;
+      else if (wasSplit && !isSplit) keepTogetherDelta -= 1;
+    }
+    delta += 200.0 * keepTogetherDelta;
+
     // Class sizes don't change in a same-depth swap
     return delta;
   }

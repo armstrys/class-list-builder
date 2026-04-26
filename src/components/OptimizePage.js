@@ -6,11 +6,17 @@ function OptimizePage({
   numericCriteria,
   flagCriteria,
   keepApart = [],
+  onAddKeepApart,
+  onRemoveKeepApart,
+  keepTogether = [],
+  onAddKeepTogether,
+  onRemoveKeepTogether,
 }) {
   const [assignment, setAssignment] = useState({});
   const [locked, setLocked] = useState(new Set());
   const [draggingId, setDraggingId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [showConstraints, setShowConstraints] = useState(false);
   const [cost, setCost] = useState(null);
   const [optimizing, setOptimizing] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -28,9 +34,9 @@ function OptimizePage({
     setTimeout(() => {
       const lockedObj = {};
       lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
-      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart);
+      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether);
       setAssignment(result);
-      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart));
+      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether));
       setOptimizing(false);
     }, 30);
   }
@@ -71,16 +77,30 @@ function OptimizePage({
     if (!sid) return;
     const newAssignment = { ...assignment, [sid]: classIdx };
     setAssignment(newAssignment);
-    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria, keepApart));
+    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether));
     setDraggingId(null);
   }
 
   // Calculate keep-apart violations for display
-  const violations = keepApart.filter(([id1, id2]) => {
+  const apartViolations = keepApart.filter(([id1, id2]) => {
     const c1 = assignment[id1];
     const c2 = assignment[id2];
     return c1 !== undefined && c2 !== undefined && c1 === c2;
   });
+
+  // Calculate keep-together violations for display
+  const togetherViolations = keepTogether.filter(group => {
+    if (group.length < 2) return false;
+    const classes = new Set();
+    for (const id of group) {
+      const c = assignment[id];
+      if (c !== undefined) classes.add(c);
+    }
+    return classes.size > 1;
+  });
+
+  // Total violations
+  const totalViolations = apartViolations.length + togetherViolations.length;
 
   const classesByIdx = Array.from({ length: numClasses }, (_, i) =>
     students.filter(s => assignment[s.id] === i)
@@ -120,10 +140,10 @@ function OptimizePage({
             <span style={{ fontSize: 10, color: 'var(--text3)' }}>(lower is better)</span>
           </div>
         )}
-        {violations.length > 0 && (
-          <div className="violations-badge" title={`${violations.length} keep-apart constraint(s) violated`}>
+        {totalViolations > 0 && (
+          <div className="violations-badge" title={`${apartViolations.length} keep-apart, ${togetherViolations.length} keep-together constraint(s) violated`}>
             <span style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 500 }}>
-              ⚠️ {violations.length} violation{violations.length === 1 ? '' : 's'}
+              ⚠️ {totalViolations} violation{totalViolations === 1 ? '' : 's'}
             </span>
           </div>
         )}
@@ -136,6 +156,13 @@ function OptimizePage({
               </span>
             ))}
           </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowConstraints(true)}
+            title="View and edit constraints"
+          >
+            🔗 Constraints {(keepApart.length + keepTogether.length) > 0 && `(${keepApart.length + keepTogether.length})`}
+          </button>
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria), 'class-lists.csv', 'text/csv')}
@@ -192,6 +219,19 @@ function OptimizePage({
       />}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} numericCriteria={numericCriteria} flagCriteria={flagCriteria} />}
+
+      {showConstraints && (
+        <ConstraintManager
+          students={students}
+          keepApart={keepApart}
+          onAddKeepApart={onAddKeepApart}
+          onRemoveKeepApart={onRemoveKeepApart}
+          keepTogether={keepTogether}
+          onAddKeepTogether={onAddKeepTogether}
+          onRemoveKeepTogether={onRemoveKeepTogether}
+          onClose={() => setShowConstraints(false)}
+        />
+      )}
     </div>
   );
 }

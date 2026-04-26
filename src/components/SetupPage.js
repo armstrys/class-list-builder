@@ -10,6 +10,9 @@ function SetupPage({
   keepApart,
   onAddKeepApart,
   onRemoveKeepApart,
+  keepTogether,
+  onAddKeepTogether,
+  onRemoveKeepTogether,
   onRemoveStudentConstraints,
 }) {
   const [showForm, setShowForm] = useState(false);
@@ -106,7 +109,7 @@ function SetupPage({
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowConstraintModal(true)}>
-                  🔗 Constraints {keepApart.length > 0 && `(${keepApart.length})`}
+                  🔗 Constraints {(keepApart.length + keepTogether.length) > 0 && `(${keepApart.length + keepTogether.length})`}
                 </button>
                 <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Add Student</button>
               </div>
@@ -204,10 +207,13 @@ function SetupPage({
       )}
       {showImport && (
         <ImportModal
-          onImport={(ss, importedKeepApart) => {
+          onImport={(ss, importedKeepApart, importedKeepTogether) => {
             setStudents(prev => [...prev, ...ss]);
             if (importedKeepApart && importedKeepApart.length > 0) {
               importedKeepApart.forEach(pair => onAddKeepApart(pair[0], pair[1]));
+            }
+            if (importedKeepTogether && importedKeepTogether.length > 0) {
+              importedKeepTogether.forEach(group => onAddKeepTogether(group));
             }
           }}
           onClose={() => setShowImport(false)}
@@ -221,6 +227,9 @@ function SetupPage({
           keepApart={keepApart}
           onAddKeepApart={onAddKeepApart}
           onRemoveKeepApart={onRemoveKeepApart}
+          keepTogether={keepTogether}
+          onAddKeepTogether={onAddKeepTogether}
+          onRemoveKeepTogether={onRemoveKeepTogether}
           onClose={() => setShowConstraintModal(false)}
         />
       )}
