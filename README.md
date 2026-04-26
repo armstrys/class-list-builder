@@ -13,7 +13,7 @@ Class List Optimizer automatically distributes students across classrooms while 
 Building fair class lists by hand is time-consuming and hard to get right when you're balancing a dozen factors at once. This tool:
 
 - **Saves hours.** Go from a student roster to balanced class lists in minutes.
-- Balances scores, SPED, GT, ELL, behavior, interventions, gender, and class size all at once. No more juggling factors one at a time.
+- Balances scores, SPED, Extended Learning, ELL, behavior, interventions, gender, and class size all at once. No more juggling factors one at a time.
 - **Handles constraints:** Keep specific students together (siblings, support pairs) or apart (conflicts, separations).
 - **Consistent and defensible:** the same data always produces the same result.
 - Runs entirely in your browser with no uploads and no accounts.
@@ -40,7 +40,7 @@ Click **⚙ Settings** in the top-right corner to configure what the optimizer b
 
 **Numeric criteria** are score columns where a higher number means stronger performance (e.g., reading, math, or language scores on a 0–100 scale). The optimizer balances the average score of each class. **Scores are optional.** If you don't have them, simply remove those criteria or leave the columns blank.
 
-**Flag criteria** are yes/no attributes (e.g., GT, SPED, ELL, behavior). The optimizer spreads students with each flag evenly across classes.
+**Flag criteria** are yes/no attributes (e.g., Extended Learning, SPED, ELL, behavior). The optimizer spreads students with each flag evenly across classes.
 
 The optimizer also always balances **gender** and **class size** automatically. You don't need to configure those.
 
@@ -114,7 +114,7 @@ With a typical roster, the optimizer usually reaches green.
 
 At the bottom of each class column you'll see:
 - **Score bars:** each bar shows how that class's average compares across all classes. All bars at the same height means perfect balance.
-- **Flag badges:** a count of students with each active flag (e.g., "GT 3", "SPED 2")
+- **Flag badges:** a count of students with each active flag (e.g., "ExtL 3", "SPED 2")
 
 ### Stats Strip
 

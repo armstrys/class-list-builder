@@ -20,7 +20,7 @@ function createMockStudents(count, options = {}) {
     const mathScore = options.mathScore ?? 40 + (i * 7) % 50;
     const languageScore = options.languageScore ?? 60 + (i * 3) % 40;
     const behavior = options.behavior ?? false;
-    const giftedTalented = options.giftedTalented ?? false;
+    const extendedLearning = options.extendedLearning ?? false;
     const sped = options.sped ?? false;
 
     students.push({
@@ -31,7 +31,7 @@ function createMockStudents(count, options = {}) {
       mathScore,
       languageScore,
       behavior,
-      giftedTalented,
+      extendedLearning,
       sped,
     });
   }
@@ -46,7 +46,7 @@ const numericCriteria = [
 
 const flagCriteria = [
   { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
-  { key: 'giftedTalented', label: 'Gifted & Talented', short: 'GT', weight: 1.5 },
+  { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.5 },
   { key: 'sped', label: 'SPED', short: 'SPED', weight: 2.0 },
 ];
 
@@ -400,7 +400,7 @@ describe('Optimizer', () => {
       // Arrange
       const students = createMockStudents(8, {
         behavior: true,
-        giftedTalented: true,
+        extendedLearning: true,
         sped: true,
       });
       const numClasses = 2;
@@ -418,7 +418,7 @@ describe('Optimizer', () => {
       // Arrange
       const students = createMockStudents(8, {
         behavior: false,
-        giftedTalented: false,
+        extendedLearning: false,
         sped: false,
       });
       const numClasses = 2;

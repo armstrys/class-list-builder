@@ -39,7 +39,7 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
     const mathIntervention = p(0.16) && !gt;
 
     flagCriteria.forEach(({ key }) => {
-      if (key === 'giftedTalented') student[key] = gt;
+      if (key === 'extendedLearning') student[key] = gt;
       else if (key === 'sped') student[key] = sped;
       else if (key === 'behavior') student[key] = behavior;
       else if (key === '504') student[key] = flag504;

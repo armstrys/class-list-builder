@@ -23,7 +23,7 @@ function HelpModal({ onClose, numericCriteria, flagCriteria }) {
     This ratio is scale-agnostic: a 5% spread in Reading Score
     contributes the same as a 5% spread in Language Score.
 
-  For binary flags (Behavior, GT, SPED, …):
+  For binary flags (Behavior, Extended Learning, SPED, …):
     normalized_variance_m = Var(class_proportions)
 
   For total flags (composite):
