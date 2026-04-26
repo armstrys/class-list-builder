@@ -1791,6 +1791,11 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
     colors: generateColor(m.key),
   })).filter(b => b.val > 0);
 
+  const classTotalFlagsCount = students.reduce(
+    (sum, s) => sum + flagCriteria.reduce((fs, { key }) => fs + (s[key] ? 1 : 0), 0),
+    0
+  );
+
   return (
     <div
       className={`class-col${dragOver ? ' drag-over' : ''}`}
@@ -1859,6 +1864,11 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
             ))}
           </div>
         )}
+        {flagCriteria.length > 0 && (
+          <div style={{ marginTop: 5, fontSize: 11, color: 'var(--text2)' }}>
+            Total Flags: <strong style={{ color: 'var(--text1)', fontFamily: "'DM Mono', monospace" }}>{classTotalFlagsCount}</strong>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1920,7 +1930,43 @@ function StatsStrip({ students, assignment, numClasses, numericCriteria, flagCri
     return { label: m.label, vals, maxVal: Math.max(...vals, 1), cv: mean > 0 ? sd / mean : 0 };
   }).filter(b => b.vals.some(v => v > 0));
 
-  const allItems = [...numItems, ...boolItems];
+  const zParamsStrip = numericCriteria.map(({ key }) => {
+    const vals = students.map(s => s[key] || 0);
+    const mean = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
+    const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / (vals.length || 1);
+    return { key, mean, stdDev: Math.sqrt(variance) };
+  });
+  const studentScoreStrip = s => zParamsStrip.reduce((zs, { key, mean, stdDev }) =>
+    stdDev > 0 ? zs + ((s[key] || 0) - mean) / stdDev : zs, 0);
+
+  const compositeItems = [];
+
+  if (flagCriteria.length > 0) {
+    const classMeanFlags = classes.map(cls =>
+      cls.length ? cls.reduce((sum, s) => sum + flagCriteria.reduce((fs, { key }) => fs + (s[key] ? 1 : 0), 0), 0) / cls.length : 0
+    );
+    const cfMean = classMeanFlags.reduce((a, b) => a + b, 0) / numClasses;
+    const cfSd = Math.sqrt(classMeanFlags.reduce((s, v) => s + (v - cfMean) ** 2, 0) / numClasses);
+    compositeItems.push({ label: 'Total Flags', vals: classMeanFlags, maxVal: Math.max(...classMeanFlags, 0.01), cv: cfMean > 0 ? cfSd / cfMean : 0 });
+  }
+
+  if (numericCriteria.length > 0) {
+    const allTotalScores = students.map(studentScoreStrip);
+    const popMin = Math.min(...allTotalScores);
+    const popMax = Math.max(...allTotalScores);
+    const popRange = popMax - popMin || 1;
+    const popMean = allTotalScores.reduce((a, b) => a + b, 0) / allTotalScores.length;
+    const popVar = allTotalScores.reduce((s, v) => s + (v - popMean) ** 2, 0) / allTotalScores.length;
+    const classMeanScores = classes.map(cls =>
+      cls.length ? cls.reduce((sum, s) => sum + studentScoreStrip(s), 0) / cls.length : popMean
+    );
+    const csMean = classMeanScores.reduce((a, b) => a + b, 0) / numClasses;
+    const varOfMeans = classMeanScores.reduce((s, v) => s + (v - csMean) ** 2, 0) / numClasses;
+    const cv = popVar > 0 ? Math.sqrt(varOfMeans / popVar) : 0;
+    compositeItems.push({ label: 'Total Score', vals: classMeanScores.map(v => Math.max(0, (v - popMin) / popRange)), maxVal: 1, cv });
+  }
+
+  const allItems = [...numItems, ...boolItems, ...compositeItems];
 
   return (
     <div className="stats-strip">
