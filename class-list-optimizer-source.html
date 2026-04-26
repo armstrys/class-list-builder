@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Class List Optimizer</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -70,6 +70,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
   cursor: pointer;
   transition: all .15s;
   border: 1.5px solid transparent;
+  font-family: inherit;
 }
 .step-pill.active { color: var(--accent); background: var(--accent-light); border-color: var(--accent); }
 .step-pill.done { color: var(--text2); }
@@ -148,6 +149,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 }
 .badge-M { background: var(--blue-light); color: var(--blue); }
 .badge-F { background: var(--purple-light); color: var(--purple); }
+.badge-U { background: var(--surface2); color: var(--text2); }
 
 /* ── Optimize Page ── */
 .optimize-layout { display: flex; flex-direction: column; height: calc(100vh - 56px); }
@@ -260,7 +262,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 
 /* ── Settings Modal ── */
 .settings-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-.settings-tab { padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; border: 1.5px solid transparent; }
+.settings-tab { padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; border: 1.5px solid transparent; font-family: inherit; background: transparent; }
 .settings-tab:hover { background: var(--surface2); }
 .settings-tab.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
 .settings-section { margin-bottom: 20px; }
@@ -328,7 +330,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef } = React;
 
 // ─────────────────────────────────────────────
 // DEFAULT CRITERIA CONFIG
@@ -444,7 +446,7 @@ function createSeededRNG(seed) {
 }
 
 // Compute deterministic seed from input data
-function computeSeed(students, numClasses, lockedAssignments, numericCriteria) {
+function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria) {
   let hash = 2166136261;
   const fnv = (h, v) => Math.imul(h ^ v, 16777619);
 
@@ -454,7 +456,8 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria) {
   for (const s of sortedStudents) {
     hash = fnv(hash, s.id.split('').reduce((h, c) => fnv(h, c.charCodeAt(0)), hash));
     numericCriteria.forEach(({ key }) => hash = fnv(hash, Math.floor(s[key] || 0)));
-    hash = fnv(hash, s.gender === 'F' ? 1 : 0);
+    hash = fnv(hash, s.gender === 'F' ? 1 : s.gender === 'M' ? 2 : 3);
+    flagCriteria.forEach(({ key }) => hash = fnv(hash, s[key] ? 1 : 0));
   }
 
   const lockedIds = Object.keys(lockedAssignments).sort();
@@ -470,60 +473,167 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   if (!students.length || !numClasses) return {};
   const unlocked = students.filter(s => lockedAssignments[s.id] === undefined);
 
-  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria);
+  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria);
   const rand = createSeededRNG(seed);
 
-  // Greedy initial: sort by composite score descending, then distribute
-  // to balance class sizes considering locked students
+  // ── Greedy init: O(n) with running size counters ────────────────
   const scored = [...unlocked].sort((a, b) => {
     const sa = numericCriteria.reduce((sum, { key }) => sum + (a[key] || 0), 0);
     const sb = numericCriteria.reduce((sum, { key }) => sum + (b[key] || 0), 0);
     return sb - sa;
   });
 
-  // Calculate target size per class and current locked counts
   const targetSize = students.length / numClasses;
-  const lockedCounts = new Array(numClasses).fill(0);
-  Object.values(lockedAssignments).forEach(classIdx => {
-    if (classIdx >= 0 && classIdx < numClasses) lockedCounts[classIdx]++;
-  });
+  const totalSizes = new Array(numClasses).fill(0);
+  Object.values(lockedAssignments).forEach(c => { if (c >= 0 && c < numClasses) totalSizes[c]++; });
 
-  // Distribute unlocked students to classes with the fewest total students
-  let assignment = { ...lockedAssignments };
-  scored.forEach((s) => {
-    // Calculate current size of assigned (unlocked) students per class
-    const assignedSizes = new Array(numClasses).fill(0);
-    Object.entries(assignment).forEach(([studentId, classIdx]) => {
-      // Only count if this student is not locked (locked students are in lockedAssignments)
-      if (lockedAssignments[studentId] === undefined && classIdx >= 0 && classIdx < numClasses) {
-        assignedSizes[classIdx]++;
-      }
-    });
-
-    const totalSizes = assignedSizes.map((size, idx) => size + lockedCounts[idx]);
-
-    // Find class(es) with minimum total size
+  const assignment = { ...lockedAssignments };
+  for (const s of scored) {
     const minSize = Math.min(...totalSizes);
-
-    // Among candidates, prefer the class most underfilled relative to target
-    let bestClass = 0;
-    let bestDeficit = -Infinity;
+    let bestClass = 0, bestDeficit = -Infinity;
     for (let i = 0; i < numClasses; i++) {
       if (totalSizes[i] === minSize) {
         const deficit = targetSize - totalSizes[i];
-        if (deficit > bestDeficit) {
-          bestDeficit = deficit;
-          bestClass = i;
-        }
+        if (deficit > bestDeficit) { bestDeficit = deficit; bestClass = i; }
       }
     }
-
     assignment[s.id] = bestClass;
+    totalSizes[bestClass]++;
+  }
+
+  // ── Pre-compute global population stats (constant throughout annealing) ──
+  const nk = numericCriteria.length;
+  const fk = flagCriteria.length;
+
+  const popNumeric = numericCriteria.map(({ key }) => {
+    const vals = students.map(s => s[key] || 0);
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const popVar = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
+    return { key, mean, popVar };
   });
+  const popFlag = flagCriteria.map(({ key }) => ({
+    key,
+    overallProp: students.filter(s => s[key]).length / students.length,
+  }));
+  const overallF = students.filter(s => s.gender === 'F').length / students.length;
+  const meanSize = students.length / numClasses;
 
-  let currentCost = computeCost(students, assignment, numClasses, numericCriteria, flagCriteria);
+  // ── Initialize per-class running sums ───────────────────────────
+  const classSizes = new Array(numClasses).fill(0);
+  const classNumSums = Array.from({ length: numClasses }, () => new Float64Array(nk));
+  const classFlagCounts = Array.from({ length: numClasses }, () => new Int32Array(fk));
+  const classFemale = new Int32Array(numClasses);
 
-  // Simulated annealing
+  for (const s of students) {
+    const c = assignment[s.id];
+    if (c === undefined || c < 0 || c >= numClasses) continue;
+    classSizes[c]++;
+    popNumeric.forEach(({ key }, ki) => { classNumSums[c][ki] += s[key] || 0; });
+    popFlag.forEach(({ key }, ki) => { if (s[key]) classFlagCounts[c][ki]++; });
+    if (s.gender === 'F') classFemale[c]++;
+  }
+
+  // ── Compute cost from running sums: O(numClasses × criteria) ────
+  function costFromSums() {
+    let cost = 0;
+    popNumeric.forEach(({ mean: overallMean, popVar }, ki) => {
+      const { weight } = numericCriteria[ki];
+      if (popVar === 0) return;
+      let varOfMeans = 0;
+      for (let c = 0; c < numClasses; c++) {
+        const m = classSizes[c] > 0 ? classNumSums[c][ki] / classSizes[c] : overallMean;
+        varOfMeans += (m - overallMean) ** 2;
+      }
+      cost += weight * (varOfMeans / numClasses) / popVar;
+    });
+    popFlag.forEach(({ overallProp }, ki) => {
+      const { weight } = flagCriteria[ki];
+      let variance = 0;
+      for (let c = 0; c < numClasses; c++) {
+        const p = classSizes[c] > 0 ? classFlagCounts[c][ki] / classSizes[c] : overallProp;
+        variance += (p - overallProp) ** 2;
+      }
+      cost += weight * variance / numClasses;
+    });
+    let gVar = 0;
+    for (let c = 0; c < numClasses; c++) {
+      const fp = classSizes[c] > 0 ? classFemale[c] / classSizes[c] : overallF;
+      gVar += (fp - overallF) ** 2;
+    }
+    cost += gVar / numClasses;
+    if (meanSize > 0) {
+      const sVar = classSizes.reduce((s, sz) => s + (sz - meanSize) ** 2, 0) / numClasses;
+      cost += 3.0 * sVar / (meanSize ** 2);
+    }
+    return cost;
+  }
+
+  // ── O(criteria) delta for swapping s1 (in c1) with s2 (in c2) ──
+  function swapDelta(s1, c1, s2, c2) {
+    let delta = 0;
+    popNumeric.forEach(({ key, mean: overallMean, popVar }, ki) => {
+      const { weight } = numericCriteria[ki];
+      if (popVar === 0) return;
+      const sz1 = classSizes[c1], sz2 = classSizes[c2];
+      const oldM1 = sz1 > 0 ? classNumSums[c1][ki] / sz1 : overallMean;
+      const oldM2 = sz2 > 0 ? classNumSums[c2][ki] / sz2 : overallMean;
+      const v1 = s1[key] || 0, v2 = s2[key] || 0;
+      const newM1 = (classNumSums[c1][ki] - v1 + v2) / sz1;
+      const newM2 = (classNumSums[c2][ki] - v2 + v1) / sz2;
+      delta += weight / (numClasses * popVar) * (
+        (newM1 - overallMean) ** 2 + (newM2 - overallMean) ** 2 -
+        (oldM1 - overallMean) ** 2 - (oldM2 - overallMean) ** 2
+      );
+    });
+    popFlag.forEach(({ key, overallProp }, ki) => {
+      const { weight } = flagCriteria[ki];
+      const sz1 = classSizes[c1], sz2 = classSizes[c2];
+      const oldP1 = sz1 > 0 ? classFlagCounts[c1][ki] / sz1 : overallProp;
+      const oldP2 = sz2 > 0 ? classFlagCounts[c2][ki] / sz2 : overallProp;
+      const f1 = s1[key] ? 1 : 0, f2 = s2[key] ? 1 : 0;
+      const newP1 = (classFlagCounts[c1][ki] - f1 + f2) / sz1;
+      const newP2 = (classFlagCounts[c2][ki] - f2 + f1) / sz2;
+      delta += weight / numClasses * (
+        (newP1 - overallProp) ** 2 + (newP2 - overallProp) ** 2 -
+        (oldP1 - overallProp) ** 2 - (oldP2 - overallProp) ** 2
+      );
+    });
+    // Gender
+    const sz1 = classSizes[c1], sz2 = classSizes[c2];
+    const oldGP1 = sz1 > 0 ? classFemale[c1] / sz1 : overallF;
+    const oldGP2 = sz2 > 0 ? classFemale[c2] / sz2 : overallF;
+    const gf1 = s1.gender === 'F' ? 1 : 0, gf2 = s2.gender === 'F' ? 1 : 0;
+    const newGP1 = (classFemale[c1] - gf1 + gf2) / sz1;
+    const newGP2 = (classFemale[c2] - gf2 + gf1) / sz2;
+    delta += 1 / numClasses * (
+      (newGP1 - overallF) ** 2 + (newGP2 - overallF) ** 2 -
+      (oldGP1 - overallF) ** 2 - (oldGP2 - overallF) ** 2
+    );
+    // Class sizes don't change in a same-depth swap
+    return delta;
+  }
+
+  function applySwap(s1, c1, s2, c2) {
+    popNumeric.forEach(({ key }, ki) => {
+      const v1 = s1[key] || 0, v2 = s2[key] || 0;
+      classNumSums[c1][ki] += v2 - v1;
+      classNumSums[c2][ki] += v1 - v2;
+    });
+    popFlag.forEach(({ key }, ki) => {
+      const f1 = s1[key] ? 1 : 0, f2 = s2[key] ? 1 : 0;
+      classFlagCounts[c1][ki] += f2 - f1;
+      classFlagCounts[c2][ki] += f1 - f2;
+    });
+    const gf1 = s1.gender === 'F' ? 1 : 0, gf2 = s2.gender === 'F' ? 1 : 0;
+    classFemale[c1] += gf2 - gf1;
+    classFemale[c2] += gf1 - gf2;
+    assignment[s1.id] = c2;
+    assignment[s2.id] = c1;
+  }
+
+  let currentCost = costFromSums();
+
+  // ── Simulated annealing: O(criteria) per iteration ──────────────
   let temp = 4.0;
   const cooling = 0.9965;
   const iters = 10000;
@@ -534,13 +644,13 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     if (i1 === i2) continue;
 
     const s1 = unlocked[i1], s2 = unlocked[i2];
-    const newAssignment = { ...assignment, [s1.id]: assignment[s2.id], [s2.id]: assignment[s1.id] };
-    const newCost = computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria);
-    const delta = newCost - currentCost;
+    const c1 = assignment[s1.id], c2 = assignment[s2.id];
+    if (c1 === c2) { temp *= cooling; continue; }
 
+    const delta = swapDelta(s1, c1, s2, c2);
     if (delta < 0 || rand() < Math.exp(-delta / temp)) {
-      assignment = newAssignment;
-      currentCost = newCost;
+      applySwap(s1, c1, s2, c2);
+      currentCost += delta;
     }
     temp *= cooling;
   }
@@ -617,87 +727,140 @@ function generateCSVHeaders(numericCriteria, flagCriteria) {
   return ['name', 'gender', ...numHeaders, ...boolHeaders];
 }
 
+// Parse a single CSV line respecting RFC 4180 quoted fields
+function parseCSVLine(line) {
+  const fields = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { field += '"'; i++; }  // escaped quote
+        else inQuotes = false;
+      } else {
+        field += ch;
+      }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { fields.push(field.trim()); field = ''; }
+      else { field += ch; }
+    }
+  }
+  fields.push(field.trim());
+  return fields;
+}
+
 function parseCSV(text, numericCriteria, flagCriteria) {
-  const lines = text.trim().split('\n');
+  // Normalize CRLF and bare CR to LF
+  const normalized = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalized.split('\n');
   if (lines.length < 2) return { students: [], errors: ['No data rows found'] };
-  
-  // Normalize headers by removing spaces and lowercasing
-  const rawHeaders = lines[0].split(',').map(h => h.trim());
-  const headers = rawHeaders.map(h => h.toLowerCase().replace(/\s+/g, ''));
-  
+
+  // Normalize headers: lowercase, strip spaces
+  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, ''));
+
   const students = [];
   const errors = [];
-  
+
   // Build mapping from criteria keys to CSV column indices
   const numericKeyMap = {};
   const flagKeyMap = {};
-  
+
   numericCriteria.forEach(({ key }) => {
     const idx = headers.findIndex(h => h === key.toLowerCase());
     if (idx !== -1) numericKeyMap[key] = idx;
   });
-  
+
   flagCriteria.forEach(({ key }) => {
     const idx = headers.findIndex(h => h === key.toLowerCase());
     if (idx !== -1) flagKeyMap[key] = idx;
   });
-  
+
   // Find name and gender columns
   const nameIdx = headers.findIndex(h => ['name','student','lastnamefirstname'].includes(h));
   const genderIdx = headers.findIndex(h => ['gender','sex'].includes(h));
-  
-  if (nameIdx === -1) errors.push('Could not find name column');
-  if (genderIdx === -1) errors.push('Could not find gender column');
-  
+
+  if (nameIdx === -1) errors.push('Could not find a name column (expected: name, student)');
+  if (genderIdx === -1) errors.push('Could not find a gender column (expected: gender, sex)');
+
   lines.slice(1).forEach((line, i) => {
     if (!line.trim()) return;
-    const cols = line.split(',').map(c => c.trim());
-    
+    const cols = parseCSVLine(line);
+
     const name = nameIdx !== -1 ? (cols[nameIdx] || `Student ${i + 2}`) : `Student ${i + 2}`;
     const genderVal = genderIdx !== -1 ? (cols[genderIdx] || '').toUpperCase() : '';
-    const gender = genderVal.startsWith('F') ? 'F' : 'M';
-    
+    const gender = genderVal.startsWith('F') ? 'F' : genderVal.startsWith('M') ? 'M' : 'U';
+
     const student = { id: uid(), name, gender };
-    
-    // Parse numeric criteria
+
     numericCriteria.forEach(({ key }) => {
       const idx = numericKeyMap[key];
-      if (idx !== undefined) {
-        student[key] = parseFloat(cols[idx]) || 0;
-      } else {
-        student[key] = 0;
-      }
+      student[key] = idx !== undefined ? (parseFloat(cols[idx]) || 0) : 0;
     });
-    
-    // Parse flag criteria
+
     flagCriteria.forEach(({ key }) => {
       const idx = flagKeyMap[key];
       if (idx !== undefined) {
-        const v = cols[idx]?.toLowerCase();
+        const v = (cols[idx] || '').toLowerCase();
         student[key] = ['1','true','yes','y','x'].includes(v);
       } else {
         student[key] = false;
       }
     });
-    
+
     students.push(student);
   });
-  
+
   return { students, errors };
 }
 
 function exportStudentsToCSV(students, numericCriteria, flagCriteria) {
   const headers = ['name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key)];
   const lines = [headers.join(',')];
-  
+
   students.forEach(s => {
     const values = [s.name, s.gender];
     numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
     flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
     lines.push(values.join(','));
   });
-  
+
   return lines.join('\n');
+}
+
+function exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria) {
+  const headers = ['class', 'name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key)];
+  const lines = [headers.join(',')];
+
+  const sorted = [...students]
+    .filter(s => assignment[s.id] !== undefined)
+    .sort((a, b) => {
+      const ca = assignment[a.id], cb = assignment[b.id];
+      if (ca !== cb) return ca - cb;
+      return a.name.localeCompare(b.name);
+    });
+
+  sorted.forEach(s => {
+    const classIdx = assignment[s.id];
+    const className = teachers[classIdx]?.name || `Class ${classIdx + 1}`;
+    const values = [className, s.name, s.gender];
+    numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
+    flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
+    lines.push(values.join(','));
+  });
+
+  return lines.join('\n');
+}
+
+function triggerDownload(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ─────────────────────────────────────────────
@@ -860,10 +1023,6 @@ function SettingsModal({
     setConfirmRemove(null);
   }
 
-  function generateKey(label) {
-    return generateKeyFromLabel(label);
-  }
-
   function handleSave() {
     setError('');
 
@@ -900,7 +1059,7 @@ function SettingsModal({
     }
 
     // Check for duplicate keys
-    const allKeys = [...numCriteria.map(c => generateKey(c.label)), ...flagCriteriaState.map(c => generateKey(c.label))];
+    const allKeys = [...numCriteria.map(c => generateKeyFromLabel(c.label)), ...flagCriteriaState.map(c => generateKeyFromLabel(c.label))];
     const uniqueKeys = new Set(allKeys);
     if (uniqueKeys.size !== allKeys.length) {
       setError('Duplicate field labels are not allowed. Labels must be unique.');
@@ -910,13 +1069,13 @@ function SettingsModal({
     // Finalize criteria with generated keys
     const finalNumCriteria = numCriteria.map(c => ({
       ...c,
-      key: generateKey(c.label),
+      key: generateKeyFromLabel(c.label),
       weight: parseFloat(c.weight),
     }));
 
     const finalFlagCriteria = flagCriteriaState.map(c => ({
       ...c,
-      key: generateKey(c.label),
+      key: generateKeyFromLabel(c.label),
       weight: parseFloat(c.weight),
     }));
 
@@ -927,16 +1086,10 @@ function SettingsModal({
   function exportConfig() {
     const config = {
       version: 1,
-      numericCriteria: numCriteria.map(c => ({ ...c, key: generateKey(c.label) })),
-      flagCriteria: flagCriteriaState.map(c => ({ ...c, key: generateKey(c.label) })),
+      numericCriteria: numCriteria.map(c => ({ ...c, key: generateKeyFromLabel(c.label) })),
+      flagCriteria: flagCriteriaState.map(c => ({ ...c, key: generateKeyFromLabel(c.label) })),
     };
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'class-optimizer-config.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    triggerDownload(JSON.stringify(config, null, 2), 'class-optimizer-config.json', 'application/json');
   }
 
   function importConfig(file) {
@@ -949,14 +1102,17 @@ function SettingsModal({
           return;
         }
         if (hasStudentData) {
-          // Check for mismatches with existing data
           const existingNumKeys = new Set(numericCriteria.map(c => c.key));
           const existingFlagKeys = new Set(flagCriteria.map(c => c.key));
           const newNumKeys = new Set(config.numericCriteria.map(c => c.key));
           const newFlagKeys = new Set(config.flagCriteria.map(c => c.key));
-          
-          if (existingNumKeys.size > 0 || existingFlagKeys.size > 0) {
-            setError('Cannot import config while student data exists. Clear student data first, or use this config on a fresh session.');
+          const keysChanged =
+            [...existingNumKeys].some(k => !newNumKeys.has(k)) ||
+            [...newNumKeys].some(k => !existingNumKeys.has(k)) ||
+            [...existingFlagKeys].some(k => !newFlagKeys.has(k)) ||
+            [...newFlagKeys].some(k => !existingFlagKeys.has(k));
+          if (keysChanged) {
+            setError('Cannot import a config with different fields while student data exists. Clear student data first.');
             return;
           }
         }
@@ -977,13 +1133,23 @@ function SettingsModal({
   function clearSavedSettings() {
     localStorage.removeItem(STORAGE_KEYS.NUMERIC_CRITERIA);
     localStorage.removeItem(STORAGE_KEYS.FLAG_CRITERIA);
-    window.location.reload();
+    setNumCriteria(DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })));
+    setFlagCriteriaState(DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })));
+    setConfirmClear(false);
   }
 
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape' && !confirmRemove && !confirmClear) onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirmRemove, confirmClear]);
+
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && !confirmRemove && onClose()}>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && !confirmRemove && !confirmClear && onClose()}>
       <div className="modal modal-xl">
         <div className="modal-header">
           <div className="modal-title">Criteria Settings</div>
@@ -1019,18 +1185,18 @@ function SettingsModal({
           </div>
 
           <div className="settings-tabs">
-            <div 
+            <button
               className={`settings-tab ${activeTab === 'numeric' ? 'active' : ''}`}
               onClick={() => setActiveTab('numeric')}
             >
               Numeric Fields ({numCriteria.length})
-            </div>
-            <div 
+            </button>
+            <button
               className={`settings-tab ${activeTab === 'flags' ? 'active' : ''}`}
               onClick={() => setActiveTab('flags')}
             >
               Flag Fields ({flagCriteriaState.length})
-            </div>
+            </button>
           </div>
 
           {activeTab === 'numeric' && (
@@ -1172,13 +1338,13 @@ function SettingsModal({
             </div>
             <div className="modal-body">
               <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-                This will erase your saved criteria configuration and reload the page.
-                Any student data you've entered will not be affected.
+                This will reset your criteria configuration to factory defaults and clear the saved cache.
+                Click Save Settings afterward to apply the defaults.
               </p>
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setConfirmClear(false)}>Cancel</button>
-              <button className="btn btn-danger" onClick={clearSavedSettings}>Clear Cache & Reload</button>
+              <button className="btn btn-danger" onClick={clearSavedSettings}>Reset to Defaults</button>
             </div>
           </div>
         </div>
@@ -1200,9 +1366,13 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria }) {
 
   function handleImport() {
     const { students, errors } = parseCSV(text, numericCriteria, flagCriteria);
-    if (!students.length) { setError('No valid students found. Check your CSV format.'); return; }
+    if (!students.length) {
+      setError(errors.length ? errors.join('; ') : 'No valid students found. Check your CSV format.');
+      return;
+    }
+    if (errors.length) setError(`Imported ${students.length} students with warnings: ${errors.join('; ')}`);
     onImport(students);
-    onClose();
+    if (!errors.length) onClose();
   }
 
   return (
@@ -1278,6 +1448,7 @@ function StudentFormModal({ student, onSave, onClose, numericCriteria, flagCrite
               <select className="form-select" value={form.gender} onChange={e => set('gender', e.target.value)}>
                 <option value="M">Male</option>
                 <option value="F">Female</option>
+                <option value="U">Unspecified</option>
               </select>
             </div>
           </div>
@@ -1488,6 +1659,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
           className="class-col-name-input"
           value={name}
           onChange={e => onNameChange(classIdx, e.target.value)}
+          aria-label={`Class ${classIdx + 1} name`}
         />
         <span className="class-count">{students.length}</span>
       </div>
@@ -1550,7 +1722,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleL
 // ─────────────────────────────────────────────
 // STATS STRIP
 // ─────────────────────────────────────────────
-function StatsStrip({ students, assignment, numClasses, teacherNames, numericCriteria, flagCriteria }) {
+function StatsStrip({ students, assignment, numClasses, numericCriteria, flagCriteria }) {
   if (!students.length) return null;
 
   const classes = Array.from({ length: numClasses }, (_, i) =>
@@ -1724,14 +1896,7 @@ function SetupPage({
       'Smith Emma,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(','),
       'Johnson Liam,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(','),
     ];
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'students_template.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    triggerDownload([header, ...rows].join('\n'), 'students_template.csv', 'text/csv');
   }
 
   return (
@@ -1886,11 +2051,10 @@ function SetupPage({
 // ─────────────────────────────────────────────
 // OPTIMIZE PAGE
 // ─────────────────────────────────────────────
-function OptimizePage({ 
-  students, 
-  teachers, 
-  teacherNames, 
-  setTeacherNames, 
+function OptimizePage({
+  students,
+  teachers,
+  setTeachers,
   onBack,
   numericCriteria,
   flagCriteria,
@@ -1957,8 +2121,9 @@ function OptimizePage({
   function handleDrop(e, classIdx) {
     const sid = e.dataTransfer.getData('text/plain') || draggingId;
     if (!sid) return;
-    setAssignment(prev => ({ ...prev, [sid]: classIdx }));
-    setCost(prev => computeCost(students, { ...assignment, [sid]: classIdx }, numClasses, numericCriteria, flagCriteria));
+    const newAssignment = { ...assignment, [sid]: classIdx };
+    setAssignment(newAssignment);
+    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria));
     setDraggingId(null);
   }
 
@@ -2009,6 +2174,11 @@ function OptimizePage({
               </span>
             ))}
           </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria), 'class-lists.csv', 'text/csv')}
+            title="Download class lists as CSV"
+          >⬇ Export Lists</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setFullscreen(true)} title="Fullscreen class lists">⛶ Fullscreen</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowHelp(true)}>? How it works</button>
         </div>
@@ -2019,12 +2189,8 @@ function OptimizePage({
           <ClassColumn
             key={i}
             classIdx={i}
-            name={teacherNames[i] || teachers[i]?.name || `Class ${i + 1}`}
-            onNameChange={(idx, val) => setTeacherNames(prev => {
-              const next = [...prev];
-              next[idx] = val;
-              return next;
-            })}
+            name={teachers[i]?.name || `Class ${i + 1}`}
+            onNameChange={(idx, val) => setTeachers(prev => prev.map((t, j) => j === idx ? { ...t, name: val } : t))}
             students={classStudents}
             locked={locked}
             onToggleLock={handleToggleLock}
@@ -2059,7 +2225,6 @@ function OptimizePage({
         students={students}
         assignment={assignment}
         numClasses={numClasses}
-        teacherNames={teacherNames}
         numericCriteria={numericCriteria}
         flagCriteria={flagCriteria}
       />}
@@ -2080,19 +2245,18 @@ function App() {
     { id: 'T2', name: 'Class B' },
     { id: 'T3', name: 'Class C' },
   ]);
-  const [teacherNames, setTeacherNames] = useState(['Class A', 'Class B', 'Class C']);
-  
+
   // Criteria state with localStorage persistence
   const [numericCriteria, setNumericCriteria] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.NUMERIC_CRITERIA);
     return saved ? JSON.parse(saved) : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c }));
   });
-  
+
   const [flagCriteria, setFlagCriteria] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.FLAG_CRITERIA);
     return saved ? JSON.parse(saved) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c }));
   });
-  
+
   const [showSettings, setShowSettings] = useState(false);
 
   // Persist criteria to localStorage
@@ -2104,14 +2268,7 @@ function App() {
     localStorage.setItem(STORAGE_KEYS.FLAG_CRITERIA, JSON.stringify(flagCriteria));
   }, [flagCriteria]);
 
-  function syncTeacherNames(ts) {
-    if (!Array.isArray(ts)) return;
-    setTeachers(ts);
-    setTeacherNames(ts.map(t => t.name));
-  }
-
   function handleOptimize() {
-    setTeacherNames(teachers.map(t => t.name));
     setView('optimize');
   }
 
@@ -2145,12 +2302,16 @@ function App() {
       <header className="app-header">
         <div className="app-logo">Class<span>List</span> Optimizer</div>
         <div className="header-steps">
-          <div className={`step-pill ${view === 'setup' ? 'active' : 'done'}`} onClick={() => setView('setup')}>
+          <button className={`step-pill ${view === 'setup' ? 'active' : 'done'}`} onClick={() => setView('setup')}>
             1 · Setup
-          </div>
-          <div className={`step-pill ${view === 'optimize' ? 'active' : ''}`} onClick={() => students.length >= teachers.length && setView('optimize')}>
+          </button>
+          <button
+            className={`step-pill ${view === 'optimize' ? 'active' : ''}`}
+            onClick={() => students.length >= teachers.length && setView('optimize')}
+            disabled={students.length < teachers.length}
+          >
             2 · Optimize
-          </div>
+          </button>
         </div>
         <div className="header-right">
           <span style={{ fontSize: 12, color: 'var(--text3)' }}>
@@ -2169,7 +2330,7 @@ function App() {
           students={students}
           setStudents={setStudents}
           teachers={teachers}
-          setTeachers={syncTeacherNames}
+          setTeachers={setTeachers}
           onOptimize={handleOptimize}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
@@ -2179,8 +2340,7 @@ function App() {
         <OptimizePage
           students={students}
           teachers={teachers}
-          teacherNames={teacherNames}
-          setTeacherNames={setTeacherNames}
+          setTeachers={setTeachers}
           onBack={() => setView('setup')}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
