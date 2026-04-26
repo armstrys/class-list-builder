@@ -26,7 +26,7 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, onImpor
         </div>
         <div className="modal-body">
           <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>
-            Paste CSV data below. First row must be headers. Boolean fields: 1/yes/true = checked.
+            Paste CSV data below. <strong>Importing appends to existing students</strong> — use "Clear All" first if you want to replace your current list.
           </p>
           <textarea className="csv-area" value={text} onChange={e => { setText(e.target.value); setError(''); }}
             placeholder={csvTemplate} />
