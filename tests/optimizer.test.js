@@ -432,4 +432,125 @@ describe('Optimizer', () => {
       });
     });
   });
+
+  describe('Keep Apart Constraints', () => {
+    test('keep apart constraint places students in different classes', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      // Force two students to be kept apart
+      const keepApart = [[students[0].id, students[1].id]];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
+
+      // Assert - the two students should be in different classes
+      expect(assignment[students[0].id]).not.toBe(assignment[students[1].id]);
+    });
+
+    test('cost includes penalty for keep-apart violations', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepApart = [[students[0].id, students[1].id]];
+
+      // Create an assignment with violation
+      const violatingAssignment = {
+        [students[0].id]: 0,
+        [students[1].id]: 0, // Same class - violation!
+        [students[2].id]: 1,
+        [students[3].id]: 1,
+      };
+
+      // Create an assignment without violation
+      const validAssignment = {
+        [students[0].id]: 0,
+        [students[1].id]: 1, // Different class - no violation
+        [students[2].id]: 0,
+        [students[3].id]: 1,
+      };
+
+      // Act
+      const violatingCost = computeCost(students, violatingAssignment, numClasses, numericCriteria, flagCriteria, keepApart);
+      const validCost = computeCost(students, validAssignment, numClasses, numericCriteria, flagCriteria, keepApart);
+
+      // Assert - violating cost should be higher by approximately 100 (penalty weight)
+      expect(violatingCost).toBeGreaterThan(validCost + 90);
+    });
+
+    test('determinism holds with keep apart constraints', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 2;
+      const keepApart = [[students[0].id, students[1].id], [students[2].id, students[3].id]];
+
+      // Act - run twice with same inputs
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
+
+      // Assert - should be identical
+      expect(assignment1).toEqual(assignment2);
+    });
+
+    test('computeSeed includes keep apart constraints', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepApart1 = [[students[0].id, students[1].id]];
+      const keepApart2 = [[students[0].id, students[2].id]]; // Different constraint
+
+      // Act
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, keepApart1);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, keepApart2);
+
+      // Assert - different constraints should produce different seeds
+      expect(seed1).not.toBe(seed2);
+    });
+
+    test('same keep apart constraints produce same seed', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepApart = [[students[0].id, students[1].id]];
+
+      // Act
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
+
+      // Assert - same constraints should produce same seed
+      expect(seed1).toBe(seed2);
+    });
+
+    test('multiple keep apart constraints are respected', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 3;
+      const keepApart = [
+        [students[0].id, students[1].id],
+        [students[1].id, students[2].id],
+        [students[3].id, students[4].id],
+      ];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
+
+      // Assert - check all constraints are satisfied
+      expect(assignment[students[0].id]).not.toBe(assignment[students[1].id]);
+      expect(assignment[students[1].id]).not.toBe(assignment[students[2].id]);
+      expect(assignment[students[3].id]).not.toBe(assignment[students[4].id]);
+    });
+
+    test('empty keep apart array works normally', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 2;
+
+      // Act
+      const assignmentWithConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, []);
+      const assignmentWithoutConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria);
+
+      // Assert - should produce same results
+      expect(assignmentWithConstraint).toEqual(assignmentWithoutConstraint);
+    });
+  });
 });

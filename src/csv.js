@@ -37,13 +37,14 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   // Normalize CRLF and bare CR to LF
   const normalized = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = normalized.split('\n');
-  if (lines.length < 2) return { students: [], errors: ['No data rows found'] };
+  if (lines.length < 2) return { students: [], errors: ['No data rows found'], keepApart: [] };
 
   // Normalize headers: lowercase, strip spaces
   const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, ''));
 
   const students = [];
   const errors = [];
+  const keepApartGroups = {}; // groupId -> array of student indices
 
   // Build mapping from criteria keys to CSV column indices
   const numericKeyMap = {};
@@ -59,9 +60,10 @@ function parseCSV(text, numericCriteria, flagCriteria) {
     if (idx !== -1) flagKeyMap[key] = idx;
   });
 
-  // Find name and gender columns
+  // Find name, gender, and keep_apart_group columns
   const nameIdx = headers.findIndex(h => ['name','student','lastnamefirstname'].includes(h));
   const genderIdx = headers.findIndex(h => ['gender','sex'].includes(h));
+  const keepApartIdx = headers.findIndex(h => h === 'keepapartgroup' || h === 'keep_apart_group');
 
   if (nameIdx === -1) errors.push('Could not find a name column (expected: name, student)');
   if (genderIdx === -1) errors.push('Could not find a gender column (expected: gender, sex)');
@@ -93,20 +95,72 @@ function parseCSV(text, numericCriteria, flagCriteria) {
       }
     });
 
+    // Track keep apart groups
+    if (keepApartIdx !== -1) {
+      const groupId = cols[keepApartIdx]?.trim();
+      if (groupId) {
+        if (!keepApartGroups[groupId]) keepApartGroups[groupId] = [];
+        keepApartGroups[groupId].push(student.id);
+      }
+    }
+
     students.push(student);
   });
 
-  return { students, errors };
+  // Build keepApart pairs from groups
+  const keepApart = [];
+  Object.values(keepApartGroups).forEach(group => {
+    // Create all pairs within the group
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        keepApart.push([group[i], group[j]]);
+      }
+    }
+  });
+
+  return { students, errors, keepApart };
 }
 
-function exportStudentsToCSV(students, numericCriteria, flagCriteria) {
-  const headers = ['name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key)];
+function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart = []) {
+  const headers = ['name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key), 'keep_apart_group'];
   const lines = [headers.join(',')];
 
+  // Build a map of student ID to group number
+  const studentGroupMap = new Map();
+  const groupMap = new Map();
+  let nextGroupNum = 1;
+  keepApart.forEach(([id1, id2]) => {
+    const group1 = studentGroupMap.get(id1);
+    const group2 = studentGroupMap.get(id2);
+    if (group1 && group2 && group1 !== group2) {
+      // Merge groups - use the lower number
+      const targetGroup = Math.min(group1, group2);
+      const sourceGroup = Math.max(group1, group2);
+      // Update all students in source group to target group
+      groupMap.get(sourceGroup).forEach(id => studentGroupMap.set(id, targetGroup));
+      groupMap.get(targetGroup).push(...groupMap.get(sourceGroup));
+      groupMap.delete(sourceGroup);
+    } else if (group1) {
+      studentGroupMap.set(id2, group1);
+      groupMap.get(group1).push(id2);
+    } else if (group2) {
+      studentGroupMap.set(id1, group2);
+      groupMap.get(group2).push(id1);
+    } else {
+      // New group
+      studentGroupMap.set(id1, nextGroupNum);
+      studentGroupMap.set(id2, nextGroupNum);
+      groupMap.set(nextGroupNum, [id1, id2]);
+      nextGroupNum++;
+    }
+  });
+
   students.forEach(s => {
+    const groupNum = studentGroupMap.get(s.id);
     const values = [s.name, s.gender];
     numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
     flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
+    values.push(groupNum || '');
     lines.push(values.join(','));
   });
 

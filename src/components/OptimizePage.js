@@ -5,6 +5,7 @@ function OptimizePage({
   onBack,
   numericCriteria,
   flagCriteria,
+  keepApart = [],
 }) {
   const [assignment, setAssignment] = useState({});
   const [locked, setLocked] = useState(new Set());
@@ -27,9 +28,9 @@ function OptimizePage({
     setTimeout(() => {
       const lockedObj = {};
       lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
-      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria);
+      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart);
       setAssignment(result);
-      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria));
+      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart));
       setOptimizing(false);
     }, 30);
   }
@@ -70,9 +71,16 @@ function OptimizePage({
     if (!sid) return;
     const newAssignment = { ...assignment, [sid]: classIdx };
     setAssignment(newAssignment);
-    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria));
+    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria, keepApart));
     setDraggingId(null);
   }
+
+  // Calculate keep-apart violations for display
+  const violations = keepApart.filter(([id1, id2]) => {
+    const c1 = assignment[id1];
+    const c2 = assignment[id2];
+    return c1 !== undefined && c2 !== undefined && c1 === c2;
+  });
 
   const classesByIdx = Array.from({ length: numClasses }, (_, i) =>
     students.filter(s => assignment[s.id] === i)
@@ -110,6 +118,13 @@ function OptimizePage({
             <span className="label">Balance score</span>
             <span className="value" style={{ color: costColor }}>{cost.toFixed(4)}</span>
             <span style={{ fontSize: 10, color: 'var(--text3)' }}>(lower is better)</span>
+          </div>
+        )}
+        {violations.length > 0 && (
+          <div className="violations-badge" title={`${violations.length} keep-apart constraint(s) violated`}>
+            <span style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 500 }}>
+              ⚠️ {violations.length} violation{violations.length === 1 ? '' : 's'}
+            </span>
           </div>
         )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
