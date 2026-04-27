@@ -588,7 +588,7 @@ function ConstraintManager({
                               {c.studentName}
                             </span>
                             <span style={{ color: 'var(--text3)', whiteSpace: 'nowrap' }}>→</span>
-                            <span className="badge" style={{ background: 'var(--warning)', color: 'white' }}>
+                            <span className="badge" style={{ background: 'var(--amber)', color: 'var(--text)' }}>
                               {c.teacherName} (Class {c.classIndex + 1})
                             </span>
                             <span style={{
