@@ -45,13 +45,19 @@ function ConstraintManager({
 
   // Get keep-out-of-class constraints with student and class info
   const outOfClassConstraints = keepOutOfClass.map((c, idx) => {
-    const classIndex = parseInt(c.classIndex, 10);
+    // Ensure classIndex is a number
+    const classIndex = typeof c.classIndex === 'string' ? parseInt(c.classIndex, 10) : Number(c.classIndex);
+    // Get teacher name safely
+    let teacherName = `Class ${classIndex + 1}`;
+    if (teachers && Array.isArray(teachers) && teachers[classIndex] && teachers[classIndex].name) {
+      teacherName = teachers[classIndex].name;
+    }
     return {
       idx,
       studentId: c.studentId,
       classIndex: classIndex,
       studentName: studentById[c.studentId]?.name || c.studentId,
-      teacherName: teachers?.[classIndex]?.name || `Class ${classIndex + 1}`,
+      teacherName: teacherName,
     };
   });
 
@@ -583,7 +589,7 @@ function ConstraintManager({
                             </span>
                             <span style={{ color: 'var(--text3)', whiteSpace: 'nowrap' }}>→</span>
                             <span className="badge" style={{ background: 'var(--warning)', color: 'white' }}>
-                              {c.teacherName}
+                              {c.teacherName} (Class {c.classIndex + 1})
                             </span>
                             <span style={{
                               marginLeft: 'auto',
@@ -706,11 +712,15 @@ function ConstraintManager({
                       </div>
                       <div style={{ fontSize: 13, marginTop: 4 }}>
                         <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-                          {studentById[selectedStudentId]?.name}
+                          {studentById[selectedStudentId]?.name || 'Unknown Student'}
                         </span>
                         <span style={{ color: 'var(--text3)', margin: '0 8px' }}>will be kept out of</span>
                         <span className="badge" style={{ background: 'var(--warning)', color: 'white' }}>
-                          {teachers[parseInt(selectedClassIndex, 10)]?.name}
+                          {(() => {
+                            const idx = parseInt(selectedClassIndex, 10);
+                            const teacher = teachers?.[idx];
+                            return teacher?.name || `Class ${idx + 1}`;
+                          })()}
                         </span>
                       </div>
                     </div>
