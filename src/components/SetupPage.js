@@ -24,11 +24,14 @@ function SetupPage({
   const [numTeachers, setNumTeachers] = useState(String(teachers.length || 3));
 
   function getDefaultClassName(index) {
-    if (index < 26) {
-      return `Class ${String.fromCharCode(65 + index)}`;
-    }
-    const extras = index - 25;
-    return `Class ${'A'.repeat(extras + 1)}`;
+    // Convert index to Excel-style column letters (0 -> A, 25 -> Z, 26 -> AA, 27 -> AB, etc.)
+    let n = index;
+    let result = '';
+    do {
+      result = String.fromCharCode(65 + (n % 26)) + result;
+      n = Math.floor(n / 26) - 1;
+    } while (n >= 0);
+    return `Class ${result}`;
   }
 
   function syncTeachers(val) {

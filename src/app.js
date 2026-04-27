@@ -25,6 +25,13 @@ function App() {
   const [keepTogether, setKeepTogether] = useState([]);
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showSaveProject, setShowSaveProject] = useState(false);
+  const [showLoadProject, setShowLoadProject] = useState(false);
+  
+  // Track optimization state for save/load
+  const [assignment, setAssignment] = useState({});
+  const [locked, setLocked] = useState(new Set());
+  const [optimizationResults, setOptimizationResults] = useState(null);
 
   // Persist criteria to localStorage
   useEffect(() => {
@@ -34,6 +41,27 @@ function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.FLAG_CRITERIA, JSON.stringify(flagCriteria));
   }, [flagCriteria]);
+
+  // Keyboard shortcuts for save/load
+  useEffect(() => {
+    function handleKeyDown(e) {
+      // Ctrl+S or Cmd+S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (students.length > 0) {
+          setShowSaveProject(true);
+        }
+      }
+      // Ctrl+O or Cmd+O to load
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        setShowLoadProject(true);
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [students.length]);
 
   function handleOptimize() {
     setView('optimize');
@@ -84,6 +112,29 @@ function App() {
     setKeepTogether(prev => prev.filter(group => !group.includes(studentId)));
   }
 
+  function handleLoadProject(data) {
+    // Load all the project data
+    if (data.students) setStudents(data.students);
+    if (data.teachers) setTeachers(data.teachers);
+    if (data.numericCriteria) setNumericCriteria(data.numericCriteria);
+    if (data.flagCriteria) setFlagCriteria(data.flagCriteria);
+    if (data.keepApart) setKeepApart(data.keepApart);
+    if (data.keepTogether) setKeepTogether(data.keepTogether);
+    if (data.optimizationResults) setOptimizationResults(data.optimizationResults);
+    if (data.assignment) setAssignment(data.assignment);
+    if (data.locked) {
+      // Convert array back to Set
+      setLocked(new Set(data.locked));
+    }
+    
+    // Switch to optimize view if we have an assignment, otherwise setup
+    if (data.assignment && Object.keys(data.assignment).length > 0) {
+      setView('optimize');
+    } else if (data.students?.length > 0) {
+      setView('setup');
+    }
+  }
+
   function handleSaveSettings(newNumCriteria, newFlagCriteria) {
     // Check if criteria changed - if so, we need to warn or clear student data
     const oldNumKeys = new Set(numericCriteria.map(c => c.key));
@@ -129,6 +180,22 @@ function App() {
           <span style={{ fontSize: 12, color: 'var(--text3)' }}>
             {students.length} students · {teachers.length} classes
           </span>
+          {students.length > 0 && (
+            <button 
+              className="btn btn-ghost btn-sm" 
+              onClick={() => setShowSaveProject(true)} 
+              title="Save project (Ctrl+S)"
+            >
+              💾 Save Project
+            </button>
+          )}
+          <button 
+            className="btn btn-ghost btn-sm" 
+            onClick={() => setShowLoadProject(true)} 
+            title="Load project (Ctrl+O)"
+          >
+            📂 Load Project
+          </button>
           {view === 'setup' && (
             <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(true)} title="Configure criteria">
               ⚙️ Settings
@@ -169,6 +236,10 @@ function App() {
           keepTogether={keepTogether}
           onAddKeepTogether={addKeepTogether}
           onRemoveKeepTogether={removeKeepTogether}
+          assignment={assignment}
+          setAssignment={setAssignment}
+          locked={locked}
+          setLocked={setLocked}
         />
       )}
 
@@ -198,6 +269,31 @@ function App() {
             setKeepApart([]);
             setKeepTogether([]);
           }}
+        />
+      )}
+
+      {showSaveProject && (
+        <SaveProjectModal
+          students={students}
+          teachers={teachers}
+          numericCriteria={numericCriteria}
+          flagCriteria={flagCriteria}
+          keepApart={keepApart}
+          keepTogether={keepTogether}
+          assignment={assignment}
+          locked={locked}
+          optimizationResults={optimizationResults}
+          onClose={() => setShowSaveProject(false)}
+        />
+      )}
+
+      {showLoadProject && (
+        <LoadProjectModal
+          onLoad={handleLoadProject}
+          onClose={() => setShowLoadProject(false)}
+          currentNumCriteria={numericCriteria}
+          currentFlagCriteria={flagCriteria}
+          hasExistingData={students.length > 0}
         />
       )}
     </div>

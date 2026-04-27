@@ -167,6 +167,17 @@ At any time, you can export your student data:
 
 Open the CSV in Excel or Google Sheets to format it, print it, or share it with your principal.
 
+### Save & Load Projects
+
+Working on class lists over multiple sessions? Use **Save Project** and **Load Project** in the header to preserve your complete working state:
+
+- Saves all students, classes, criteria settings, constraints, and optimization results
+- Perfect for saving progress and continuing later
+- Validates compatibility when loading (warns about version or criteria mismatches)
+- Keyboard shortcuts: **Ctrl+S** to save, **Ctrl+O** to load
+
+Project files are JSON format and contain all student data—store them securely.
+
 ---
 
 ## Privacy & Security
