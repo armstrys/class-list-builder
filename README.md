@@ -12,11 +12,12 @@ Class List Optimizer automatically distributes students across classrooms while 
 
 Building fair class lists by hand is time-consuming and hard to get right when you're balancing a dozen factors at once. This tool:
 
-- **Saves hours.** Go from a student roster to balanced class lists in minutes.
-- Balances scores, SPED, Extended Learning, ELL, behavior, interventions, gender, and class size all at once. No more juggling factors one at a time.
+- **Saves time.** Go from a student roster to balanced class lists in minutes.
+- **Balances your criteria:** Scores, SPED, Extended Learning, ELL, behavior, interventions, gender, and class size all at once. No more juggling factors one at a time.
 - **Handles constraints:** Keep specific students together (siblings, support pairs) or apart (conflicts, separations).
-- **Consistent and defensible:** the same data always produces the same result.
-- Runs entirely in your browser with no uploads and no accounts.
+- **Consistent and defensible:** the same data always produces the same result so that you and your teammates can reproduce your results.
+- **Private**: Runs entirely in your browser with third party server or data transmission off of your machine. Private student data stays private.
+- **Scalable**: This tool can handle rosters of any size, from small to large schools. The optimization runs in seconds even with thousands of students and hundreds of classes.
 
 ---
 
@@ -202,6 +203,16 @@ Any modern web browser (Chrome, Safari, Firefox, Edge) on Mac, Windows, or Linux
 ## License
 
 MIT. Free to use, modify, and share.
+
+---
+
+## Support This Project
+
+**Want to donate? Don't.** Please consider donating to organizations that support your local teachers or teachers in communities of need. Long-term support of this tool is not guaranteed, but it exists to help benefit the public good.
+
+If you have the ability to support by contributing to this tool or providing feedback to improve it, please do so! See the [Contributing](#contributing) section for more info.
+
+---
 
 ## Questions or Bugs?
 

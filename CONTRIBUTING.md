@@ -1,5 +1,14 @@
 # Contributing to Class List Optimizer
 
+## Ways to Contribute
+
+**You don't need to be a technical person to contribute!** Here are ways anyone can help:
+
+- **Report bugs or suggest features** — Noticed something not working right? Have an idea for improvement? [Open an issue](../../issues) on GitHub. Creating a GitHub account and submitting an issue is a valuable contribution, even if you've never written code.
+- **Share feedback** — Tell us how you're using the tool and what would make it better for your school.
+- **Spread the word** — Share this tool with other teachers and schools who might benefit.
+- **Contribute code** — If you're comfortable with JavaScript and HTML, see the sections below for technical contributions.
+
 ## Project Structure
 
 ```
