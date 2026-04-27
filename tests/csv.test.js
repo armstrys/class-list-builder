@@ -398,10 +398,12 @@ Bob,F,`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[0]).toBe('class,name,gender,readingScore,mathScore,behavior,sped');
+      expect(lines[0]).toBe('class,id,name,gender,readingScore,mathScore,behavior,sped');
       expect(lines[1]).toContain('Mrs. Smith');
+      expect(lines[1]).toContain('1'); // ID
       expect(lines[1]).toContain('Alice');
       expect(lines[2]).toContain('Mr. Jones');
+      expect(lines[2]).toContain('2'); // ID
       expect(lines[2]).toContain('Bob');
     });
 

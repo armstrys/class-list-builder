@@ -201,6 +201,8 @@ function OptimizePage({
             setVisibleClasses={setVisibleClasses}
             showClassFilter={showClassFilter}
             setShowClassFilter={setShowClassFilter}
+            students={students}
+            assignment={assignment}
           />
           <button
             className="btn btn-secondary btn-sm"
@@ -550,10 +552,11 @@ function ViolationsModal({ apartViolations, togetherViolations, outOfClassViolat
 }
 
 // Class filter dropdown component
-function ClassFilterDropdown({ teachers, visibleClasses, setVisibleClasses, showClassFilter, setShowClassFilter }) {
+function ClassFilterDropdown({ teachers, visibleClasses, setVisibleClasses, showClassFilter, setShowClassFilter, students, assignment }) {
   const dropdownRef = useRef(null);
   const selectedCount = visibleClasses.size;
   const totalCount = teachers.length;
+  const [studentFilter, setStudentFilter] = useState('');
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -586,6 +589,31 @@ function ClassFilterDropdown({ teachers, visibleClasses, setVisibleClasses, show
 
   function clearAll() {
     setVisibleClasses(new Set());
+  }
+
+  // Find which class a student is in
+  function getStudentClass(student) {
+    const classIdx = assignment[student.id];
+    if (classIdx === undefined) return null;
+    return { index: classIdx, name: teachers[classIdx]?.name || `Class ${classIdx + 1}` };
+  }
+
+  // Filter students by name or ID
+  const filteredStudents = studentFilter.trim() 
+    ? students.filter(s => 
+        s.name.toLowerCase().includes(studentFilter.toLowerCase()) ||
+        s.id.toLowerCase().includes(studentFilter.toLowerCase())
+      )
+    : [];
+
+  // Show class for a found student
+  function showStudentClass(student) {
+    const classInfo = getStudentClass(student);
+    if (classInfo) {
+      setVisibleClasses(new Set([classInfo.index]));
+      setStudentFilter('');
+      setShowClassFilter(false);
+    }
   }
 
   return (
@@ -651,11 +679,88 @@ function ClassFilterDropdown({ teachers, visibleClasses, setVisibleClasses, show
             </span>
           </div>
           
+          {/* Student search section */}
+          <div
+            style={{
+              padding: '10px 12px',
+              borderBottom: '1px solid var(--border)',
+              background: 'var(--surface2)',
+            }}
+          >
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6, fontWeight: 500 }}>
+              Find Student
+            </div>
+            <input
+              type="text"
+              placeholder="Name or ID..."
+              value={studentFilter}
+              onChange={(e) => setStudentFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 10px',
+                border: '1.5px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 12,
+                fontFamily: 'inherit',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                outline: 'none',
+              }}
+            />
+            {filteredStudents.length > 0 && (
+              <div style={{ marginTop: 8, maxHeight: 120, overflowY: 'auto' }}>
+                {filteredStudents.slice(0, 5).map(student => {
+                  const classInfo = getStudentClass(student);
+                  return (
+                    <div
+                      key={student.id}
+                      onClick={() => showStudentClass(student)}
+                      style={{
+                        padding: '6px 8px',
+                        cursor: 'pointer',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 12,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--surface)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {student.name}
+                      </span>
+                      {classInfo && (
+                        <span style={{ fontSize: 10, color: 'var(--accent)', whiteSpace: 'nowrap', marginLeft: 8 }}>
+                          {classInfo.name}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {filteredStudents.length > 5 && (
+                  <div style={{ fontSize: 10, color: 'var(--text3)', padding: '4px 8px', fontStyle: 'italic' }}>
+                    ...and {filteredStudents.length - 5} more
+                  </div>
+                )}
+              </div>
+            )}
+            {studentFilter.trim() && filteredStudents.length === 0 && (
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6, fontStyle: 'italic' }}>
+                No students found
+              </div>
+            )}
+          </div>
+          
           <div
             style={{
               overflowY: 'auto',
               padding: '6px 0',
-              maxHeight: '50vh',
+              maxHeight: '40vh',
             }}
           >
             {teachers.map((teacher, i) => (

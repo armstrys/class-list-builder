@@ -131,7 +131,7 @@ function SetupPage({
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
                 {students.length > 0 && (
-                  <button className="btn btn-secondary btn-sm" onClick={saveStudentsCSV}>⬇ Save Students</button>
+                  <button className="btn btn-secondary btn-sm" onClick={saveStudentsCSV}>⬇ Save CSV</button>
                 )}
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
                 {students.length > 0 && (
