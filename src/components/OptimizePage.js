@@ -282,18 +282,8 @@ function OptimizePage({
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {showConstraints && (
-        <ConstraintManager
-          students={students}
-          keepApart={keepApart}
-          onAddKeepApart={addKeepApart}
-          onRemoveKeepApart={removeKeepApart}
-          keepTogether={keepTogether}
-          onAddKeepTogether={addKeepTogether}
-          onRemoveKeepTogether={removeKeepTogether}
-          keepOutOfClass={keepOutOfClass}
+        <ConstraintModal
           teachers={teachers}
-          onAddKeepOutOfClass={addKeepOutOfClass}
-          onRemoveKeepOutOfClass={removeKeepOutOfClass}
           onClose={() => setShowConstraints(false)}
         />
       )}

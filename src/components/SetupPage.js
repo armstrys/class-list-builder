@@ -264,7 +264,7 @@ function SetupPage({
         />
       )}
       {showConstraintModal && (
-        <ConstraintManagerWrapper
+        <ConstraintModal
           teachers={teachers}
           onClose={() => setShowConstraintModal(false)}
         />
@@ -316,26 +316,4 @@ function ImportModalWrapper({ onClose, onClearAll }) {
   );
 }
 
-/**
- * ConstraintManagerWrapper - Provides context data to ConstraintManager
- */
-function ConstraintManagerWrapper({ teachers, onClose }) {
-  const { students, ...constraintActions } = useStudentsExport();
-  
-  return (
-    <ConstraintManager
-      students={students}
-      keepApart={constraintActions.keepApart}
-      onAddKeepApart={constraintActions.addKeepApart}
-      onRemoveKeepApart={constraintActions.removeKeepApart}
-      keepTogether={constraintActions.keepTogether}
-      onAddKeepTogether={constraintActions.addKeepTogether}
-      onRemoveKeepTogether={constraintActions.removeKeepTogether}
-      keepOutOfClass={constraintActions.keepOutOfClass}
-      teachers={teachers}
-      onAddKeepOutOfClass={constraintActions.addKeepOutOfClass}
-      onRemoveKeepOutOfClass={constraintActions.removeKeepOutOfClass}
-      onClose={onClose}
-    />
-  );
-}
+
