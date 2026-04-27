@@ -1,5 +1,8 @@
 const { useState, useEffect, useRef } = React;
 
+// App version for save/load compatibility checking
+const APP_VERSION = "1.3.2";
+
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
   { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },

@@ -11,9 +11,11 @@ function OptimizePage({
   keepTogether = [],
   onAddKeepTogether,
   onRemoveKeepTogether,
+  assignment,
+  setAssignment,
+  locked,
+  setLocked,
 }) {
-  const [assignment, setAssignment] = useState({});
-  const [locked, setLocked] = useState(new Set());
   const [draggingId, setDraggingId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showConstraints, setShowConstraints] = useState(false);
@@ -42,7 +44,12 @@ function OptimizePage({
     }, 30);
   }
 
-  useEffect(() => { runOptimize(new Map()); }, []);
+  useEffect(() => { 
+    // Only run initial optimization if we don't have an assignment yet
+    if (!assignment || Object.keys(assignment).length === 0) {
+      runOptimize(new Map()); 
+    }
+  }, []);
 
   function handleReoptimize() {
     const lockedObj = new Map();
