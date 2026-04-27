@@ -62,9 +62,10 @@ function parseCSV(text, numericCriteria, flagCriteria) {
     if (idx !== -1) flagKeyMap[key] = idx;
   });
 
-  // Find name, gender, and keep constraint columns
+  // Find name, gender, id, and keep constraint columns
   const nameIdx = headers.findIndex(h => ['name','student','lastnamefirstname'].includes(h));
   const genderIdx = headers.findIndex(h => ['gender','sex'].includes(h));
+  const idIdx = headers.findIndex(h => h === 'id' || h === 'studentid' || h === 'student_id');
   const keepApartIdx = headers.findIndex(h => h === 'keepapartgroup' || h === 'keep_apart_group');
   const keepTogetherIdx = headers.findIndex(h => h === 'keeptogethergroup' || h === 'keep_together_group');
   const keepOutOfClassIdx = headers.findIndex(h => h === 'keepoutofclass' || h === 'keep_out_of_class');
@@ -80,9 +81,16 @@ function parseCSV(text, numericCriteria, flagCriteria) {
     const genderVal = genderIdx !== -1 ? (cols[genderIdx] || '').toUpperCase() : '';
     const gender = genderVal.startsWith('F') ? 'F' : genderVal.startsWith('M') ? 'M' : 'U';
 
-    // Use global uid if available (browser), otherwise use local _uid (Node.js tests)
-    const generateId = typeof uid !== 'undefined' ? uid : _uid;
-    const student = { id: generateId(), name, gender };
+    // Use provided ID if available, otherwise generate one
+    let studentId;
+    if (idIdx !== -1 && cols[idIdx]?.trim()) {
+      studentId = cols[idIdx].trim();
+    } else {
+      // Use global uid if available (browser), otherwise use local _uid (Node.js tests)
+      const generateId = typeof uid !== 'undefined' ? uid : _uid;
+      studentId = generateId();
+    }
+    const student = { id: studentId, name, gender };
 
     numericCriteria.forEach(({ key }) => {
       const idx = numericKeyMap[key];
@@ -224,7 +232,7 @@ function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart 
 }
 
 function exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria) {
-  const headers = ['class', 'name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key)];
+  const headers = ['class', 'id', 'name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key)];
   const lines = [headers.join(',')];
 
   const sorted = [...students]
@@ -238,7 +246,7 @@ function exportClassListsToCSV(students, assignment, teachers, numericCriteria, 
   sorted.forEach(s => {
     const classIdx = assignment[s.id];
     const className = teachers[classIdx]?.name || `Class ${classIdx + 1}`;
-    const values = [className, s.name, s.gender];
+    const values = [className, s.id, s.name, s.gender];
     numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
     flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
     lines.push(values.join(','));
