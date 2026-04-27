@@ -44,13 +44,16 @@ function ConstraintManager({
   }));
 
   // Get keep-out-of-class constraints with student and class info
-  const outOfClassConstraints = keepOutOfClass.map((c, idx) => ({
-    idx,
-    studentId: c.studentId,
-    classIndex: c.classIndex,
-    studentName: studentById[c.studentId]?.name || c.studentId,
-    teacherName: teachers[c.classIndex]?.name || `Class ${c.classIndex + 1}`,
-  }));
+  const outOfClassConstraints = keepOutOfClass.map((c, idx) => {
+    const classIndex = parseInt(c.classIndex, 10);
+    return {
+      idx,
+      studentId: c.studentId,
+      classIndex: classIndex,
+      studentName: studentById[c.studentId]?.name || c.studentId,
+      teacherName: teachers?.[classIndex]?.name || `Class ${classIndex + 1}`,
+    };
+  });
 
   // Build adjacency list for keep-apart
   const apartAdj = {};
@@ -574,11 +577,11 @@ function ConstraintManager({
                           borderRadius: 'var(--radius-sm)',
                           padding: '8px 12px',
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
                               {c.studentName}
                             </span>
-                            <span style={{ color: 'var(--text3)' }}>→</span>
+                            <span style={{ color: 'var(--text3)', whiteSpace: 'nowrap' }}>→</span>
                             <span className="badge" style={{ background: 'var(--warning)', color: 'white' }}>
                               {c.teacherName}
                             </span>
