@@ -37,7 +37,7 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   // Normalize CRLF and bare CR to LF
   const normalized = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = normalized.split('\n');
-  if (lines.length < 2) return { students: [], errors: ['No data rows found'], keepApart: [], keepTogether: [] };
+  if (lines.length < 2) return { students: [], errors: ['No data rows found'], keepApart: [], keepTogether: [], keepOutOfClass: [] };
 
   // Normalize headers: lowercase, strip spaces
   const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, ''));
@@ -46,6 +46,7 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   const errors = [];
   const keepApartGroups = {}; // groupId -> array of student indices
   const keepTogetherGroups = {}; // groupId -> array of student indices
+  const keepOutOfClassConstraints = []; // Array<{studentId, classIndex}>
 
   // Build mapping from criteria keys to CSV column indices
   const numericKeyMap = {};
@@ -66,6 +67,7 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   const genderIdx = headers.findIndex(h => ['gender','sex'].includes(h));
   const keepApartIdx = headers.findIndex(h => h === 'keepapartgroup' || h === 'keep_apart_group');
   const keepTogetherIdx = headers.findIndex(h => h === 'keeptogethergroup' || h === 'keep_together_group');
+  const keepOutOfClassIdx = headers.findIndex(h => h === 'keepoutofclass' || h === 'keep_out_of_class');
 
   if (nameIdx === -1) errors.push('Could not find a name column (expected: name, student)');
   if (genderIdx === -1) errors.push('Could not find a gender column (expected: gender, sex)');
@@ -115,6 +117,21 @@ function parseCSV(text, numericCriteria, flagCriteria) {
       }
     }
 
+    // Track keep out of class constraints
+    if (keepOutOfClassIdx !== -1) {
+      const classIndicesStr = cols[keepOutOfClassIdx]?.trim();
+      if (classIndicesStr) {
+        // Parse comma-separated class indices (e.g., "0,2" or "1")
+        const classIndices = classIndicesStr
+          .split(',')
+          .map(s => parseInt(s.trim(), 10))
+          .filter(n => !isNaN(n) && n >= 0);
+        classIndices.forEach(classIndex => {
+          keepOutOfClassConstraints.push({ studentId: student.id, classIndex });
+        });
+      }
+    }
+
     students.push(student);
   });
 
@@ -132,11 +149,14 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   // Build keepTogether groups array
   const keepTogether = Object.values(keepTogetherGroups).filter(group => group.length >= 2);
 
-  return { students, errors, keepApart, keepTogether };
+  // Keep out of class constraints are already in the correct format
+  const keepOutOfClass = keepOutOfClassConstraints;
+
+  return { students, errors, keepApart, keepTogether, keepOutOfClass };
 }
 
-function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart = [], keepTogether = []) {
-  const headers = ['name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key), 'keep_apart_group', 'keep_together_group'];
+function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
+  const headers = ['name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key), 'keep_apart_group', 'keep_together_group', 'keep_out_of_class'];
   const lines = [headers.join(',')];
 
   // Build a map of student ID to keep-apart group number
@@ -177,14 +197,26 @@ function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart 
     nextTogetherNum++;
   });
 
+  // Build a map of student ID to comma-separated class indices for keep out of class
+  const studentOutOfClassMap = new Map();
+  keepOutOfClass.forEach(({ studentId, classIndex }) => {
+    if (!studentOutOfClassMap.has(studentId)) {
+      studentOutOfClassMap.set(studentId, []);
+    }
+    studentOutOfClassMap.get(studentId).push(classIndex);
+  });
+
   students.forEach(s => {
     const apartNum = studentApartMap.get(s.id);
     const togetherNum = studentTogetherMap.get(s.id);
+    const outOfClassList = studentOutOfClassMap.get(s.id);
+    const outOfClassStr = outOfClassList ? outOfClassList.sort((a, b) => a - b).join(',') : '';
     const values = [s.name, s.gender];
     numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
     flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
     values.push(apartNum || '');
     values.push(togetherNum || '');
+    values.push(outOfClassStr);
     lines.push(values.join(','));
   });
 

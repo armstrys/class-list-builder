@@ -9,6 +9,7 @@ const PROJECT_FORMAT_VERSION = 1;
  * @param {Array} state.flagCriteria - Configured flag criteria
  * @param {Array} state.keepApart - Array of [id1, id2] pairs
  * @param {Array} state.keepTogether - Array of student ID groups
+ * @param {Array} state.keepOutOfClass - Array of {studentId, classIndex} constraints
  * @param {Object} state.optimizationResults - Optional optimization results
  * @param {Map} state.optimizationResults.assignments - Map of studentId -> teacherIndex
  * @param {number} state.optimizationResults.score - Optimization score
@@ -32,6 +33,7 @@ function serializeProject(state) {
       flagCriteria: state.flagCriteria || [],
       keepApart: state.keepApart || [],
       keepTogether: state.keepTogether || [],
+      keepOutOfClass: state.keepOutOfClass || [],
       assignment: state.assignment || {},
       locked: state.locked || []
     }

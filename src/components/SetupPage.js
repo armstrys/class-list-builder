@@ -13,6 +13,9 @@ function SetupPage({
   keepTogether,
   onAddKeepTogether,
   onRemoveKeepTogether,
+  keepOutOfClass,
+  onAddKeepOutOfClass,
+  onRemoveKeepOutOfClass,
   onRemoveStudentConstraints,
 }) {
   const [showForm, setShowForm] = useState(false);
@@ -249,6 +252,10 @@ function SetupPage({
           keepTogether={keepTogether}
           onAddKeepTogether={onAddKeepTogether}
           onRemoveKeepTogether={onRemoveKeepTogether}
+          keepOutOfClass={keepOutOfClass}
+          teachers={teachers}
+          onAddKeepOutOfClass={onAddKeepOutOfClass}
+          onRemoveKeepOutOfClass={onRemoveKeepOutOfClass}
           onClose={() => setShowConstraintModal(false)}
         />
       )}

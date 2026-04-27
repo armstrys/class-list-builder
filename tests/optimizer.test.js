@@ -692,6 +692,146 @@ describe('Optimizer', () => {
     });
   });
 
+  describe('Keep Out of Class Constraints', () => {
+    test('keep out of class constraint prevents student from being assigned to blocked class', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 3;
+      // Block student 0 from class 0
+      const keepOutOfClass = [{ studentId: students[0].id, classIndex: 0 }];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+
+      // Assert - student should not be in class 0
+      expect(assignment[students[0].id]).not.toBe(0);
+      expect(assignment[students[0].id]).toBeGreaterThanOrEqual(1);
+      expect(assignment[students[0].id]).toBeLessThan(numClasses);
+    });
+
+    test('cost includes penalty for keep-out-of-class violations', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepOutOfClass = [{ studentId: students[0].id, classIndex: 0 }];
+
+      // Create an assignment with violation
+      const violatingAssignment = {
+        [students[0].id]: 0, // Student 0 in class 0 - violation!
+        [students[1].id]: 1,
+        [students[2].id]: 1,
+        [students[3].id]: 0,
+      };
+
+      // Create an assignment without violation
+      const validAssignment = {
+        [students[0].id]: 1, // Student 0 in class 1 - no violation
+        [students[1].id]: 0,
+        [students[2].id]: 1,
+        [students[3].id]: 0,
+      };
+
+      // Act
+      const violatingCost = computeCost(students, violatingAssignment, numClasses, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+      const validCost = computeCost(students, validAssignment, numClasses, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+
+      // Assert - violating cost should be higher by approximately 150 (penalty weight)
+      expect(violatingCost).toBeGreaterThan(validCost + 140);
+    });
+
+    test('determinism holds with keep out of class constraints', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 2;
+      const keepOutOfClass = [
+        { studentId: students[0].id, classIndex: 0 },
+        { studentId: students[1].id, classIndex: 1 }
+      ];
+
+      // Act - run twice with same inputs
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+
+      // Assert - should be identical
+      expect(assignment1).toEqual(assignment2);
+    });
+
+    test('computeSeed includes keep out of class constraints', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepOutOfClass1 = [{ studentId: students[0].id, classIndex: 0 }];
+      const keepOutOfClass2 = [{ studentId: students[0].id, classIndex: 1 }]; // Different constraint
+
+      // Act
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass1);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass2);
+
+      // Assert - different constraints should produce different seeds
+      expect(seed1).not.toBe(seed2);
+    });
+
+    test('same keep out of class constraints produce same seed', () => {
+      // Arrange
+      const students = createMockStudents(4);
+      const numClasses = 2;
+      const keepOutOfClass = [{ studentId: students[0].id, classIndex: 0 }];
+
+      // Act
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+
+      // Assert - same constraints should produce same seed
+      expect(seed1).toBe(seed2);
+    });
+
+    test('multiple keep out of class constraints are respected', () => {
+      // Arrange
+      const students = createMockStudents(8);
+      const numClasses = 4;
+      const keepOutOfClass = [
+        { studentId: students[0].id, classIndex: 0 },
+        { studentId: students[1].id, classIndex: 1 },
+        { studentId: students[2].id, classIndex: 2 },
+      ];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+
+      // Assert - check all constraints are satisfied
+      expect(assignment[students[0].id]).not.toBe(0);
+      expect(assignment[students[1].id]).not.toBe(1);
+      expect(assignment[students[2].id]).not.toBe(2);
+    });
+
+    test('empty keep out of class array works normally', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 2;
+
+      // Act
+      const assignmentWithConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], []);
+      const assignmentWithoutConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], []);
+
+      // Assert - should produce same results
+      expect(assignmentWithConstraint).toEqual(assignmentWithoutConstraint);
+    });
+
+    test('keep out of class with locked assignments', () => {
+      // Arrange
+      const students = createMockStudents(6);
+      const numClasses = 3;
+      const keepOutOfClass = [{ studentId: students[0].id, classIndex: 0 }];
+      const lockedAssignments = { [students[0].id]: 1 }; // Lock student 0 to class 1
+
+      // Act
+      const assignment = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+
+      // Assert - locked assignment should be respected and also satisfy constraint
+      expect(assignment[students[0].id]).toBe(1);
+    });
+  });
+
   describe('Combined Constraints', () => {
     test('keep apart and keep together work together', () => {
       // Arrange
@@ -719,6 +859,39 @@ describe('Optimizer', () => {
       // Act
       const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether);
       const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether);
+
+      // Assert - should be identical
+      expect(assignment1).toEqual(assignment2);
+    });
+
+    test('all three constraint types work together', () => {
+      // Arrange
+      const students = createMockStudents(12);
+      const numClasses = 4;
+      const keepApart = [[students[0].id, students[1].id]];
+      const keepTogether = [[students[2].id, students[3].id]];
+      const keepOutOfClass = [{ studentId: students[0].id, classIndex: 0 }];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
+
+      // Assert - check all constraints
+      expect(assignment[students[0].id]).not.toBe(assignment[students[1].id]); // Apart
+      expect(assignment[students[2].id]).toBe(assignment[students[3].id]); // Together
+      expect(assignment[students[0].id]).not.toBe(0); // Out of class 0
+    });
+
+    test('determinism holds with all three constraint types', () => {
+      // Arrange
+      const students = createMockStudents(8);
+      const numClasses = 2;
+      const keepApart = [[students[0].id, students[2].id]];
+      const keepTogether = [[students[0].id, students[1].id]];
+      const keepOutOfClass = [{ studentId: students[3].id, classIndex: 0 }];
+
+      // Act
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
 
       // Assert - should be identical
       expect(assignment1).toEqual(assignment2);
