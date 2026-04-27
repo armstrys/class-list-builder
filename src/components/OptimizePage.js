@@ -1,3 +1,40 @@
+/**
+ * OptimizePage - Main optimization results view with drag-and-drop class management.
+ * 
+ * Displays optimized class assignments with:
+ * - Drag-and-drop to manually adjust assignments
+ * - Lock/unlock individual students
+ * - Re-optimization around locked students
+ * - Real-time balance score updates
+ * - Class filtering and fullscreen modes
+ * 
+ * @component
+ * @param {Object} props
+ * @param {Array<Object>} props.students - Array of student objects
+ * @param {Array<{id: string, name: string}>} props.teachers - Class/teacher definitions
+ * @param {Function} props.setTeachers - Update teachers state
+ * @param {Function} props.onBack - Navigate back to setup view
+ * @param {Array<Object>} props.numericCriteria - Numeric score criteria with weights
+ * @param {Array<Object>} props.flagCriteria - Boolean flag criteria with weights
+ * @param {Array<[string, string]>} props.keepApart - Students to keep in different classes
+ * @param {Function} props.onAddKeepApart - Add keep-apart constraint
+ * @param {Function} props.onRemoveKeepApart - Remove keep-apart constraint
+ * @param {Array<string[]>} props.keepTogether - Students to keep in same class
+ * @param {Function} props.onAddKeepTogether - Add keep-together constraint
+ * @param {Function} props.onRemoveKeepTogether - Remove keep-together constraint
+ * @param {Array<{studentId: string, classIndex: number}>} props.keepOutOfClass - Blocked assignments
+ * @param {Function} props.onAddKeepOutOfClass - Add blocked assignment
+ * @param {Function} props.onRemoveKeepOutOfClass - Remove blocked assignment
+ * @param {Object<string, number>} props.assignment - Current student -> class mapping
+ * @param {Function} props.setAssignment - Update assignment state
+ * @param {Set<string>} props.locked - Set of locked student IDs
+ * @param {Function} props.setLocked - Update locked state
+ * @returns {JSX.Element}
+ * 
+ * @todo Extract Toolbar component (~200 lines)
+ * @todo Extract DragDropProvider for drag state
+ * @todo Split constraint management into separate component
+ */
 function OptimizePage({
   students,
   teachers,

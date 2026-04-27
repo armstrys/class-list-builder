@@ -1,0 +1,78 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "plugins": [
+    "react",
+    "react-hooks"
+  ],
+  "globals": {
+    "React": "readonly",
+    "ReactDOM": "readonly",
+    "useState": "readonly",
+    "useEffect": "readonly",
+    "useRef": "readonly",
+    "useMemo": "readonly",
+    "useCallback": "readonly",
+    "optimize": "readonly",
+    "computeCost": "readonly",
+    "exportStudentsToCSV": "readonly",
+    "STORAGE_KEYS": "readonly",
+    "DEFAULT_NUMERIC_CRITERIA": "readonly",
+    "DEFAULT_FLAG_CRITERIA": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-console": ["warn", { "allow": ["error", "warn", "info"] }],
+    "prefer-const": "error",
+    "no-var": "error",
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "curly": ["error", "multi-line"],
+    "max-lines-per-function": ["warn", { "max": 50, "skipBlankLines": true, "skipComments": true }],
+    "max-lines": ["warn", { "max": 300, "skipBlankLines": true, "skipComments": true }],
+    "complexity": ["warn", 10],
+    "max-params": ["warn", 4],
+    "react/prop-types": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*.js"],
+      "env": {
+        "jest": true
+      },
+      "globals": {
+        "describe": "readonly",
+        "test": "readonly",
+        "expect": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly",
+        "beforeAll": "readonly",
+        "afterAll": "readonly"
+      },
+      "rules": {
+        "max-lines-per-function": "off",
+        "max-lines": "off"
+      }
+    },
+    {
+      "files": ["src/components/**/*.js"],
+      "rules": {
+        "max-lines": ["warn", { "max": 200, "skipBlankLines": true, "skipComments": true }]
+      }
+    }
+  ]
+}

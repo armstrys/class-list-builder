@@ -1,3 +1,20 @@
+/**
+ * Compute the optimization cost for a given student assignment.
+ * 
+ * The cost function measures how imbalanced the class distribution is across
+ * all criteria (numeric scores, flags, gender, total flags, total scores, and size).
+ * Lower cost = better balanced classes.
+ * 
+ * @param {Array<Object>} students - Array of student objects with id, gender, and criteria properties
+ * @param {Object<string, number>} assignment - Map of studentId -> classIndex
+ * @param {number} numClasses - Total number of classes
+ * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric score criteria with weights
+ * @param {Array<{key: string, weight: number}>} flagCriteria - Boolean flag criteria with weights
+ * @param {Array<[string, string]>} keepApart - Pairs of student IDs that should be in different classes
+ * @param {Array<string[]>} keepTogether - Groups of student IDs that should be in the same class
+ * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Students blocked from specific classes
+ * @returns {number} The total cost (lower is better)
+ */
 function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
   if (!students.length || !numClasses) return 0;
   const classes = Array.from({ length: numClasses }, () => []);
@@ -193,6 +210,26 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
   return hash >>> 0;
 }
 
+/**
+ * Optimize student class assignments using simulated annealing.
+ * 
+ * Algorithm:
+ * 1. Greedy initialization: Sort students by score and assign to smallest classes
+ * 2. Simulated annealing: Randomly swap students to minimize cost function
+ * 3. Constraint handling: High penalties for constraint violations
+ * 
+ * The algorithm is deterministic - same inputs always produce same outputs.
+ * 
+ * @param {Array<Object>} students - Array of student objects
+ * @param {number} numClasses - Total number of classes
+ * @param {Object<string, number>} lockedAssignments - Pre-assigned students (studentId -> classIndex)
+ * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric score criteria
+ * @param {Array<{key: string, weight: number}>} flagCriteria - Boolean flag criteria
+ * @param {Array<[string, string]>} keepApart - Pairs of students to keep apart
+ * @param {Array<string[]>} keepTogether - Groups of students to keep together
+ * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Blocked class assignments
+ * @returns {Object<string, number>} Final assignment (studentId -> classIndex)
+ */
 function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
   if (!students.length || !numClasses) return {};
   const unlocked = students.filter(s => lockedAssignments[s.id] === undefined);

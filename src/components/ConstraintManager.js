@@ -1,3 +1,30 @@
+/**
+ * ConstraintManager - Modal for managing student placement constraints.
+ * 
+ * This component allows users to define three types of constraints:
+ * - Keep Apart: Students that must be in different classes
+ * - Keep Together: Students that must be in the same class  
+ * - Keep Out of Class: Students blocked from specific classes
+ * 
+ * @component
+ * @param {Object} props
+ * @param {Array<Object>} props.students - Array of student objects
+ * @param {Array<[string, string]>} props.keepApart - Current keep-apart constraint pairs
+ * @param {Function} props.onAddKeepApart - Callback to add a keep-apart constraint
+ * @param {Function} props.onRemoveKeepApart - Callback to remove a keep-apart constraint
+ * @param {Array<string[]>} props.keepTogether - Current keep-together groups
+ * @param {Function} props.onAddKeepTogether - Callback to add a keep-together group
+ * @param {Function} props.onRemoveKeepTogether - Callback to remove a keep-together group
+ * @param {Array<{studentId: string, classIndex: number}>} props.keepOutOfClass - Blocked assignments
+ * @param {Array<{id: string, name: string}>} props.teachers - Array of class/teacher objects
+ * @param {Function} props.onAddKeepOutOfClass - Callback to add a blocked assignment
+ * @param {Function} props.onRemoveKeepOutOfClass - Callback to remove a blocked assignment
+ * @param {Function} props.onClose - Callback to close the modal
+ * @returns {JSX.Element}
+ * 
+ * @todo Split into smaller components (tabs as separate files)
+ * @todo Extract custom hook for constraint state management
+ */
 function ConstraintManager({
   students,
   keepApart,
