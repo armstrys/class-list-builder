@@ -1,23 +1,30 @@
+/**
+ * SetupPage - Student roster setup and configuration view
+ * 
+ * Uses contexts:
+ * - useStudents: Student data and constraint management
+ * - useCriteria: Criteria configuration
+ * 
+ * @param {Object} props
+ * @param {Array<{id: string, name: string}>} props.teachers - Teacher/class definitions
+ * @param {Function} props.setTeachers - Update teachers
+ * @param {Function} props.onOptimize - Navigate to optimize view
+ * @param {Function} props.onOpenSettings - Open settings modal
+ */
 function SetupPage({
-  students,
-  setStudents,
   teachers,
   setTeachers,
   onOptimize,
-  numericCriteria,
-  flagCriteria,
   onOpenSettings,
-  keepApart,
-  onAddKeepApart,
-  onRemoveKeepApart,
-  keepTogether,
-  onAddKeepTogether,
-  onRemoveKeepTogether,
-  keepOutOfClass,
-  onAddKeepOutOfClass,
-  onRemoveKeepOutOfClass,
-  onRemoveStudentConstraints,
 }) {
+  // Context hooks
+  const { 
+    students, 
+    setStudents,
+    removeStudentConstraints,
+    clearAllStudents: clearAllStudentsContext
+  } = useStudentsExport();
+  const { numericCriteria, flagCriteria } = useCriteriaExport();
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [showImport, setShowImport] = useState(false);
@@ -64,9 +71,7 @@ function SetupPage({
   }
   function handleDeleteStudent(id) {
     setStudents(prev => prev.filter(s => s.id !== id));
-    if (onRemoveStudentConstraints) {
-      onRemoveStudentConstraints(id);
-    }
+    removeStudentConstraints(id);
   }
 
   const canOptimize = students.length >= teachers.length && teachers.length >= 2;
@@ -77,15 +82,11 @@ function SetupPage({
     triggerDownload(csv, 'students.csv', 'text/csv');
   }
 
-  function clearAllStudents() {
+  function handleClearAllStudents() {
     if (students.length === 0) return;
     const confirmClear = window.confirm(`Clear all ${students.length} students? This cannot be undone.`);
     if (confirmClear) {
-      setStudents([]);
-      // Clear constraints when clearing students
-      if (onRemoveStudentConstraints) {
-        students.forEach(s => onRemoveStudentConstraints(s.id));
-      }
+      clearAllStudentsContext();
     }
   }
 
@@ -135,11 +136,9 @@ function SetupPage({
                 )}
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
                 {students.length > 0 && (
-                  <button className="btn btn-danger btn-sm" onClick={clearAllStudents}>Clear All</button>
+                  <button className="btn btn-danger btn-sm" onClick={handleClearAllStudents}>Clear All</button>
                 )}
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowConstraintModal(true)}>
-                  🔗 Constraints {(keepApart.length + keepTogether.length) > 0 && `(${keepApart.length + keepTogether.length})`}
-                </button>
+                <ConstraintButton onClick={() => setShowConstraintModal(true)} />
                 <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Add Student</button>
               </div>
             </div>
@@ -259,39 +258,84 @@ function SetupPage({
         />
       )}
       {showImport && (
-        <ImportModal
-          onImport={(ss, importedKeepApart, importedKeepTogether) => {
-            setStudents(prev => [...prev, ...ss]);
-            if (importedKeepApart && importedKeepApart.length > 0) {
-              importedKeepApart.forEach(pair => onAddKeepApart(pair[0], pair[1]));
-            }
-            if (importedKeepTogether && importedKeepTogether.length > 0) {
-              importedKeepTogether.forEach(group => onAddKeepTogether(group));
-            }
-          }}
+        <ImportModalWrapper
           onClose={() => setShowImport(false)}
-          numericCriteria={numericCriteria}
-          flagCriteria={flagCriteria}
-          students={students}
-          onClearAll={clearAllStudents}
+          onClearAll={handleClearAllStudents}
         />
       )}
       {showConstraintModal && (
-        <ConstraintManager
-          students={students}
-          keepApart={keepApart}
-          onAddKeepApart={onAddKeepApart}
-          onRemoveKeepApart={onRemoveKeepApart}
-          keepTogether={keepTogether}
-          onAddKeepTogether={onAddKeepTogether}
-          onRemoveKeepTogether={onRemoveKeepTogether}
-          keepOutOfClass={keepOutOfClass}
+        <ConstraintManagerWrapper
           teachers={teachers}
-          onAddKeepOutOfClass={onAddKeepOutOfClass}
-          onRemoveKeepOutOfClass={onRemoveKeepOutOfClass}
           onClose={() => setShowConstraintModal(false)}
         />
       )}
     </>
+  );
+}
+
+/**
+ * ConstraintButton - Shows constraint count badge
+ */
+function ConstraintButton({ onClick }) {
+  const { keepApart, keepTogether } = useStudentsExport();
+  const count = keepApart.length + keepTogether.length;
+  
+  return (
+    <button className="btn btn-secondary btn-sm" onClick={onClick}>
+      🔗 Constraints {count > 0 && `(${count})`}
+    </button>
+  );
+}
+
+/**
+ * ImportModalWrapper - Provides context data to ImportModal
+ */
+function ImportModalWrapper({ onClose, onClearAll }) {
+  const { students, setStudents, addKeepApart, addKeepTogether } = useStudentsExport();
+  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  
+  const handleImport = useCallback((ss, importedKeepApart, importedKeepTogether) => {
+    setStudents(prev => [...prev, ...ss]);
+    if (importedKeepApart?.length > 0) {
+      importedKeepApart.forEach(pair => addKeepApart(pair[0], pair[1]));
+    }
+    if (importedKeepTogether?.length > 0) {
+      importedKeepTogether.forEach(group => addKeepTogether(group));
+    }
+  }, [setStudents, addKeepApart, addKeepTogether]);
+  
+  return (
+    <ImportModal
+      onImport={handleImport}
+      onClose={onClose}
+      numericCriteria={numericCriteria}
+      flagCriteria={flagCriteria}
+      students={students}
+      onClearAll={onClearAll}
+    />
+  );
+}
+
+/**
+ * ConstraintManagerWrapper - Provides context data to ConstraintManager
+ */
+function ConstraintManagerWrapper({ teachers, onClose }) {
+  const { students, ...constraintActions } = useStudentsExport();
+  
+  return (
+    <ConstraintManager
+      students={students}
+      keepApart={constraintActions.keepApart}
+      onAddKeepApart={constraintActions.addKeepApart}
+      onRemoveKeepApart={constraintActions.removeKeepApart}
+      keepTogether={constraintActions.keepTogether}
+      onAddKeepTogether={constraintActions.addKeepTogether}
+      onRemoveKeepTogether={constraintActions.removeKeepTogether}
+      keepOutOfClass={constraintActions.keepOutOfClass}
+      teachers={teachers}
+      onAddKeepOutOfClass={constraintActions.addKeepOutOfClass}
+      onRemoveKeepOutOfClass={constraintActions.removeKeepOutOfClass}
+      onClose={onClose}
+    />
   );
 }
