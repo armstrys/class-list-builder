@@ -588,7 +588,7 @@ function ConstraintManager({
                               {c.studentName}
                             </span>
                             <span style={{ color: 'var(--text3)', whiteSpace: 'nowrap' }}>→</span>
-                            <span className="badge" style={{ background: 'var(--amber)', color: 'var(--text)' }}>
+                            <span className="badge" style={{ background: 'var(--surface2)', color: 'var(--text)' }}>
                               {c.teacherName} (Class {c.classIndex + 1})
                             </span>
                             <span style={{
@@ -715,7 +715,7 @@ function ConstraintManager({
                           {studentById[selectedStudentId]?.name || 'Unknown Student'}
                         </span>
                         <span style={{ color: 'var(--text3)', margin: '0 8px' }}>will be kept out of</span>
-                        <span className="badge" style={{ background: 'var(--amber)', color: 'var(--text)' }}>
+                        <span className="badge" style={{ background: 'var(--surface2)', color: 'var(--text)' }}>
                           {(() => {
                             const idx = parseInt(selectedClassIndex, 10);
                             const teacher = teachers?.[idx];
