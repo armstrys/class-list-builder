@@ -1,4 +1,4 @@
-function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = []) {
+function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
   if (!students.length || !numClasses) return 0;
   const classes = Array.from({ length: numClasses }, () => []);
   students.forEach(s => {
@@ -115,6 +115,13 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
   }, 0);
   cost += 200.0 * keepTogetherPenalty;
 
+  // Keep Out of Class penalty: count of students assigned to their forbidden class
+  const keepOutOfClassPenalty = keepOutOfClass.reduce((penalty, { studentId, classIndex }) => {
+    const assignedClass = assignment[studentId];
+    return (assignedClass !== undefined && assignedClass === classIndex) ? penalty + 1 : penalty;
+  }, 0);
+  cost += 150.0 * keepOutOfClassPenalty;
+
   return cost;
 }
 
@@ -131,7 +138,7 @@ function createSeededRNG(seed) {
 }
 
 // Compute deterministic seed from input data
-function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart = [], keepTogether = []) {
+function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
   let hash = 2166136261;
   const fnv = (h, v) => Math.imul(h ^ v, 16777619);
 
@@ -173,18 +180,48 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
     }
   }
 
+  // Hash keepOutOfClass constraints for determinism
+  const sortedKeepOutOfClass = [...keepOutOfClass].sort((a, b) => {
+    if (a.studentId !== b.studentId) return a.studentId.localeCompare(b.studentId);
+    return a.classIndex - b.classIndex;
+  });
+  for (const constraint of sortedKeepOutOfClass) {
+    hash = fnv(hash, constraint.studentId.split('').reduce((h, c) => fnv(h, c.charCodeAt(0)), hash));
+    hash = fnv(hash, constraint.classIndex);
+  }
+
   return hash >>> 0;
 }
 
-function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = [], keepTogether = []) {
+function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
   if (!students.length || !numClasses) return {};
   const unlocked = students.filter(s => lockedAssignments[s.id] === undefined);
 
-  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether);
+  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
   const rand = createSeededRNG(seed);
 
+  // ── Build keep-together group membership map ────────────────
+  const studentGroupMap = new Map(); // studentId -> group index
+  const validKeepTogether = keepTogether.filter(group => group.length >= 2);
+  validKeepTogether.forEach((group, idx) => {
+    group.forEach(studentId => studentGroupMap.set(studentId, idx));
+  });
+
   // ── Greedy init: O(n) with running size counters ────────────────
+  // Sort by group (group members together) then by score
   const scored = [...unlocked].sort((a, b) => {
+    const groupA = studentGroupMap.get(a.id);
+    const groupB = studentGroupMap.get(b.id);
+
+    // If both are in groups, keep groups together (sort by group index)
+    if (groupA !== undefined && groupB !== undefined) {
+      if (groupA !== groupB) return groupA - groupB;
+    }
+    // If only one is in a group, groups come first
+    if (groupA !== undefined && groupB === undefined) return -1;
+    if (groupA === undefined && groupB !== undefined) return 1;
+
+    // Within same group or neither in group, sort by score
     const sa = numericCriteria.reduce((sum, { key }) => sum + (a[key] || 0), 0);
     const sb = numericCriteria.reduce((sum, { key }) => sum + (b[key] || 0), 0);
     return sb - sa;
@@ -203,16 +240,79 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   });
 
   const assignment = { ...lockedAssignments };
+
+  // Track which group is assigned to which class
+  const groupAssignments = new Map(); // group index -> class index
+
+  // Process groups in random order to distribute them fairly across classes
+  const groupIndices = validKeepTogether.map((_, idx) => idx);
+  // Shuffle group order using seeded RNG for determinism
+  for (let i = groupIndices.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [groupIndices[i], groupIndices[j]] = [groupIndices[j], groupIndices[i]];
+  }
+  const groupOrderMap = new Map(groupIndices.map((idx, order) => [idx, order]));
+
+  // Re-sort scored to process groups in randomized order
+  scored.sort((a, b) => {
+    const groupA = studentGroupMap.get(a.id);
+    const groupB = studentGroupMap.get(b.id);
+
+    // Both in groups - use randomized group order
+    if (groupA !== undefined && groupB !== undefined) {
+      if (groupA !== groupB) {
+        return groupOrderMap.get(groupA) - groupOrderMap.get(groupB);
+      }
+      // Same group - maintain original order
+      return 0;
+    }
+    // If only one is in a group, groups come first
+    if (groupA !== undefined && groupB === undefined) return -1;
+    if (groupA === undefined && groupB !== undefined) return 1;
+
+    // Neither in group - sort by score
+    const sa = numericCriteria.reduce((sum, { key }) => sum + (a[key] || 0), 0);
+    const sb = numericCriteria.reduce((sum, { key }) => sum + (b[key] || 0), 0);
+    return sb - sa;
+  });
+
   for (const s of scored) {
     const sScore = numericCriteria.reduce((sum, { key }) => sum + (s[key] || 0), 0);
-    const minSize = Math.min(...totalSizes);
-    let bestClass = 0, bestMean = Infinity;
-    for (let i = 0; i < numClasses; i++) {
-      if (totalSizes[i] === minSize) {
-        const mean = totalSizes[i] > 0 ? greedyScoreSums[i] / totalSizes[i] : 0;
-        if (mean < bestMean) { bestMean = mean; bestClass = i; }
+
+    let bestClass;
+    const groupIdx = studentGroupMap.get(s.id);
+
+    if (groupIdx !== undefined) {
+      // Student is in a keep-together group
+      if (groupAssignments.has(groupIdx)) {
+        // Group already has a class assigned, use it
+        bestClass = groupAssignments.get(groupIdx);
+      } else {
+        // First member of this group - assign to a random smallest class
+        const minSize = Math.min(...totalSizes);
+        const smallestClasses = [];
+        for (let i = 0; i < numClasses; i++) {
+          if (totalSizes[i] === minSize) {
+            smallestClasses.push(i);
+          }
+        }
+        // Randomly select from smallest classes for fairness
+        bestClass = smallestClasses[Math.floor(rand() * smallestClasses.length)];
+        groupAssignments.set(groupIdx, bestClass);
+      }
+    } else {
+      // Not in a group - use normal greedy assignment
+      const minSize = Math.min(...totalSizes);
+      let bestMean = Infinity;
+      bestClass = 0;
+      for (let i = 0; i < numClasses; i++) {
+        if (totalSizes[i] === minSize) {
+          const mean = totalSizes[i] > 0 ? greedyScoreSums[i] / totalSizes[i] : 0;
+          if (mean < bestMean) { bestMean = mean; bestClass = i; }
+        }
       }
     }
+
     assignment[s.id] = bestClass;
     totalSizes[bestClass]++;
     greedyScoreSums[bestClass] += sScore;
@@ -350,6 +450,13 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     }, 0);
     cost += 200.0 * keepTogetherPenalty;
 
+    // Keep Out of Class penalty: count of students assigned to their forbidden class
+    const keepOutOfClassPenalty = keepOutOfClass.reduce((penalty, { studentId, classIndex }) => {
+      const assignedClass = assignment[studentId];
+      return (assignedClass !== undefined && assignedClass === classIndex) ? penalty + 1 : penalty;
+    }, 0);
+    cost += 150.0 * keepOutOfClassPenalty;
+
     return cost;
   }
 
@@ -464,6 +571,19 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       else if (wasSplit && !isSplit) keepTogetherDelta -= 1;
     }
     delta += 200.0 * keepTogetherDelta;
+
+    // Keep Out of Class delta: changes if swap moves a student into/out of their forbidden class
+    let keepOutOfClassDelta = 0;
+    for (const { studentId, classIndex } of keepOutOfClass) {
+      const oldClass = assignment[studentId];
+      // Determine new class after swap
+      const newClass = (studentId === s1.id) ? c2 : (studentId === s2.id) ? c1 : oldClass;
+      const wasViolating = oldClass !== undefined && oldClass === classIndex;
+      const isViolating = newClass !== undefined && newClass === classIndex;
+      if (!wasViolating && isViolating) keepOutOfClassDelta += 1;
+      else if (wasViolating && !isViolating) keepOutOfClassDelta -= 1;
+    }
+    delta += 150.0 * keepOutOfClassDelta;
 
     // Class sizes don't change in a same-depth swap
     return delta;

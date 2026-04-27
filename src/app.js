@@ -24,6 +24,9 @@ function App() {
   // Keep together constraints: array of student ID groups
   const [keepTogether, setKeepTogether] = useState([]);
 
+  // Keep out of class constraints: array of {studentId, classIndex} objects
+  const [keepOutOfClass, setKeepOutOfClass] = useState([]);
+
   const [showSettings, setShowSettings] = useState(false);
   const [showSaveProject, setShowSaveProject] = useState(false);
   const [showLoadProject, setShowLoadProject] = useState(false);
@@ -110,6 +113,32 @@ function App() {
   function removeStudentConstraints(studentId) {
     setKeepApart(prev => prev.filter(p => p[0] !== studentId && p[1] !== studentId));
     setKeepTogether(prev => prev.filter(group => !group.includes(studentId)));
+    setKeepOutOfClass(prev => prev.filter(c => c.studentId !== studentId));
+  }
+
+  // Add a keep-out-of-class constraint
+  function addKeepOutOfClass(studentId, classIndex) {
+    setKeepOutOfClass(prev => {
+      // Don't add duplicates
+      const exists = prev.some(c => c.studentId === studentId && c.classIndex === classIndex);
+      if (exists) return prev;
+      return [...prev, { studentId, classIndex }];
+    });
+  }
+
+  // Remove a keep-out-of-class constraint
+  function removeKeepOutOfClass(studentId, classIndex) {
+    setKeepOutOfClass(prev => prev.filter(c => !(c.studentId === studentId && c.classIndex === classIndex)));
+  }
+
+  // Get all keep-out-of-class constraints for a student
+  function getKeepOutOfClassForStudent(studentId) {
+    return keepOutOfClass.filter(c => c.studentId === studentId);
+  }
+
+  // Clear all keep-out-of-class constraints for a student
+  function clearKeepOutOfClassForStudent(studentId) {
+    setKeepOutOfClass(prev => prev.filter(c => c.studentId !== studentId));
   }
 
   function handleLoadProject(data) {
@@ -120,13 +149,14 @@ function App() {
     if (data.flagCriteria) setFlagCriteria(data.flagCriteria);
     if (data.keepApart) setKeepApart(data.keepApart);
     if (data.keepTogether) setKeepTogether(data.keepTogether);
+    if (data.keepOutOfClass) setKeepOutOfClass(data.keepOutOfClass);
     if (data.optimizationResults) setOptimizationResults(data.optimizationResults);
     if (data.assignment) setAssignment(data.assignment);
     if (data.locked) {
       // Convert array back to Set
       setLocked(new Set(data.locked));
     }
-    
+
     // Switch to optimize view if we have an assignment, otherwise setup
     if (data.assignment && Object.keys(data.assignment).length > 0) {
       setView('optimize');
@@ -220,6 +250,9 @@ function App() {
           keepTogether={keepTogether}
           onAddKeepTogether={addKeepTogether}
           onRemoveKeepTogether={removeKeepTogether}
+          keepOutOfClass={keepOutOfClass}
+          onAddKeepOutOfClass={addKeepOutOfClass}
+          onRemoveKeepOutOfClass={removeKeepOutOfClass}
           onRemoveStudentConstraints={removeStudentConstraints}
         />
       ) : (
@@ -236,6 +269,9 @@ function App() {
           keepTogether={keepTogether}
           onAddKeepTogether={addKeepTogether}
           onRemoveKeepTogether={removeKeepTogether}
+          keepOutOfClass={keepOutOfClass}
+          onAddKeepOutOfClass={addKeepOutOfClass}
+          onRemoveKeepOutOfClass={removeKeepOutOfClass}
           assignment={assignment}
           setAssignment={setAssignment}
           locked={locked}
@@ -253,7 +289,7 @@ function App() {
           onExportStudents={() => {
             // Export current students before clearing
             // exportStudentsToCSV is globally available from csv.js
-            const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart, keepTogether);
+            const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -268,6 +304,7 @@ function App() {
             setStudents([]);
             setKeepApart([]);
             setKeepTogether([]);
+            setKeepOutOfClass([]);
           }}
         />
       )}
@@ -280,6 +317,7 @@ function App() {
           flagCriteria={flagCriteria}
           keepApart={keepApart}
           keepTogether={keepTogether}
+          keepOutOfClass={keepOutOfClass}
           assignment={assignment}
           locked={locked}
           optimizationResults={optimizationResults}

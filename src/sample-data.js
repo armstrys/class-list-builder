@@ -1,9 +1,9 @@
 let _sid = 1;
 function uid() { return 'S' + (_sid++).toString().padStart(3, '0'); }
 
-const FN_F = ['Emma','Olivia','Ava','Sophia','Isabella','Mia','Luna','Harper','Nora','Riley','Zoey','Lily','Hannah','Elena','Maya','Chloe','Leah','Zoe','Aria','Camila'];
-const FN_M = ['Liam','Noah','Oliver','Elijah','James','William','Lucas','Henry','Mason','Ethan','Daniel','Logan','Owen','Leo','Dylan','Nathan','Carter','Julian','Jayden','Aiden'];
-const LN = ['Smith','Johnson','Williams','Brown','Davis','Miller','Wilson','Moore','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Garcia','Martinez','Lewis','Walker','Hall','Allen','Young','King','Wright'];
+const FN_F = ['Emma','Olivia','Ava','Sophia','Isabella','Mia','Luna','Harper','Nora','Riley','Zoey','Lily','Hannah','Elena','Maya','Chloe','Leah','Zoe','Aria','Camila','Grace','Ellie','Violet','Aurora','Scarlett','Emily','Madison','Penelope','Layla','Stella'];
+const FN_M = ['Liam','Noah','Oliver','Elijah','James','William','Lucas','Henry','Mason','Ethan','Daniel','Logan','Owen','Leo','Dylan','Nathan','Carter','Julian','Jayden','Aiden','Sebastian','Benjamin','Alexander','Michael','Matthew','Samuel','David','Joseph','Jack','Wyatt'];
+const LN = ['Smith','Johnson','Williams','Brown','Davis','Miller','Wilson','Moore','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Garcia','Martinez','Lewis','Walker','Hall','Allen','Young','King','Wright','Clark','Rodriguez','Lopez','Hill','Adams','Nelson','Baker'];
 
 function rnd(a, b) { return Math.round(a + Math.random() * (b - a)); }
 function p(prob) { return Math.random() < prob; }

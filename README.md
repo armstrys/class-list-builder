@@ -90,7 +90,7 @@ Click **Sample Data** to generate a randomized roster for testing or demonstrati
 
 **Need a template?**
 
-Generate sample data first, then click **⬇ Export Students** to download a CSV with the correct column headers for your criteria configuration. Use that as a template for your real data.
+Generate sample data first, then click **⬇ Save Students** to save a CSV with the correct column headers for your criteria configuration. Use that as a template for your real data.
 
 ---
 
@@ -162,8 +162,8 @@ Constraints are cleared when you import new students. Use the `keep_apart_group`
 
 At any time, you can export your student data:
 
-- **On the Setup page:** Click **⬇ Export Students** to download a CSV with all student data (useful as a template or for backup)
-- **After optimizing:** Click **⬇ Export Lists** in the toolbar to download class assignments with all student data
+- **On the Setup page:** Click **⬇ Save Students** to save a CSV with all student data (useful as a template or for backup)
+- **After optimizing:** Click **⬇ Save Lists** in the toolbar to save class assignments with all student data
 
 Open the CSV in Excel or Google Sheets to format it, print it, or share it with your principal.
 

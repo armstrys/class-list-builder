@@ -13,6 +13,9 @@ function SetupPage({
   keepTogether,
   onAddKeepTogether,
   onRemoveKeepTogether,
+  keepOutOfClass,
+  onAddKeepOutOfClass,
+  onRemoveKeepOutOfClass,
   onRemoveStudentConstraints,
 }) {
   const [showForm, setShowForm] = useState(false);
@@ -22,6 +25,15 @@ function SetupPage({
   const [showConstraintModal, setShowConstraintModal] = useState(false);
   const [sampleCount, setSampleCount] = useState(27);
   const [numTeachers, setNumTeachers] = useState(String(teachers.length || 3));
+  const [idFilter, setIdFilter] = useState('');
+  const [nameFilter, setNameFilter] = useState('');
+
+  // Filter students by ID and name
+  const filteredStudents = students.filter(s => {
+    const matchesId = idFilter === '' || s.id.toLowerCase().includes(idFilter.toLowerCase());
+    const matchesName = nameFilter === '' || s.name.toLowerCase().includes(nameFilter.toLowerCase());
+    return matchesId && matchesName;
+  });
 
   function getDefaultClassName(index) {
     // Convert index to Excel-style column letters (0 -> A, 25 -> Z, 26 -> AA, 27 -> AB, etc.)
@@ -59,7 +71,7 @@ function SetupPage({
 
   const canOptimize = students.length >= teachers.length && teachers.length >= 2;
 
-  function downloadStudentsCSV() {
+  function saveStudentsCSV() {
     if (students.length === 0) return;
     const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart, keepTogether);
     triggerDownload(csv, 'students.csv', 'text/csv');
@@ -119,7 +131,7 @@ function SetupPage({
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
                 {students.length > 0 && (
-                  <button className="btn btn-secondary btn-sm" onClick={downloadStudentsCSV}>⬇ Export Students</button>
+                  <button className="btn btn-secondary btn-sm" onClick={saveStudentsCSV}>⬇ Save Students</button>
                 )}
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
                 {students.length > 0 && (
@@ -142,9 +154,32 @@ function SetupPage({
               </div>
             ) : (
               <div className="students-table-wrap" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                {/* Filter row */}
+                <div style={{ display: 'flex', gap: 12, marginBottom: 12, padding: '8px 0' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Filter by ID..."
+                    value={idFilter}
+                    onChange={e => setIdFilter(e.target.value)}
+                    style={{ flex: 1, maxWidth: 200 }}
+                  />
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Filter by name..."
+                    value={nameFilter}
+                    onChange={e => setNameFilter(e.target.value)}
+                    style={{ flex: 2 }}
+                  />
+                  <span style={{ fontSize: 12, color: 'var(--text3)', alignSelf: 'center' }}>
+                    Showing {filteredStudents.length} of {students.length}
+                  </span>
+                </div>
                 <table className="students-table">
                   <thead>
                     <tr>
+                      <th className="col-id" style={{ fontSize: 11, width: 80 }}>ID</th>
                       <th className="col-name">Name</th>
                       <th>G</th>
                       {numericCriteria.map(c => <th key={c.key} className="col-num" title={c.label}>{c.short}</th>)}
@@ -153,8 +188,9 @@ function SetupPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map(s => (
+                    {filteredStudents.map(s => (
                       <tr key={s.id}>
+                        <td className="col-id" style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>{s.id}</td>
                         <td className="col-name">{s.name}</td>
                         <td><span className={`badge badge-${s.gender}`}>{s.gender}</span></td>
                         {numericCriteria.map(c => <td key={c.key} className="col-num">{s[c.key] || 0}</td>)}
@@ -249,6 +285,10 @@ function SetupPage({
           keepTogether={keepTogether}
           onAddKeepTogether={onAddKeepTogether}
           onRemoveKeepTogether={onRemoveKeepTogether}
+          keepOutOfClass={keepOutOfClass}
+          teachers={teachers}
+          onAddKeepOutOfClass={onAddKeepOutOfClass}
+          onRemoveKeepOutOfClass={onRemoveKeepOutOfClass}
           onClose={() => setShowConstraintModal(false)}
         />
       )}

@@ -272,6 +272,51 @@ function validateKeepTogether(keepTogether, validStudentIds) {
 }
 
 /**
+ * Validates keepOutOfClass constraints
+ * @param {Array} keepOutOfClass - Array of {studentId, classIndex} objects
+ * @param {Set} validStudentIds - Set of valid student IDs
+ * @param {number} numTeachers - Number of teachers/classes
+ * @returns {Object} { validConstraints: Array, invalidConstraints: Array }
+ */
+function validateKeepOutOfClass(keepOutOfClass, validStudentIds, numTeachers) {
+  const validConstraints = [];
+  const invalidConstraints = [];
+
+  (keepOutOfClass || []).forEach((constraint, index) => {
+    if (!constraint || typeof constraint !== 'object') {
+      invalidConstraints.push({ index, constraint, reason: 'Invalid format (expected object with studentId and classIndex)' });
+      return;
+    }
+
+    const { studentId, classIndex } = constraint;
+
+    if (!studentId || typeof studentId !== 'string') {
+      invalidConstraints.push({ index, constraint, reason: 'Missing or invalid studentId' });
+      return;
+    }
+
+    if (classIndex === undefined || typeof classIndex !== 'number') {
+      invalidConstraints.push({ index, constraint, reason: 'Missing or invalid classIndex' });
+      return;
+    }
+
+    if (!validStudentIds.has(studentId)) {
+      invalidConstraints.push({ index, constraint, reason: `Unknown student ID: ${studentId}` });
+      return;
+    }
+
+    if (classIndex < 0 || classIndex >= numTeachers) {
+      invalidConstraints.push({ index, constraint, reason: `Invalid classIndex: ${classIndex} (must be 0-${numTeachers - 1})` });
+      return;
+    }
+
+    validConstraints.push(constraint);
+  });
+
+  return { validConstraints, invalidConstraints };
+}
+
+/**
  * Deserializes and validates a project file
  * @param {string|Object} projectData - The project data (JSON string or parsed object)
  * @param {Object} options - Options for validation
@@ -287,7 +332,8 @@ function deserializeProject(projectData, options = {}) {
     students: [],
     teachers: [],
     keepApart: [],
-    keepTogether: []
+    keepTogether: [],
+    keepOutOfClass: []
   };
   
   const currentVersion = options.currentVersion || (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown');
@@ -384,9 +430,12 @@ function deserializeProject(projectData, options = {}) {
   // Validate constraints
   const keepApartResult = validateKeepApart(projectState.keepApart, validStudentIds);
   invalidItems.keepApart = keepApartResult.invalidPairs;
-  
+
   const keepTogetherResult = validateKeepTogether(projectState.keepTogether, validStudentIds);
   invalidItems.keepTogether = keepTogetherResult.invalidGroups;
+
+  const keepOutOfClassResult = validateKeepOutOfClass(projectState.keepOutOfClass, validStudentIds, validatedTeachers.length);
+  invalidItems.keepOutOfClass = keepOutOfClassResult.invalidConstraints;
   
   // Check criteria compatibility
   const criteriaCheck = validateCriteriaCompatibility(
@@ -447,6 +496,7 @@ function deserializeProject(projectData, options = {}) {
     flagCriteria: criteriaCheck.mergedFlagCriteria,
     keepApart: keepApartResult.validPairs,
     keepTogether: keepTogetherResult.validGroups,
+    keepOutOfClass: keepOutOfClassResult.validConstraints,
     assignment,
     locked,
     optimizationResults
@@ -465,7 +515,10 @@ function deserializeProject(projectData, options = {}) {
   if (invalidItems.keepTogether.length > 0) {
     warnings.push(`${invalidItems.keepTogether.length} keep-together group(s) skipped due to invalid references.`);
   }
-  
+  if (invalidItems.keepOutOfClass.length > 0) {
+    warnings.push(`${invalidItems.keepOutOfClass.length} keep-out-of-class constraint(s) skipped due to invalid references.`);
+  }
+
   return {
     canLoad,
     errors,
@@ -514,6 +567,7 @@ if (typeof module !== 'undefined' && module.exports) {
     validateCriteriaCompatibility,
     validateKeepApart,
     validateKeepTogether,
+    validateKeepOutOfClass,
     PROJECT_FORMAT_VERSION
   };
 }

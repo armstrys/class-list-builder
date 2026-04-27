@@ -308,9 +308,9 @@ Bob,F,`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[0]).toBe('name,gender,readingScore,mathScore,behavior,sped,keep_apart_group,keep_together_group');
-      expect(lines[1]).toBe('Alice,F,85,90,1,0,,');
-      expect(lines[2]).toBe('Bob,M,78,82,0,1,,');
+      expect(lines[0]).toBe('name,gender,readingScore,mathScore,behavior,sped,keep_apart_group,keep_together_group,keep_out_of_class');
+      expect(lines[1]).toBe('Alice,F,85,90,1,0,,,');
+      expect(lines[2]).toBe('Bob,M,78,82,0,1,,,');
     });
 
     test('handles students with missing fields', () => {
@@ -324,7 +324,7 @@ Bob,F,`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[1]).toBe('Alice,F,0,0,0,0,,');
+      expect(lines[1]).toBe('Alice,F,0,0,0,0,,,');
     });
 
     test('exports empty student list with headers only', () => {
@@ -337,7 +337,7 @@ Bob,F,`;
       // Assert
       const lines = csv.split('\n');
       expect(lines).toHaveLength(1);
-      expect(lines[0]).toBe('name,gender,readingScore,mathScore,behavior,sped,keep_apart_group,keep_together_group');
+      expect(lines[0]).toBe('name,gender,readingScore,mathScore,behavior,sped,keep_apart_group,keep_together_group,keep_out_of_class');
     });
 
     test('exports keep apart groups to CSV', () => {
@@ -354,11 +354,11 @@ Bob,F,`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[0]).toBe('name,gender,readingScore,mathScore,behavior,sped,keep_apart_group,keep_together_group');
+      expect(lines[0]).toBe('name,gender,readingScore,mathScore,behavior,sped,keep_apart_group,keep_together_group,keep_out_of_class');
       // All three should have group 1
-      expect(lines[1]).toBe('Alice,F,85,90,0,0,1,');
-      expect(lines[2]).toBe('Bob,M,78,82,0,0,1,');
-      expect(lines[3]).toBe('Charlie,M,70,75,0,0,1,');
+      expect(lines[1]).toBe('Alice,F,85,90,0,0,1,,');
+      expect(lines[2]).toBe('Bob,M,78,82,0,0,1,,');
+      expect(lines[3]).toBe('Charlie,M,70,75,0,0,1,,');
     });
 
     test('exports multiple keep apart groups', () => {
@@ -376,10 +376,10 @@ Bob,F,`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[1]).toBe('Alice,F,85,90,0,0,1,');
-      expect(lines[2]).toBe('Bob,M,78,82,0,0,1,');
-      expect(lines[3]).toBe('Charlie,M,70,75,0,0,2,');
-      expect(lines[4]).toBe('Diana,F,92,88,0,0,2,');
+      expect(lines[1]).toBe('Alice,F,85,90,0,0,1,,');
+      expect(lines[2]).toBe('Bob,M,78,82,0,0,1,,');
+      expect(lines[3]).toBe('Charlie,M,70,75,0,0,2,,');
+      expect(lines[4]).toBe('Diana,F,92,88,0,0,2,,');
     });
   });
 
@@ -694,11 +694,11 @@ Charlie,M,70,1`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[0]).toBe('name,gender,readingScore,mathScore,behavior,sped,keep_apart_group,keep_together_group');
+      expect(lines[0]).toBe('name,gender,readingScore,mathScore,behavior,sped,keep_apart_group,keep_together_group,keep_out_of_class');
       // Alice and Bob should have group 1, Charlie should have no group
-      expect(lines[1]).toBe('Alice,F,85,90,0,0,,1');
-      expect(lines[2]).toBe('Bob,M,78,82,0,0,,1');
-      expect(lines[3]).toBe('Charlie,M,70,75,0,0,,');
+      expect(lines[1]).toBe('Alice,F,85,90,0,0,,1,');
+      expect(lines[2]).toBe('Bob,M,78,82,0,0,,1,');
+      expect(lines[3]).toBe('Charlie,M,70,75,0,0,,,');
     });
 
     test('exports multiple keep together groups', () => {
@@ -716,10 +716,10 @@ Charlie,M,70,1`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[1]).toBe('Alice,F,85,90,0,0,,1');
-      expect(lines[2]).toBe('Bob,M,78,82,0,0,,1');
-      expect(lines[3]).toBe('Charlie,M,70,75,0,0,,2');
-      expect(lines[4]).toBe('Diana,F,92,88,0,0,,2');
+      expect(lines[1]).toBe('Alice,F,85,90,0,0,,1,');
+      expect(lines[2]).toBe('Bob,M,78,82,0,0,,1,');
+      expect(lines[3]).toBe('Charlie,M,70,75,0,0,,2,');
+      expect(lines[4]).toBe('Diana,F,92,88,0,0,,2,');
     });
   });
 

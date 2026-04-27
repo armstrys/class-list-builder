@@ -1,4 +1,4 @@
-function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], allStudents = [] }) {
+function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [], teachers = [] }) {
   const activeFlags = flagCriteria.filter(c => student[c.key]);
   const inactiveFlags = flagCriteria.filter(c => !student[c.key]);
 
@@ -16,7 +16,10 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
     otherNames: group.filter(id => id !== student.id).map(id => studentById[id]?.name || id)
   }));
 
-  const hasConstraints = keepApart.length > 0 || keepTogether.length > 0;
+  // Get class names for keepOutOfClass constraints
+  const outOfClassNames = keepOutOfClass.map(classIndex => teachers[classIndex]?.name || `Class ${classIndex + 1}`);
+
+  const hasConstraints = keepApart.length > 0 || keepTogether.length > 0 || keepOutOfClass.length > 0;
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -35,6 +38,12 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
           <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Student ID */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>ID:</span>
+            <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'DM Mono, monospace', background: 'var(--surface2)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{student.id}</span>
+          </div>
+
           {numericCriteria.length > 0 && (
             <div>
               <div className="panel-title">Scores</div>
@@ -93,6 +102,18 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
                     {togetherWithNames.map(({ otherNames }, idx) => (
                       <div key={idx} style={{ fontSize: 13, color: 'var(--text1)', padding: '4px 8px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
                         {otherNames.join(', ')}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {keepOutOfClass.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>Keep Out Of Class:</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {outOfClassNames.map((className, idx) => (
+                      <div key={idx} style={{ fontSize: 13, color: 'var(--text1)', padding: '4px 8px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
+                        {className}
                       </div>
                     ))}
                   </div>

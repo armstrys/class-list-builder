@@ -6,11 +6,20 @@ function ConstraintManager({
   keepTogether,
   onAddKeepTogether,
   onRemoveKeepTogether,
+  keepOutOfClass,
+  teachers,
+  onAddKeepOutOfClass,
+  onRemoveKeepOutOfClass,
   onClose,
 }) {
-  const [activeTab, setActiveTab] = useState('apart'); // 'apart' | 'together'
+  const [activeTab, setActiveTab] = useState('apart'); // 'apart' | 'together' | 'outofclass'
   const [selectedIds, setSelectedIds] = useState([]);
   const [filter, setFilter] = useState('');
+
+  // Keep Out of Class form state
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedClassIndex, setSelectedClassIndex] = useState('');
+  const [studentFilter, setStudentFilter] = useState('');
 
   const studentById = Object.fromEntries(students.map(s => [s.id, s]));
 
@@ -33,6 +42,24 @@ function ConstraintManager({
     studentIds: group,
     names: group.map(id => studentById[id]?.name || id),
   }));
+
+  // Get keep-out-of-class constraints with student and class info
+  const outOfClassConstraints = keepOutOfClass.map((c, idx) => {
+    // Ensure classIndex is a number
+    const classIndex = typeof c.classIndex === 'string' ? parseInt(c.classIndex, 10) : Number(c.classIndex);
+    // Get teacher name safely
+    let teacherName = `Class ${classIndex + 1}`;
+    if (teachers && Array.isArray(teachers) && teachers[classIndex] && teachers[classIndex].name) {
+      teacherName = teachers[classIndex].name;
+    }
+    return {
+      idx,
+      studentId: c.studentId,
+      classIndex: classIndex,
+      studentName: studentById[c.studentId]?.name || c.studentId,
+      teacherName: teacherName,
+    };
+  });
 
   // Build adjacency list for keep-apart
   const apartAdj = {};
@@ -84,6 +111,18 @@ function ConstraintManager({
     onRemoveKeepTogether(idx);
   }
 
+  function handleAddOutOfClassConstraint() {
+    if (selectedStudentId && selectedClassIndex !== '') {
+      onAddKeepOutOfClass(selectedStudentId, parseInt(selectedClassIndex, 10));
+      setSelectedStudentId('');
+      setSelectedClassIndex('');
+    }
+  }
+
+  function handleRemoveOutOfClassConstraint(studentId, classIndex) {
+    onRemoveKeepOutOfClass(studentId, classIndex);
+  }
+
   // Get related students for the selected group (apart mode only)
   function getSelectedGroupInfo() {
     if (activeTab !== 'apart' || selectedIds.length === 0) return null;
@@ -108,7 +147,7 @@ function ConstraintManager({
   const groupInfo = getSelectedGroupInfo();
 
   // Count total constraints
-  const totalConstraints = keepApart.length + keepTogether.length;
+  const totalConstraints = keepApart.length + keepTogether.length + keepOutOfClass.length;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -171,10 +210,33 @@ function ConstraintManager({
                 </span>
               )}
             </button>
+            <button
+              onClick={() => { setActiveTab('outofclass'); setSelectedIds([]); setFilter(''); }}
+              style={{
+                padding: '12px 20px',
+                border: 'none',
+                background: activeTab === 'outofclass' ? 'var(--bg)' : 'transparent',
+                borderBottom: activeTab === 'outofclass' ? '2px solid var(--accent)' : '2px solid transparent',
+                color: activeTab === 'outofclass' ? 'var(--accent)' : 'var(--text2)',
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              Keep Out of Class
+              {keepOutOfClass.length > 0 && (
+                <span className="badge" style={{ background: 'var(--warning)', color: 'white', fontSize: 10 }}>
+                  {keepOutOfClass.length}
+                </span>
+              )}
+            </button>
           </div>
 
           <div style={{ padding: 20 }}>
-            {activeTab === 'apart' ? (
+            {activeTab === 'apart' && (
               <>
                 {/* Keep Apart Existing Constraints */}
                 <div style={{ marginBottom: 24 }}>
@@ -275,6 +337,7 @@ function ConstraintManager({
                             onChange={() => {}}
                             style={{ pointerEvents: 'none' }}
                           />
+                          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace', minWidth: 60 }}>{s.id}</span>
                           <span>{s.name}</span>
                           {apartAdj[s.id].length > 0 && (
                             <span style={{ 
@@ -338,7 +401,8 @@ function ConstraintManager({
                   </div>
                 </div>
               </>
-            ) : (
+            )}
+            {activeTab === 'together' && (
               <>
                 {/* Keep Together Existing Constraints */}
                 <div style={{ marginBottom: 24 }}>
@@ -438,6 +502,7 @@ function ConstraintManager({
                             onChange={() => {}}
                             style={{ pointerEvents: 'none' }}
                           />
+                          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace', minWidth: 60 }}>{s.id}</span>
                           <span>{s.name}</span>
                           {togetherStudentSet.has(s.id) && (
                             <span style={{ 
@@ -493,6 +558,193 @@ function ConstraintManager({
                       onClick={handleAddTogetherConstraint}
                     >
                       Add Group
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+            {activeTab === 'outofclass' && (
+              <>
+                {/* Keep Out of Class Existing Constraints */}
+                <div style={{ marginBottom: 24 }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 500 }}>
+                    Active Keep-Out-of-Class Constraints ({outOfClassConstraints.length})
+                  </h4>
+                  {outOfClassConstraints.length === 0 ? (
+                    <div style={{ color: 'var(--text3)', fontSize: 13, padding: '12px 0' }}>
+                      No keep-out-of-class constraints set yet. These students will be prevented from being assigned to specific classes.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {outOfClassConstraints.map((c) => (
+                        <div key={c.idx} className="constraint-item" style={{
+                          background: 'var(--surface)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '8px 12px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+                              {c.studentName}
+                            </span>
+                            <span style={{ color: 'var(--text3)', whiteSpace: 'nowrap' }}>→</span>
+                            <span className="badge" style={{ background: 'var(--surface2)', color: 'var(--text)' }}>
+                              {c.teacherName} (Class {c.classIndex + 1})
+                            </span>
+                            <span style={{
+                              marginLeft: 'auto',
+                              fontSize: 11,
+                              color: 'var(--text3)',
+                              fontStyle: 'italic'
+                            }}>
+                              blocked
+                            </span>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleRemoveOutOfClassConstraint(c.studentId, c.classIndex)}
+                              title="Remove this constraint"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Keep Out of Class Add New */}
+                <div>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 500 }}>
+                    Add Keep-Out-of-Class Constraint
+                  </h4>
+                  <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--text3)' }}>
+                    Select a student and a class to prevent them from being assigned to that class.
+                  </p>
+
+                  {/* Student filter and select */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 6, color: 'var(--text2)' }}>
+                      Filter Students
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Filter students by name..."
+                      value={studentFilter}
+                      onChange={e => setStudentFilter(e.target.value)}
+                      style={{ marginBottom: 8 }}
+                    />
+
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 6, color: 'var(--text2)' }}>
+                      Select Student
+                    </label>
+                    <select
+                      className="form-select"
+                      value={selectedStudentId}
+                      onChange={e => setSelectedStudentId(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                        fontSize: 14,
+                      }}
+                    >
+                      <option value="">-- Select a student --</option>
+                      {students
+                        .filter(s => s.name.toLowerCase().includes(studentFilter.toLowerCase()))
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.id} - {s.name}
+                          </option>
+                        ))}
+                    </select>
+                    {studentFilter && students.filter(s => s.name.toLowerCase().includes(studentFilter.toLowerCase())).length === 0 && (
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                        No students match this filter
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Class select */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 500, marginBottom: 6, color: 'var(--text2)' }}>
+                      Select Class to Block
+                    </label>
+                    <select
+                      className="form-select"
+                      value={selectedClassIndex}
+                      onChange={e => setSelectedClassIndex(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                        fontSize: 14,
+                      }}
+                    >
+                      <option value="">-- Select a class --</option>
+                      {teachers.map((t, idx) => (
+                        <option key={idx} value={idx}>
+                          {t.name} (Class {idx + 1})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Selected summary */}
+                  {selectedStudentId && selectedClassIndex !== '' && (
+                    <div style={{
+                      marginBottom: 12,
+                      padding: 12,
+                      background: 'var(--surface)',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div style={{ fontSize: 13 }}>
+                        <strong>Constraint to add:</strong>
+                      </div>
+                      <div style={{ fontSize: 13, marginTop: 4 }}>
+                        <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+                          {studentById[selectedStudentId]?.name || 'Unknown Student'}
+                        </span>
+                        <span style={{ color: 'var(--text3)', margin: '0 8px' }}>will be kept out of</span>
+                        <span className="badge" style={{ background: 'var(--surface2)', color: 'var(--text)' }}>
+                          {(() => {
+                            const idx = parseInt(selectedClassIndex, 10);
+                            const teacher = teachers?.[idx];
+                            return teacher?.name || `Class ${idx + 1}`;
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end' }}>
+                    {(selectedStudentId || selectedClassIndex !== '') && (
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => {
+                          setSelectedStudentId('');
+                          setSelectedClassIndex('');
+                          setStudentFilter('');
+                        }}
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                    <button
+                      className="btn btn-primary btn-sm"
+                      disabled={!selectedStudentId || selectedClassIndex === ''}
+                      onClick={handleAddOutOfClassConstraint}
+                    >
+                      Add Constraint
                     </button>
                   </div>
                 </div>

@@ -253,7 +253,7 @@ function SettingsModal({
           )}
 
           <div className="config-actions">
-            <button className="btn btn-secondary btn-sm" onClick={exportConfig}>⬇ Export Config</button>
+            <button className="btn btn-secondary btn-sm" onClick={exportConfig}>⬇ Save Config</button>
             <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>⬆ Import Config</button>
             <input
               ref={fileInputRef}

@@ -9,6 +9,7 @@ const PROJECT_FORMAT_VERSION = 1;
  * @param {Array} state.flagCriteria - Configured flag criteria
  * @param {Array} state.keepApart - Array of [id1, id2] pairs
  * @param {Array} state.keepTogether - Array of student ID groups
+ * @param {Array} state.keepOutOfClass - Array of {studentId, classIndex} constraints
  * @param {Object} state.optimizationResults - Optional optimization results
  * @param {Map} state.optimizationResults.assignments - Map of studentId -> teacherIndex
  * @param {number} state.optimizationResults.score - Optimization score
@@ -32,6 +33,7 @@ function serializeProject(state) {
       flagCriteria: state.flagCriteria || [],
       keepApart: state.keepApart || [],
       keepTogether: state.keepTogether || [],
+      keepOutOfClass: state.keepOutOfClass || [],
       assignment: state.assignment || {},
       locked: state.locked || []
     }
@@ -65,22 +67,22 @@ function generateProjectFilename() {
 }
 
 /**
- * Creates a blob URL for downloading the project file.
+ * Creates a blob URL for saving the project file.
  * @param {Object} projectData - The serialized project data
- * @returns {string} Blob URL for download
+ * @returns {string} Blob URL for saving
  */
-function createProjectDownloadUrl(projectData) {
+function createProjectSaveUrl(projectData) {
   const json = JSON.stringify(projectData, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   return URL.createObjectURL(blob);
 }
 
 /**
- * Triggers a download of the project file.
+ * Triggers a save of the project file.
  * @param {Object} projectData - The serialized project data
  */
-function downloadProject(projectData) {
-  const url = createProjectDownloadUrl(projectData);
+function saveProject(projectData) {
+  const url = createProjectSaveUrl(projectData);
   const filename = generateProjectFilename();
   const a = document.createElement('a');
   a.href = url;
@@ -96,8 +98,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     serializeProject,
     generateProjectFilename,
-    createProjectDownloadUrl,
-    downloadProject,
+    createProjectSaveUrl,
+    saveProject,
     PROJECT_FORMAT_VERSION
   };
 }

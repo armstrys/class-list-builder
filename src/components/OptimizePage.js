@@ -11,6 +11,9 @@ function OptimizePage({
   keepTogether = [],
   onAddKeepTogether,
   onRemoveKeepTogether,
+  keepOutOfClass = [],
+  onAddKeepOutOfClass,
+  onRemoveKeepOutOfClass,
   assignment,
   setAssignment,
   locked,
@@ -37,9 +40,9 @@ function OptimizePage({
     setTimeout(() => {
       const lockedObj = {};
       lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
-      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether);
+      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
       setAssignment(result);
-      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether));
+      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
       setOptimizing(false);
     }, 30);
   }
@@ -85,7 +88,7 @@ function OptimizePage({
     if (!sid) return;
     const newAssignment = { ...assignment, [sid]: classIdx };
     setAssignment(newAssignment);
-    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether));
+    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
     setDraggingId(null);
   }
 
@@ -107,8 +110,14 @@ function OptimizePage({
     return classes.size > 1;
   });
 
+  // Calculate keep-out-of-class violations for display
+  const outOfClassViolations = keepOutOfClass.filter(({ studentId, classIndex }) => {
+    const assignedClass = assignment[studentId];
+    return assignedClass !== undefined && assignedClass === classIndex;
+  });
+
   // Total violations
-  const totalViolations = apartViolations.length + togetherViolations.length;
+  const totalViolations = apartViolations.length + togetherViolations.length + outOfClassViolations.length;
 
   const classesByIdx = Array.from({ length: numClasses }, (_, i) =>
     students.filter(s => assignment[s.id] === i)
@@ -184,13 +193,13 @@ function OptimizePage({
             onClick={() => setShowConstraints(true)}
             title="View and edit constraints"
           >
-            🔗 Constraints {(keepApart.length + keepTogether.length) > 0 && `(${keepApart.length + keepTogether.length})`}
+            🔗 Constraints {(keepApart.length + keepTogether.length + keepOutOfClass.length) > 0 && `(${keepApart.length + keepTogether.length + keepOutOfClass.length})`}
           </button>
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria), 'class-lists.csv', 'text/csv')}
-            title="Download class lists as CSV"
-          >⬇ Export Lists</button>
+            title="Save class lists as CSV"
+          >⬇ Save Lists</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setFullscreen(true)} title="Fullscreen class lists">⛶ Fullscreen</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowHelp(true)}>? How it works</button>
         </div>
@@ -254,6 +263,10 @@ function OptimizePage({
           keepTogether={keepTogether}
           onAddKeepTogether={onAddKeepTogether}
           onRemoveKeepTogether={onRemoveKeepTogether}
+          keepOutOfClass={keepOutOfClass}
+          teachers={teachers}
+          onAddKeepOutOfClass={onAddKeepOutOfClass}
+          onRemoveKeepOutOfClass={onRemoveKeepOutOfClass}
           onClose={() => setShowConstraints(false)}
         />
       )}
@@ -262,6 +275,7 @@ function OptimizePage({
         <ViolationsModal
           apartViolations={apartViolations}
           togetherViolations={togetherViolations}
+          outOfClassViolations={outOfClassViolations}
           students={students}
           assignment={assignment}
           teachers={teachers}
@@ -277,7 +291,7 @@ function OptimizePage({
 }
 
 // Modal to display constraint violations in detail
-function ViolationsModal({ apartViolations, togetherViolations, students, assignment, teachers, onClose, onOpenConstraints }) {
+function ViolationsModal({ apartViolations, togetherViolations, outOfClassViolations, students, assignment, teachers, onClose, onOpenConstraints }) {
   const studentById = Object.fromEntries(students.map(s => [s.id, s]));
 
   // Get class name for a student
@@ -289,6 +303,7 @@ function ViolationsModal({ apartViolations, togetherViolations, students, assign
 
   const hasApart = apartViolations.length > 0;
   const hasTogether = togetherViolations.length > 0;
+  const hasOutOfClass = outOfClassViolations.length > 0;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -431,6 +446,59 @@ function ViolationsModal({ apartViolations, togetherViolations, students, assign
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Keep Out of Class Violations */}
+          {hasOutOfClass && (
+            <div style={{ marginBottom: 24 }}>
+              <h4 style={{
+                margin: '0 0 12px 0',
+                fontSize: 14,
+                fontWeight: 500,
+                color: 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}>
+                <span>🚫</span>
+                Keep-Out-of-Class Violations ({outOfClassViolations.length})
+              </h4>
+              <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--text3)' }}>
+                These students should not be in their assigned class:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {outOfClassViolations.map(({ studentId, classIndex }, idx) => (
+                  <div key={idx} style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '10px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="badge" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+                        {studentById[studentId]?.name || studentId}
+                      </span>
+                      <span style={{ color: 'var(--text3)' }}>→</span>
+                      <span className="badge" style={{ background: 'var(--warning)', color: 'white' }}>
+                        {teachers[classIndex]?.name || `Class ${classIndex + 1}`}
+                      </span>
+                    </div>
+                    <span style={{
+                      marginLeft: 'auto',
+                      fontSize: 11,
+                      color: 'var(--danger)',
+                      fontWeight: 500,
+                    }}>
+                      Should be excluded
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

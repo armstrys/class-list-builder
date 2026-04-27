@@ -1,4 +1,4 @@
-function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], allStudents = [] }) {
+function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
   const activeFlags = flagCriteria.filter(c => student[c.key]);
   const [showDetail, setShowDetail] = useState(false);
   const didDrag = useRef(false);
@@ -6,11 +6,13 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
   // Check if student has any constraints
   const hasKeepApart = keepApart.some(([id1, id2]) => id1 === student.id || id2 === student.id);
   const hasKeepTogether = keepTogether.some(group => group.includes(student.id));
-  const hasConstraints = hasKeepApart || hasKeepTogether;
+  const hasKeepOutOfClass = keepOutOfClass.some(c => c.studentId === student.id);
+  const hasConstraints = hasKeepApart || hasKeepTogether || hasKeepOutOfClass;
 
   // Get constraint details for this student
   const studentKeepApart = keepApart.filter(([id1, id2]) => id1 === student.id || id2 === student.id);
   const studentKeepTogether = keepTogether.filter(group => group.includes(student.id));
+  const studentKeepOutOfClass = keepOutOfClass.filter(c => c.studentId === student.id);
 
   return (
     <>
@@ -24,6 +26,7 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
       >
         <div className="student-card-top">
           <span className={`badge badge-${student.gender}`}>{student.gender}</span>
+          <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'monospace' }}>{student.id}</span>
           <span className="student-name">{student.name}</span>
           {activeFlags.length > 0 && (
             <span style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
@@ -35,11 +38,11 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
           {hasConstraints && (
             <span
               style={{ fontSize: 14, cursor: 'help' }}
-              title={hasKeepApart && hasKeepTogether
-                ? 'Has keep-apart and keep-together constraints'
-                : hasKeepApart
-                  ? 'Has keep-apart constraint(s)'
-                  : 'Has keep-together constraint(s)'}
+              title={[
+                hasKeepApart && 'Has keep-apart constraint(s)',
+                hasKeepTogether && 'Has keep-together constraint(s)',
+                hasKeepOutOfClass && 'Has keep-out-of-class constraint(s)'
+              ].filter(Boolean).join(' + ')}
             >
               🔗
             </span>
@@ -63,6 +66,7 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
           flagCriteria={flagCriteria}
           keepApart={studentKeepApart}
           keepTogether={studentKeepTogether}
+          keepOutOfClass={studentKeepOutOfClass}
           allStudents={allStudents}
         />
       )}
