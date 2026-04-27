@@ -200,8 +200,28 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
   const rand = createSeededRNG(seed);
 
+  // ── Build keep-together group membership map ────────────────
+  const studentGroupMap = new Map(); // studentId -> group index
+  const validKeepTogether = keepTogether.filter(group => group.length >= 2);
+  validKeepTogether.forEach((group, idx) => {
+    group.forEach(studentId => studentGroupMap.set(studentId, idx));
+  });
+
   // ── Greedy init: O(n) with running size counters ────────────────
+  // Sort by group (group members together) then by score
   const scored = [...unlocked].sort((a, b) => {
+    const groupA = studentGroupMap.get(a.id);
+    const groupB = studentGroupMap.get(b.id);
+
+    // If both are in groups, keep groups together (sort by group index)
+    if (groupA !== undefined && groupB !== undefined) {
+      if (groupA !== groupB) return groupA - groupB;
+    }
+    // If only one is in a group, groups come first
+    if (groupA !== undefined && groupB === undefined) return -1;
+    if (groupA === undefined && groupB !== undefined) return 1;
+
+    // Within same group or neither in group, sort by score
     const sa = numericCriteria.reduce((sum, { key }) => sum + (a[key] || 0), 0);
     const sb = numericCriteria.reduce((sum, { key }) => sum + (b[key] || 0), 0);
     return sb - sa;
@@ -220,16 +240,47 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   });
 
   const assignment = { ...lockedAssignments };
+
+  // Track which group is assigned to which class
+  const groupAssignments = new Map(); // group index -> class index
+
   for (const s of scored) {
     const sScore = numericCriteria.reduce((sum, { key }) => sum + (s[key] || 0), 0);
-    const minSize = Math.min(...totalSizes);
-    let bestClass = 0, bestMean = Infinity;
-    for (let i = 0; i < numClasses; i++) {
-      if (totalSizes[i] === minSize) {
-        const mean = totalSizes[i] > 0 ? greedyScoreSums[i] / totalSizes[i] : 0;
-        if (mean < bestMean) { bestMean = mean; bestClass = i; }
+
+    let bestClass;
+    const groupIdx = studentGroupMap.get(s.id);
+
+    if (groupIdx !== undefined) {
+      // Student is in a keep-together group
+      if (groupAssignments.has(groupIdx)) {
+        // Group already has a class assigned, use it
+        bestClass = groupAssignments.get(groupIdx);
+      } else {
+        // First member of this group - assign to smallest class
+        const minSize = Math.min(...totalSizes);
+        let bestMean = Infinity;
+        bestClass = 0;
+        for (let i = 0; i < numClasses; i++) {
+          if (totalSizes[i] === minSize) {
+            const mean = totalSizes[i] > 0 ? greedyScoreSums[i] / totalSizes[i] : 0;
+            if (mean < bestMean) { bestMean = mean; bestClass = i; }
+          }
+        }
+        groupAssignments.set(groupIdx, bestClass);
+      }
+    } else {
+      // Not in a group - use normal greedy assignment
+      const minSize = Math.min(...totalSizes);
+      let bestMean = Infinity;
+      bestClass = 0;
+      for (let i = 0; i < numClasses; i++) {
+        if (totalSizes[i] === minSize) {
+          const mean = totalSizes[i] > 0 ? greedyScoreSums[i] / totalSizes[i] : 0;
+          if (mean < bestMean) { bestMean = mean; bestClass = i; }
+        }
       }
     }
+
     assignment[s.id] = bestClass;
     totalSizes[bestClass]++;
     greedyScoreSums[bestClass] += sScore;
