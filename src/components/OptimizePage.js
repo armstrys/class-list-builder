@@ -26,12 +26,19 @@ function OptimizePage({
   const [cost, setCost] = useState(null);
   const [optimizing, setOptimizing] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [showClassFilter, setShowClassFilter] = useState(false);
+  const [visibleClasses, setVisibleClasses] = useState(new Set());
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape' && fullscreen) setFullscreen(false); }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [fullscreen]);
+
+  // Initialize visible classes when teachers change
+  useEffect(() => {
+    setVisibleClasses(new Set(teachers.map((_, i) => i)));
+  }, [teachers.length]);
 
   const numClasses = teachers.length;
 
@@ -188,6 +195,13 @@ function OptimizePage({
               </span>
             ))}
           </div>
+          <ClassFilterDropdown
+            teachers={teachers}
+            visibleClasses={visibleClasses}
+            setVisibleClasses={setVisibleClasses}
+            showClassFilter={showClassFilter}
+            setShowClassFilter={setShowClassFilter}
+          />
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => setShowConstraints(true)}
@@ -207,6 +221,7 @@ function OptimizePage({
 
       <div className="classes-area" style={{ flex: 1 }}>
         {classesByIdx.map((classStudents, i) => (
+          visibleClasses.has(i) && (
           <ClassColumn
             key={i}
             classIdx={i}
@@ -225,6 +240,7 @@ function OptimizePage({
             keepApart={keepApart}
             keepTogether={keepTogether}
           />
+          )
         ))}
       </div>
 
@@ -529,6 +545,171 @@ function ViolationsModal({ apartViolations, togetherViolations, outOfClassViolat
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Class filter dropdown component
+function ClassFilterDropdown({ teachers, visibleClasses, setVisibleClasses, showClassFilter, setShowClassFilter }) {
+  const dropdownRef = useRef(null);
+  const selectedCount = visibleClasses.size;
+  const totalCount = teachers.length;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowClassFilter(false);
+      }
+    }
+    if (showClassFilter) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showClassFilter, setShowClassFilter]);
+
+  function toggleClass(classIdx) {
+    setVisibleClasses(prev => {
+      const next = new Set(prev);
+      if (next.has(classIdx)) {
+        next.delete(classIdx);
+      } else {
+        next.add(classIdx);
+      }
+      return next;
+    });
+  }
+
+  function selectAll() {
+    setVisibleClasses(new Set(teachers.map((_, i) => i)));
+  }
+
+  function clearAll() {
+    setVisibleClasses(new Set());
+  }
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative' }}>
+      <button
+        className="btn btn-secondary btn-sm"
+        onClick={() => setShowClassFilter(!showClassFilter)}
+        title="Filter which classes to show"
+      >
+        👁️ Show Classes ({selectedCount}/{totalCount})
+      </button>
+      
+      {showClassFilter && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: 4,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            boxShadow: 'var(--shadow)',
+            zIndex: 1000,
+            minWidth: 220,
+            maxWidth: 300,
+            maxHeight: '60vh',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              padding: '10px 12px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              gap: 8,
+              alignItems: 'center',
+            }}
+          >
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={selectAll}
+              style={{ fontSize: 11, padding: '3px 8px' }}
+            >
+              Select All
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={clearAll}
+              style={{ fontSize: 11, padding: '3px 8px' }}
+            >
+              Clear All
+            </button>
+            <span
+              style={{
+                marginLeft: 'auto',
+                fontSize: 11,
+                color: 'var(--text3)',
+              }}
+            >
+              {selectedCount} selected
+            </span>
+          </div>
+          
+          <div
+            style={{
+              overflowY: 'auto',
+              padding: '6px 0',
+              maxHeight: '50vh',
+            }}
+          >
+            {teachers.map((teacher, i) => (
+              <label
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  transition: 'background 0.1s',
+                  fontSize: 13,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--surface2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleClasses.has(i)}
+                  onChange={() => toggleClass(i)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span
+                  style={{
+                    flex: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={teacher?.name || `Class ${i + 1}`}
+                >
+                  {teacher?.name || `Class ${i + 1}`}
+                </span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--text3)',
+                    background: 'var(--surface2)',
+                    padding: '1px 5px',
+                    borderRadius: 4,
+                  }}
+                >
+                  #{i + 1}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
