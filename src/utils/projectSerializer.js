@@ -67,22 +67,22 @@ function generateProjectFilename() {
 }
 
 /**
- * Creates a blob URL for downloading the project file.
+ * Creates a blob URL for saving the project file.
  * @param {Object} projectData - The serialized project data
- * @returns {string} Blob URL for download
+ * @returns {string} Blob URL for saving
  */
-function createProjectDownloadUrl(projectData) {
+function createProjectSaveUrl(projectData) {
   const json = JSON.stringify(projectData, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   return URL.createObjectURL(blob);
 }
 
 /**
- * Triggers a download of the project file.
+ * Triggers a save of the project file.
  * @param {Object} projectData - The serialized project data
  */
-function downloadProject(projectData) {
-  const url = createProjectDownloadUrl(projectData);
+function saveProject(projectData) {
+  const url = createProjectSaveUrl(projectData);
   const filename = generateProjectFilename();
   const a = document.createElement('a');
   a.href = url;
@@ -98,8 +98,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     serializeProject,
     generateProjectFilename,
-    createProjectDownloadUrl,
-    downloadProject,
+    createProjectSaveUrl,
+    saveProject,
     PROJECT_FORMAT_VERSION
   };
 }

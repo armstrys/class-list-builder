@@ -198,8 +198,8 @@ function OptimizePage({
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria), 'class-lists.csv', 'text/csv')}
-            title="Download class lists as CSV"
-          >⬇ Export Lists</button>
+            title="Save class lists as CSV"
+          >⬇ Save Lists</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setFullscreen(true)} title="Fullscreen class lists">⛶ Fullscreen</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowHelp(true)}>? How it works</button>
         </div>

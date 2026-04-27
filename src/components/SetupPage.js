@@ -62,7 +62,7 @@ function SetupPage({
 
   const canOptimize = students.length >= teachers.length && teachers.length >= 2;
 
-  function downloadStudentsCSV() {
+  function saveStudentsCSV() {
     if (students.length === 0) return;
     const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart, keepTogether);
     triggerDownload(csv, 'students.csv', 'text/csv');
@@ -122,7 +122,7 @@ function SetupPage({
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
                 {students.length > 0 && (
-                  <button className="btn btn-secondary btn-sm" onClick={downloadStudentsCSV}>⬇ Export Students</button>
+                  <button className="btn btn-secondary btn-sm" onClick={saveStudentsCSV}>⬇ Save Students</button>
                 )}
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
                 {students.length > 0 && (

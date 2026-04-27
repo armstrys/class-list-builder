@@ -31,7 +31,7 @@ function SaveProjectModal({
       };
       
       const projectData = serializeProject(state);
-      downloadProject(projectData);
+      saveProject(projectData);
       
       setIsSaving(false);
       setSaved(true);
