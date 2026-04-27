@@ -4,18 +4,17 @@
  * Uses contexts:
  * - useStudents: Student data and constraint management
  * - useCriteria: Criteria configuration
+ * - useAppState: Navigation and modal state
  * 
  * @param {Object} props
  * @param {Array<{id: string, name: string}>} props.teachers - Teacher/class definitions
  * @param {Function} props.setTeachers - Update teachers
  * @param {Function} props.onOptimize - Navigate to optimize view
- * @param {Function} props.onOpenSettings - Open settings modal
  */
 function SetupPage({
   teachers,
   setTeachers,
   onOptimize,
-  onOpenSettings,
 }) {
   // Context hooks
   const { 
@@ -25,6 +24,7 @@ function SetupPage({
     clearAllStudents: clearAllStudentsContext
   } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { openSettings } = useAppStateExport();
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [showImport, setShowImport] = useState(false);
@@ -148,7 +148,7 @@ function SetupPage({
                 <div className="icon">👩‍🎓</div>
                 <div>No students yet — import a CSV or add sample data to get started.</div>
                 <div style={{ marginTop: 16 }}>
-                  <button className="btn btn-secondary" onClick={onOpenSettings}>⚙️ Configure Criteria First</button>
+                  <button className="btn btn-secondary" onClick={openSettings}>⚙️ Configure Criteria First</button>
                 </div>
               </div>
             ) : (
