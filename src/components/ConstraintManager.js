@@ -328,6 +328,7 @@ function ConstraintManager({
                             onChange={() => {}}
                             style={{ pointerEvents: 'none' }}
                           />
+                          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace', minWidth: 60 }}>{s.id}</span>
                           <span>{s.name}</span>
                           {apartAdj[s.id].length > 0 && (
                             <span style={{ 
@@ -492,6 +493,7 @@ function ConstraintManager({
                             onChange={() => {}}
                             style={{ pointerEvents: 'none' }}
                           />
+                          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace', minWidth: 60 }}>{s.id}</span>
                           <span>{s.name}</span>
                           {togetherStudentSet.has(s.id) && (
                             <span style={{ 
@@ -648,7 +650,7 @@ function ConstraintManager({
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map(s => (
                           <option key={s.id} value={s.id}>
-                            {s.name}
+                            {s.id} - {s.name}
                           </option>
                         ))}
                     </select>

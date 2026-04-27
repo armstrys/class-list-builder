@@ -38,6 +38,12 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
           <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Student ID */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>ID:</span>
+            <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'DM Mono, monospace', background: 'var(--surface2)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{student.id}</span>
+          </div>
+
           {numericCriteria.length > 0 && (
             <div>
               <div className="panel-title">Scores</div>

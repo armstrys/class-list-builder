@@ -26,6 +26,7 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
       >
         <div className="student-card-top">
           <span className={`badge badge-${student.gender}`}>{student.gender}</span>
+          <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'monospace' }}>{student.id}</span>
           <span className="student-name">{student.name}</span>
           {activeFlags.length > 0 && (
             <span style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
