@@ -1,12 +1,25 @@
+/**
+ * SettingsModal - Configure numeric and flag criteria
+ * 
+ * Uses contexts:
+ * - useCriteria: Criteria configuration
+ * 
+ * @param {Object} props
+ * @param {Function} props.onSave - Save callback
+ * @param {Function} props.onClose - Close callback
+ * @param {boolean} props.hasStudentData - Whether students exist
+ * @param {Function} props.onExportStudents - Export students callback
+ * @param {Function} props.onClearStudents - Clear students callback
+ */
 function SettingsModal({
-  numericCriteria,
-  flagCriteria,
   onSave,
   onClose,
   hasStudentData,
   onExportStudents,
   onClearStudents
 }) {
+  // Get criteria from context
+  const { numericCriteria, flagCriteria } = useCriteriaExport();
   const [activeTab, setActiveTab] = useState('numeric');
   const [numCriteria, setNumCriteria] = useState(numericCriteria);
   const [flagCriteriaState, setFlagCriteriaState] = useState(flagCriteria);

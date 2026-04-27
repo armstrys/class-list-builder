@@ -1,10 +1,21 @@
+/**
+ * LoadProjectModal - Load project from JSON file
+ * 
+ * Uses contexts:
+ * - useCriteria: To check compatibility with current criteria
+ * 
+ * @param {Object} props
+ * @param {Function} props.onLoad - Load callback
+ * @param {Function} props.onClose - Close callback
+ * @param {boolean} props.hasExistingData - Whether data already exists
+ */
 function LoadProjectModal({
   onLoad,
   onClose,
-  currentNumCriteria,
-  currentFlagCriteria,
   hasExistingData
 }) {
+  // Get current criteria from context for compatibility checking
+  const { numericCriteria: currentNumCriteria, flagCriteria: currentFlagCriteria } = useCriteriaExport();
   const [file, setFile] = useState(null);
   const [validationResult, setValidationResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
