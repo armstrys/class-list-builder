@@ -719,6 +719,67 @@ describe('Optimizer', () => {
       const avgSize = 100000 / 5000;
       console.log(`Absurd test completed in ${duration}ms, avg class size: ${avgSize}`);
     });
+
+    test('comprehensive absurd stress test: all constraint types with 10000 students', () => {
+      // Arrange - test all constraint types at scale
+      const students = createMockStudents(10000);
+      const numClasses = 100;
+
+      // Create multiple keep-together groups (sizes 2-5)
+      const keepTogether = [
+        [students[0].id, students[1].id], // Group 1: size 2
+        [students[2].id, students[3].id, students[4].id], // Group 2: size 3
+        [students[5].id, students[6].id, students[7].id, students[8].id], // Group 3: size 4
+        [students[9].id, students[10].id, students[11].id, students[12].id, students[13].id], // Group 4: size 5
+      ];
+
+      // Create keep-apart pairs (students from different groups)
+      const keepApart = [
+        [students[0].id, students[2].id], // Group 1 member apart from Group 2 member
+        [students[5].id, students[9].id], // Group 3 member apart from Group 4 member
+      ];
+
+      // Create keep-out-of-class constraints
+      const keepOutOfClass = [
+        { studentId: students[0].id, classIndex: 0 }, // Group 1 leader can't be in class 0
+        { studentId: students[9].id, classIndex: 1 }, // Group 4 leader can't be in class 1
+      ];
+
+      // Lock one student to a specific class
+      const lockedAssignments = { [students[20].id]: 50 };
+
+      // Act
+      const startTime = Date.now();
+      const assignment = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
+      const duration = Date.now() - startTime;
+
+      // Assert - all keep-together groups should be together
+      keepTogether.forEach(group => {
+        const groupClass = assignment[group[0]];
+        group.forEach(studentId => {
+          expect(assignment[studentId]).toBe(groupClass);
+        });
+      });
+
+      // Assert - keep-apart pairs should be in different classes
+      keepApart.forEach(([id1, id2]) => {
+        expect(assignment[id1]).not.toBe(assignment[id2]);
+      });
+
+      // Assert - keep-out-of-class constraints should be respected
+      keepOutOfClass.forEach(({ studentId, classIndex }) => {
+        expect(assignment[studentId]).not.toBe(classIndex);
+      });
+
+      // Assert - locked student should remain in assigned class
+      expect(assignment[students[20].id]).toBe(50);
+
+      // Assert - locked student should not break their keep-together group
+      const lockedGroupClass = assignment[students[0].id];
+      expect(assignment[students[1].id]).toBe(lockedGroupClass);
+
+      console.log(`Comprehensive absurd test completed in ${duration}ms`);
+    });
   });
 
   describe('Keep Out of Class Constraints', () => {

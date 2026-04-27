@@ -244,6 +244,38 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   // Track which group is assigned to which class
   const groupAssignments = new Map(); // group index -> class index
 
+  // Process groups in random order to distribute them fairly across classes
+  const groupIndices = validKeepTogether.map((_, idx) => idx);
+  // Shuffle group order using seeded RNG for determinism
+  for (let i = groupIndices.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [groupIndices[i], groupIndices[j]] = [groupIndices[j], groupIndices[i]];
+  }
+  const groupOrderMap = new Map(groupIndices.map((idx, order) => [idx, order]));
+
+  // Re-sort scored to process groups in randomized order
+  scored.sort((a, b) => {
+    const groupA = studentGroupMap.get(a.id);
+    const groupB = studentGroupMap.get(b.id);
+
+    // Both in groups - use randomized group order
+    if (groupA !== undefined && groupB !== undefined) {
+      if (groupA !== groupB) {
+        return groupOrderMap.get(groupA) - groupOrderMap.get(groupB);
+      }
+      // Same group - maintain original order
+      return 0;
+    }
+    // If only one is in a group, groups come first
+    if (groupA !== undefined && groupB === undefined) return -1;
+    if (groupA === undefined && groupB !== undefined) return 1;
+
+    // Neither in group - sort by score
+    const sa = numericCriteria.reduce((sum, { key }) => sum + (a[key] || 0), 0);
+    const sb = numericCriteria.reduce((sum, { key }) => sum + (b[key] || 0), 0);
+    return sb - sa;
+  });
+
   for (const s of scored) {
     const sScore = numericCriteria.reduce((sum, { key }) => sum + (s[key] || 0), 0);
 
@@ -256,16 +288,16 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
         // Group already has a class assigned, use it
         bestClass = groupAssignments.get(groupIdx);
       } else {
-        // First member of this group - assign to smallest class
+        // First member of this group - assign to a random smallest class
         const minSize = Math.min(...totalSizes);
-        let bestMean = Infinity;
-        bestClass = 0;
+        const smallestClasses = [];
         for (let i = 0; i < numClasses; i++) {
           if (totalSizes[i] === minSize) {
-            const mean = totalSizes[i] > 0 ? greedyScoreSums[i] / totalSizes[i] : 0;
-            if (mean < bestMean) { bestMean = mean; bestClass = i; }
+            smallestClasses.push(i);
           }
         }
+        // Randomly select from smallest classes for fairness
+        bestClass = smallestClasses[Math.floor(rand() * smallestClasses.length)];
         groupAssignments.set(groupIdx, bestClass);
       }
     } else {
