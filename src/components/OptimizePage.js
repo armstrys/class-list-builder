@@ -277,29 +277,23 @@ function OptimizePage({
         </button>
       )}
 
-      {!fullscreen && <StatsStrip
-        students={students}
-        assignment={assignment}
-        numClasses={numClasses}
-        numericCriteria={numericCriteria}
-        flagCriteria={flagCriteria}
-      />}
+      {!fullscreen && <StatsStrip numClasses={numClasses} />}
 
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} numericCriteria={numericCriteria} flagCriteria={flagCriteria} />}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {showConstraints && (
         <ConstraintManager
           students={students}
           keepApart={keepApart}
-          onAddKeepApart={onAddKeepApart}
-          onRemoveKeepApart={onRemoveKeepApart}
+          onAddKeepApart={addKeepApart}
+          onRemoveKeepApart={removeKeepApart}
           keepTogether={keepTogether}
-          onAddKeepTogether={onAddKeepTogether}
-          onRemoveKeepTogether={onRemoveKeepTogether}
+          onAddKeepTogether={addKeepTogether}
+          onRemoveKeepTogether={removeKeepTogether}
           keepOutOfClass={keepOutOfClass}
           teachers={teachers}
-          onAddKeepOutOfClass={onAddKeepOutOfClass}
-          onRemoveKeepOutOfClass={onRemoveKeepOutOfClass}
+          onAddKeepOutOfClass={addKeepOutOfClass}
+          onRemoveKeepOutOfClass={removeKeepOutOfClass}
           onClose={() => setShowConstraints(false)}
         />
       )}
