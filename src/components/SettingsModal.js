@@ -252,14 +252,14 @@ function SettingsModal({
 
   return (
     <>
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      title="Criteria Settings"
-      size="xl"
-      footer={footer}
-      closeOnOverlayClick={!confirmRemove && !confirmClear}
-    >
+      <Modal
+        isOpen={true}
+        onClose={onClose}
+        title="Criteria Settings"
+        size="xl"
+        footer={footer}
+        closeOnOverlayClick={!confirmRemove && !confirmClear}
+      >
       <div>
           {hasStudentData && (
             <div style={{
