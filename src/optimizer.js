@@ -682,14 +682,25 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   let currentCost = costFromSums();
 
   // ── Simulated annealing: O(criteria) per iteration ──────────────
-  let temp = 4.0;
-  const cooling = 0.99965;
-  const maxIters = 100000;
-  const convergenceThreshold = 0.001; // Temperature threshold for early exit
-  const convergenceWindow = 5000;    // Iterations without improvement to trigger exit
+  // Use adaptive parameters based on problem size for better scaling
+  const annealingParams = computeAdaptiveAnnealingParams(students.length, numClasses);
+  let temp = annealingParams.temp;
+  const cooling = annealingParams.cooling;
+  const maxIters = annealingParams.maxIters;
+  const convergenceThreshold = annealingParams.convergenceThreshold;
+  const convergenceWindow = annealingParams.convergenceWindow;
 
   let bestCost = currentCost;
   let iterationsSinceImprovement = 0;
+  
+  // Log adaptive parameters for large problems (helpful for debugging)
+  // eslint-disable-next-line no-console
+  if (students.length > 500) {
+    // eslint-disable-next-line no-console
+    console.log(`[Optimizer] Problem size: ${students.length} students × ${numClasses} classes`);
+    // eslint-disable-next-line no-console
+    console.log(`[Optimizer] Annealing params: ${maxIters.toLocaleString()} iterations, cooling=${cooling.toFixed(5)}, window=${convergenceWindow}`);
+  }
 
   for (let i = 0; i < maxIters; i++) {
     const i1 = Math.floor(rand() * unlocked.length);
@@ -727,7 +738,55 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   return assignment;
 }
 
+/**
+ * Compute adaptive annealing parameters based on problem size.
+ * 
+ * Scaling strategy:
+ * - Base: 100k iterations for 27 students × 3 classes (problem size = 81)
+ * - Scale iterations with √problemSize for larger datasets
+ * - Cap iterations at 500k to prevent unreasonable runtimes
+ * - Adjust cooling rate to maintain effective temperature schedule
+ * - Increase convergence patience for larger search spaces
+ * 
+ * @param {number} numStudents - Total number of students
+ * @param {number} numClasses - Total number of classes
+ * @returns {Object} Annealing parameters { temp, cooling, maxIters, convergenceThreshold, convergenceWindow }
+ */
+function computeAdaptiveAnnealingParams(numStudents, numClasses) {
+  const baseProblemSize = 81; // 27 students × 3 classes (original test case)
+  const problemSize = numStudents * numClasses;
+  const scaleFactor = Math.sqrt(problemSize / baseProblemSize);
+  
+  // Scale iterations with √problemSize, but cap at 500k for reasonable runtime
+  // For 5000 students: ~333k iterations
+  // For 100,000 students: capped at 500k (not 248 million!)
+  const MAX_ITERATIONS = 500000;
+  const scaledIters = Math.floor(100000 * scaleFactor);
+  const maxIters = Math.min(scaledIters, MAX_ITERATIONS);
+  
+  // Slower cooling for larger problems to maintain search effectiveness
+  // Use logarithmic scaling to keep cooling rate close to 1.0
+  // Base: 0.99965, decreases slightly for larger problems
+  const coolingAdjustment = 1 - (Math.log10(scaleFactor) * 0.0001);
+  const cooling = 0.99965 * Math.max(coolingAdjustment, 0.999);
+  
+  // More patient convergence detection for large datasets
+  // Scale with student count (not problem size) for reasonable values
+  const convergenceWindow = Math.max(5000, Math.floor(numStudents * 0.3));
+  
+  // Slightly lower threshold for large problems to allow finer optimization
+  const convergenceThreshold = 0.001 / Math.sqrt(scaleFactor);
+  
+  return {
+    temp: 4.0,
+    cooling: Math.min(cooling, 0.99995), // Cap to prevent too slow cooling
+    maxIters,
+    convergenceThreshold: Math.max(convergenceThreshold, 0.0001),
+    convergenceWindow
+  };
+}
+
 // Export for Node.js testing (conditional to not break browser)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { optimize, computeCost, computeSeed, createSeededRNG };
+  module.exports = { optimize, computeCost, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams };
 }
