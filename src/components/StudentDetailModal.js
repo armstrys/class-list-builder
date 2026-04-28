@@ -17,7 +17,7 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
   }));
 
   // Get class names for keepOutOfClass constraints
-  const outOfClassNames = keepOutOfClass.map(classIndex => teachers[classIndex]?.name || `Class ${classIndex + 1}`);
+  const outOfClassNames = keepOutOfClass.map(c => teachers[c.classIndex]?.name || `Class ${c.classIndex + 1}`);
 
   const hasConstraints = keepApart.length > 0 || keepTogether.length > 0 || keepOutOfClass.length > 0;
 
