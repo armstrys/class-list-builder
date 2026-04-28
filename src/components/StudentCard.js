@@ -1,4 +1,4 @@
-function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
+function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [], teachers = [] }) {
   const activeFlags = useMemo(() => 
     flagCriteria.filter(c => student[c.key]),
     [flagCriteria, student]
@@ -87,6 +87,7 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
           keepTogether={studentKeepTogether}
           keepOutOfClass={studentKeepOutOfClass}
           allStudents={allStudents}
+          teachers={teachers}
         />
       )}
     </>

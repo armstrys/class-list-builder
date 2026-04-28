@@ -17,11 +17,13 @@ function SetupPage({
   onOptimize,
 }) {
   // Context hooks
-  const { 
-    students, 
+  const {
+    students,
     setStudents,
     removeStudentConstraints,
-    clearAllStudents: clearAllStudentsContext
+    clearAllStudents: clearAllStudentsContext,
+    keepApart,
+    keepTogether,
   } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
   const { openSettings } = useAppStateExport();

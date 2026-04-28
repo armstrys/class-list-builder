@@ -275,6 +275,7 @@ function OptimizePage({
             key={i}
             classIdx={i}
             name={teachers[i]?.name || `Class ${i + 1}`}
+            teachers={teachers}
             onNameChange={(idx, val) => setTeachers(prev => prev.map((t, j) => j === idx ? { ...t, name: val } : t))}
             students={classStudents}
             locked={locked}

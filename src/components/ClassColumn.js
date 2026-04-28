@@ -17,7 +17,7 @@
  * @param {Array} props.allStudents - All students for population stats
  * @param {boolean} props.fullscreen - Whether in fullscreen mode
  */
-function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen }) {
+function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen, teachers = [] }) {
   // Get criteria and locked state from contexts
   const { locked, keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
@@ -102,6 +102,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
                 keepTogether={keepTogether}
                 keepOutOfClass={keepOutOfClass}
                 allStudents={allStudents}
+                teachers={teachers}
               />
             </React.Fragment>
           );

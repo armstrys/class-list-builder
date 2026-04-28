@@ -47,11 +47,6 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
             title={locked ? 'Unlock student' : 'Lock to this class'}
           >{locked ? '🔒' : '🔓'}</button>
         </div>
-          {/* Student ID */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--text3)' }}>ID:</span>
-            <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'DM Mono, monospace', background: 'var(--surface2)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{student.id}</span>
-          </div>
 
           {numericCriteria.length > 0 && (
             <div>
