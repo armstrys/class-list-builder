@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { optimize, computeCost, computeSeed, createSeededRNG } from '../src/optimizer.js';
+import { optimize, computeCost, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams } from '../src/optimizer.js';
 
 // Test helpers - use deterministic IDs for reproducible tests
 let idCounter = 0;
@@ -985,6 +985,90 @@ describe('Optimizer', () => {
 
       // Assert - should be identical
       expect(assignment1).toEqual(assignment2);
+    });
+  });
+
+  describe('Adaptive Annealing Parameters', () => {
+    test('base case (27 students, 3 classes) returns original parameters', () => {
+      // Arrange
+      const numStudents = 27;
+      const numClasses = 3;
+
+      // Act
+      const params = computeAdaptiveAnnealingParams(numStudents, numClasses);
+
+      // Assert - should be close to original values for base case
+      expect(params.temp).toBe(4.0);
+      expect(params.maxIters).toBeGreaterThanOrEqual(99000); // ~100k
+      expect(params.maxIters).toBeLessThanOrEqual(101000);
+      expect(params.cooling).toBeGreaterThanOrEqual(0.9996);
+      expect(params.cooling).toBeLessThanOrEqual(0.9997);
+      expect(params.convergenceWindow).toBe(5000);
+    });
+
+    test('scales iterations with problem size', () => {
+      // Arrange
+      const smallParams = computeAdaptiveAnnealingParams(27, 3);
+      const mediumParams = computeAdaptiveAnnealingParams(500, 25); // Problem size ~24x larger
+      const largeParams = computeAdaptiveAnnealingParams(5000, 250); // Problem size ~15,000x larger
+
+      // Assert - iterations should scale with √problemSize until hitting the cap
+      expect(mediumParams.maxIters).toBeGreaterThan(smallParams.maxIters);
+      // Both 500×25 and 5000×250 are capped at 500k, so they may be equal
+      expect(largeParams.maxIters).toBeGreaterThanOrEqual(mediumParams.maxIters);
+      
+      // Large problem should have at least 300k iterations (or hit the 500k cap)
+      expect(largeParams.maxIters).toBeGreaterThan(300000);
+      expect(largeParams.maxIters).toBeLessThanOrEqual(500000);
+    });
+
+    test('cooling rate adjusts for problem size', () => {
+      // Arrange
+      const smallParams = computeAdaptiveAnnealingParams(27, 3);
+      const largeParams = computeAdaptiveAnnealingParams(5000, 250);
+
+      // Assert - larger problems should have slightly slower cooling
+      expect(largeParams.cooling).toBeLessThan(smallParams.cooling);
+      expect(largeParams.cooling).toBeGreaterThan(0.999); // Stay close to 1.0 for effective annealing
+    });
+
+    test('convergence window scales with problem size', () => {
+      // Arrange
+      const smallParams = computeAdaptiveAnnealingParams(20, 2); // 20 students
+      const mediumParams = computeAdaptiveAnnealingParams(100, 4); // 100 students
+      const largeParams = computeAdaptiveAnnealingParams(20000, 400); // 20000 students
+
+      // Assert - window should be at least 5000, then 30% of student count
+      expect(smallParams.convergenceWindow).toBe(5000); // max(5000, 6) = 5000
+      expect(mediumParams.convergenceWindow).toBe(5000); // max(5000, 30) = 5000
+      expect(largeParams.convergenceWindow).toBeGreaterThan(5000);
+      expect(largeParams.convergenceWindow).toBe(Math.floor(20000 * 0.3)); // 6000
+    });
+
+    test('convergence threshold decreases with problem size', () => {
+      // Arrange
+      const smallParams = computeAdaptiveAnnealingParams(27, 3);
+      const largeParams = computeAdaptiveAnnealingParams(5000, 250);
+
+      // Assert - larger problems need finer optimization
+      expect(largeParams.convergenceThreshold).toBeLessThan(smallParams.convergenceThreshold);
+      expect(largeParams.convergenceThreshold).toBeGreaterThan(0); // But not zero
+    });
+
+    test('very large problems cap cooling rate', () => {
+      // Arrange - extremely large problem
+      const hugeParams = computeAdaptiveAnnealingParams(100000, 5000);
+
+      // Assert - cooling should be capped to prevent too slow cooling
+      expect(hugeParams.cooling).toBeLessThanOrEqual(0.99995);
+    });
+
+    test('minimum convergence threshold is enforced', () => {
+      // Arrange - extremely large problem
+      const hugeParams = computeAdaptiveAnnealingParams(100000, 5000);
+
+      // Assert - threshold should not go below minimum
+      expect(hugeParams.convergenceThreshold).toBeGreaterThanOrEqual(0.0001);
     });
   });
 });
