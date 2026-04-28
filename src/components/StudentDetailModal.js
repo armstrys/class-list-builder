@@ -130,7 +130,6 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
               )}
             </div>
           )}
-        </div>
       </div>
     </Modal>
   );
