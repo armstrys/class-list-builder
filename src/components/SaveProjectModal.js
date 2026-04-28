@@ -1,28 +1,26 @@
 /**
  * SaveProjectModal - Save project to JSON file
- * 
+ *
  * Uses contexts:
  * - useStudents: Student data, constraints, assignments
  * - useCriteria: Criteria configuration
- * 
+ * - useAppState: teachers/classes
+ *
  * @param {Object} props
- * @param {Array<{id: string, name: string}>} props.teachers - Teacher/class definitions
  * @param {Function} props.onClose - Close callback
  */
-function SaveProjectModal({ 
-  teachers,
-  onClose 
-}) {
+function SaveProjectModal({ onClose }) {
   // Get data from contexts
-  const { 
+  const {
     students,
     keepApart,
     keepTogether,
     assignment,
     locked,
-    optimizationResults
+    optimizationResults,
   } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { teachers } = useAppStateExport();
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 

@@ -1,29 +1,28 @@
 /**
  * ViolationsModal - Display constraint violations in detail
- * 
+ *
  * Shows which keep-apart, keep-together, and keep-out-of-class constraints
  * are violated in the current assignment.
- * 
+ *
  * @param {Object} props
  * @param {Array<[string, string]>} props.apartViolations - Pairs of students who should be apart but aren't
  * @param {Array<string[]>} props.togetherViolations - Groups that should be together but are split
  * @param {Array<{studentId: string, classIndex: number}>} props.outOfClassViolations - Students in forbidden classes
  * @param {Array<Object>} props.students - All student objects
  * @param {Object<string, number>} props.assignment - Student ID to class index mapping
- * @param {Array<{id: string, name: string}>} props.teachers - Class/teacher definitions
  * @param {Function} props.onClose - Close callback
  * @param {Function} props.onOpenConstraints - Open constraints editor callback
  */
-function ViolationsModal({ 
-  apartViolations, 
-  togetherViolations, 
-  outOfClassViolations, 
-  students, 
-  assignment, 
-  teachers, 
-  onClose, 
-  onOpenConstraints 
+function ViolationsModal({
+  apartViolations,
+  togetherViolations,
+  outOfClassViolations,
+  students,
+  assignment,
+  onClose,
+  onOpenConstraints,
 }) {
+  const { teachers } = useAppStateExport();
   const studentById = Object.fromEntries(students.map(s => [s.id, s]));
 
   // Get class name for a student

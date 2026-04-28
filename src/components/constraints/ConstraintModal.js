@@ -1,14 +1,14 @@
 /**
  * ConstraintModal - Main constraint management modal
- * 
+ *
  * Uses contexts:
  * - useStudents: For students and constraint data
- * 
+ * - useAppState: teachers/classes
+ *
  * @param {Object} props
- * @param {Array<{id: string, name: string}>} props.teachers - Class/teacher definitions
  * @param {Function} props.onClose - Close callback
  */
-function ConstraintModal({ teachers, onClose }) {
+function ConstraintModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('apart');
 
   const {
@@ -23,6 +23,7 @@ function ConstraintModal({ teachers, onClose }) {
     addKeepOutOfClass,
     removeKeepOutOfClass,
   } = useStudentsExport();
+  const { teachers } = useAppStateExport();
 
   const totalConstraints = keepApart.length + keepTogether.length + keepOutOfClass.length;
 

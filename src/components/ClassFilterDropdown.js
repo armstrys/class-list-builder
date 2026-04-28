@@ -1,11 +1,10 @@
 /**
  * ClassFilterDropdown - Filter dropdown for showing/hiding classes
- * 
+ *
  * Provides a dropdown interface to toggle visibility of individual classes
  * and search for students to quickly find their class.
- * 
+ *
  * @param {Object} props
- * @param {Array<{id: string, name: string}>} props.teachers - Class/teacher definitions
  * @param {Set<number>} props.visibleClasses - Set of visible class indices
  * @param {Function} props.setVisibleClasses - Update visible classes
  * @param {boolean} props.showClassFilter - Whether dropdown is open
@@ -13,15 +12,15 @@
  * @param {Array<Object>} props.students - All student objects
  * @param {Object<string, number>} props.assignment - Student ID to class index mapping
  */
-function ClassFilterDropdown({ 
-  teachers, 
-  visibleClasses, 
-  setVisibleClasses, 
-  showClassFilter, 
-  setShowClassFilter, 
-  students, 
-  assignment 
+function ClassFilterDropdown({
+  visibleClasses,
+  setVisibleClasses,
+  showClassFilter,
+  setShowClassFilter,
+  students,
+  assignment,
 }) {
+  const { teachers } = useAppStateExport();
   const dropdownRef = useRef(null);
   const selectedCount = visibleClasses.size;
   const totalCount = teachers.length;

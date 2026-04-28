@@ -4,17 +4,12 @@
  * Uses contexts:
  * - useStudents: Student data, constraints, assignments, locks
  * - useCriteria: Criteria configuration
+ * - useAppState: teachers/classes
  *
  * @param {Object} props
- * @param {Array<{id: string, name: string}>} props.teachers - Class/teacher definitions
- * @param {Function} props.setTeachers - Update teachers state
  * @param {Function} props.onBack - Navigate back to setup view
  */
-function OptimizePage({
-  teachers,
-  setTeachers,
-  onBack,
-}) {
+function OptimizePage({ onBack }) {
   // Get data from contexts
   const {
     students,
@@ -38,6 +33,7 @@ function OptimizePage({
   } = useStudentsExport();
 
   const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { teachers, setTeachers } = useAppStateExport();
   const [draggingId, setDraggingId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showConstraints, setShowConstraints] = useState(false);
@@ -243,7 +239,6 @@ function OptimizePage({
             ))}
           </div>
           <ClassFilterDropdown
-            teachers={teachers}
             visibleClasses={visibleClasses}
             setVisibleClasses={setVisibleClasses}
             showClassFilter={showClassFilter}
@@ -275,7 +270,6 @@ function OptimizePage({
             key={i}
             classIdx={i}
             name={teachers[i]?.name || `Class ${i + 1}`}
-            teachers={teachers}
             onNameChange={(idx, val) => setTeachers(prev => prev.map((t, j) => j === idx ? { ...t, name: val } : t))}
             students={classStudents}
             locked={locked}
@@ -315,10 +309,7 @@ function OptimizePage({
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {showConstraints && (
-        <ConstraintModal
-          teachers={teachers}
-          onClose={() => setShowConstraints(false)}
-        />
+        <ConstraintModal onClose={() => setShowConstraints(false)} />
       )}
 
       {showViolations && (
@@ -328,7 +319,6 @@ function OptimizePage({
           outOfClassViolations={outOfClassViolations}
           students={students}
           assignment={assignment}
-          teachers={teachers}
           onClose={() => setShowViolations(false)}
           onOpenConstraints={() => {
             setShowViolations(false);

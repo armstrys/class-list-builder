@@ -380,6 +380,11 @@
     const [showSettings, setShowSettings] = useState(false);
     const [showSaveProject, setShowSaveProject] = useState(false);
     const [showLoadProject, setShowLoadProject] = useState(false);
+    const [teachers, setTeachers] = useState([
+      { id: 'T1', name: 'Class A' },
+      { id: 'T2', name: 'Class B' },
+      { id: 'T3', name: 'Class C' },
+    ]);
 
     const navigateToOptimize = useCallback(() => setView('optimize'), []);
     const navigateToSetup = useCallback(() => setView('setup'), []);
@@ -402,6 +407,7 @@
       openSaveProject, closeSaveProject,
       openLoadProject, closeLoadProject,
       closeAllModals,
+      teachers, setTeachers,
     };
 
     return (

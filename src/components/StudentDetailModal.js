@@ -1,4 +1,5 @@
-function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [], teachers = [] }) {
+function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
+  const { teachers } = useAppStateExport();
   const activeFlags = flagCriteria.filter(c => student[c.key]);
   const inactiveFlags = flagCriteria.filter(c => !student[c.key]);
 
