@@ -21,23 +21,32 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
 
   const hasConstraints = keepApart.length > 0 || keepTogether.length > 0 || keepOutOfClass.length > 0;
 
+  const headerContent = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+      <span className={`badge badge-${student.gender}`}>{student.gender}</span>
+      <span>{student.name}</span>
+    </div>
+  );
+
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 380 }}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-            <span className={`badge badge-${student.gender}`}>{student.gender}</span>
-            <div className="modal-title">{student.name}</div>
-          </div>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={headerContent}
+      size="sm"
+      style={{ maxWidth: 380 }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--text3)' }}>ID:</span>
+          <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'DM Mono, monospace', background: 'var(--surface2)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{student.id}</span>
           <button
             className={`lock-btn${locked ? ' locked' : ''}`}
-            style={{ fontSize: 18, marginRight: 8 }}
+            style={{ fontSize: 18, marginLeft: 'auto' }}
             onClick={() => onToggleLock(student.id)}
             title={locked ? 'Unlock student' : 'Lock to this class'}
           >{locked ? '🔒' : '🔓'}</button>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Student ID */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 12, color: 'var(--text3)' }}>ID:</span>

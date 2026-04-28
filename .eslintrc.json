@@ -51,7 +51,8 @@
     "saveProject": "readonly",
     "generateSampleStudents": "readonly",
     "PROJECT_FORMAT_VERSION": "readonly",
-    "escapeCSVValue": "readonly"
+    "escapeCSVValue": "readonly",
+    "Modal": "readonly"
   },
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
