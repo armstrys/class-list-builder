@@ -251,6 +251,7 @@ function SettingsModal({
   );
 
   return (
+    <>
     <Modal
       isOpen={true}
       onClose={onClose}
@@ -399,7 +400,6 @@ function SettingsModal({
               {error}
             </div>
           )}
-      </div>
       </Modal>
 
       <Modal
