@@ -400,6 +400,7 @@ function SettingsModal({
               {error}
             </div>
           )}
+      </div>
       </Modal>
 
       <Modal
