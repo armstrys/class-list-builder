@@ -401,7 +401,7 @@ function SettingsModal({
             </div>
           )}
       </div>
-      </Modal>
+    </Modal>
 
       <Modal
         isOpen={!!confirmRemove}
