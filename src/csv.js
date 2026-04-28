@@ -3,6 +3,18 @@ function _uid() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+// Escape CSV field value per RFC 4180
+// Fields containing commas, quotes, or newlines must be quoted
+// Quotes inside quoted fields are escaped by doubling them
+function escapeCSVValue(value) {
+  const str = String(value ?? '');
+  // Check if escaping is needed: comma, double quote, carriage return, or newline
+  if (/[",\r\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
 function generateCSVHeaders(numericCriteria, flagCriteria) {
   const numHeaders = numericCriteria.map(c => c.key);
   const boolHeaders = flagCriteria.map(c => c.key);
@@ -94,7 +106,24 @@ function parseCSV(text, numericCriteria, flagCriteria) {
 
     numericCriteria.forEach(({ key }) => {
       const idx = numericKeyMap[key];
-      student[key] = idx !== undefined ? (parseFloat(cols[idx]) || 0) : 0;
+      if (idx !== undefined) {
+        const rawValue = cols[idx];
+        if (rawValue === undefined || rawValue.trim() === '') {
+          // Blank value - treat as missing (skip)
+          student[key] = 0;
+        } else {
+          const parsed = parseFloat(rawValue);
+          if (isNaN(parsed)) {
+            // Invalid numeric value - flag as error
+            errors.push(`Row ${i + 2}: Invalid ${key} value "${rawValue}" for student "${name}"`);
+            student[key] = 0;
+          } else {
+            student[key] = parsed;
+          }
+        }
+      } else {
+        student[key] = 0;
+      }
     });
 
     flagCriteria.forEach(({ key }) => {
@@ -225,7 +254,7 @@ function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart 
     values.push(apartNum || '');
     values.push(togetherNum || '');
     values.push(outOfClassStr);
-    lines.push(values.join(','));
+    lines.push(values.map(escapeCSVValue).join(','));
   });
 
   return lines.join('\n');
@@ -249,7 +278,7 @@ function exportClassListsToCSV(students, assignment, teachers, numericCriteria, 
     const values = [className, s.id, s.name, s.gender];
     numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
     flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
-    lines.push(values.join(','));
+    lines.push(values.map(escapeCSVValue).join(','));
   });
 
   return lines.join('\n');
@@ -273,6 +302,7 @@ if (typeof module !== 'undefined' && module.exports) {
     parseCSV,
     exportStudentsToCSV,
     exportClassListsToCSV,
-    triggerDownload
+    triggerDownload,
+    escapeCSVValue
   };
 }

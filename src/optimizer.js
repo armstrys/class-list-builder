@@ -15,6 +15,19 @@
  * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Students blocked from specific classes
  * @returns {number} The total cost (lower is better)
  */
+
+// Penalty weights reference - points to global PENALTY_WEIGHTS or uses inline defaults
+// Check for global first (set by defaults.js), fall back to inline defaults
+const PW = (typeof PENALTY_WEIGHTS !== 'undefined') ? PENALTY_WEIGHTS : {
+  KEEP_APART: 100.0,
+  KEEP_TOGETHER: 200.0,
+  KEEP_OUT_OF_CLASS: 150.0,
+  TOTAL_FLAGS: 2.0,
+  TOTAL_SCORE: 1.5,
+  CLASS_SIZE: 3.0,
+  GENDER: 1.0,
+};
+
 function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
   if (!students.length || !numClasses) return 0;
   const classes = Array.from({ length: numClasses }, () => []);
@@ -54,7 +67,7 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     cls.length ? cls.filter(s => s.gender === 'F').length / cls.length : overallF
   );
   const gVariance = fProps.reduce((s, p) => s + (p - overallF) ** 2, 0) / numClasses;
-  cost += 1.0 * gVariance;
+  cost += PW.GENDER * gVariance;
 
   // Total flags balance: variance of mean total flags per class
   const studentTotalFlags = students.map(s =>
@@ -70,7 +83,7 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     return total / cls.length;
   });
   const tfVariance = classMeanTotalFlags.reduce((s, m) => s + (m - overallMeanTotalFlags) ** 2, 0) / numClasses;
-  cost += 2.0 * tfVariance;
+  cost += PW.TOTAL_FLAGS * tfVariance;
 
   // Total score balance: variance of mean z-score per class
   // Calculate z-scores for each numeric criterion
@@ -101,13 +114,13 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     return total / cls.length;
   });
   const tsVariance = classMeanTotalScores.reduce((s, m) => s + (m - overallMeanTotalScore) ** 2, 0) / numClasses;
-  cost += 1.5 * tsVariance;
+  cost += PW.TOTAL_SCORE * tsVariance;
 
   // Class size balance: normalized variance of sizes
   const meanSize = students.length / numClasses;
   if (meanSize > 0) {
     const sVar = classes.reduce((s, cls) => s + (cls.length - meanSize) ** 2, 0) / numClasses;
-    cost += 3.0 * sVar / (meanSize * meanSize);
+    cost += PW.CLASS_SIZE * sVar / (meanSize * meanSize);
   }
 
   // Keep Apart penalty: count of constrained pairs in same class (high weight)
@@ -116,7 +129,7 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     const c2 = assignment[id2];
     return (c1 !== undefined && c2 !== undefined && c1 === c2) ? penalty + 1 : penalty;
   }, 0);
-  cost += 100.0 * keepApartPenalty;
+  cost += PW.KEEP_APART * keepApartPenalty;
 
   // Keep Together penalty: count of groups split across classes (very high weight)
   // Note: This is a soft constraint - high penalty encourages togetherness but doesn't guarantee it
@@ -130,14 +143,14 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     // Penalty if group members are in more than 1 class
     return classes.size > 1 ? penalty + 1 : penalty;
   }, 0);
-  cost += 200.0 * keepTogetherPenalty;
+  cost += PW.KEEP_TOGETHER * keepTogetherPenalty;
 
   // Keep Out of Class penalty: count of students assigned to their forbidden class
   const keepOutOfClassPenalty = keepOutOfClass.reduce((penalty, { studentId, classIndex }) => {
     const assignedClass = assignment[studentId];
     return (assignedClass !== undefined && assignedClass === classIndex) ? penalty + 1 : penalty;
   }, 0);
-  cost += 150.0 * keepOutOfClassPenalty;
+  cost += PW.KEEP_OUT_OF_CLASS * keepOutOfClassPenalty;
 
   return cost;
 }
@@ -419,12 +432,47 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     classTotalScore[c] += studentTotalScore.get(s.id);
   }
 
+  // ── Constraint penalty calculations ─────────────────────────────
+  // Centralized constraint penalty logic used by both costFromSums and swapDelta
+  // Returns object with { keepApartPenalty, keepTogetherPenalty, keepOutOfClassPenalty }
+  function calculateConstraintPenalties() {
+    // Keep Apart penalty: count of constrained pairs in same class (high weight)
+    const keepApartPenalty = keepApart.reduce((penalty, [id1, id2]) => {
+      const c1 = assignment[id1];
+      const c2 = assignment[id2];
+      return (c1 !== undefined && c2 !== undefined && c1 === c2) ? penalty + 1 : penalty;
+    }, 0);
+
+    // Keep Together penalty: count of groups split across classes (very high weight)
+    const keepTogetherPenalty = keepTogether.reduce((penalty, group) => {
+      if (group.length < 2) return penalty;
+      const classes = new Set();
+      for (const id of group) {
+        const c = assignment[id];
+        if (c !== undefined) classes.add(c);
+      }
+      // Penalty if group members are in more than 1 class
+      return classes.size > 1 ? penalty + 1 : penalty;
+    }, 0);
+
+    // Keep Out of Class penalty: count of students assigned to their forbidden class
+    const keepOutOfClassPenalty = keepOutOfClass.reduce((penalty, { studentId, classIndex }) => {
+      const assignedClass = assignment[studentId];
+      return (assignedClass !== undefined && assignedClass === classIndex) ? penalty + 1 : penalty;
+    }, 0);
+
+    return { keepApartPenalty, keepTogetherPenalty, keepOutOfClassPenalty };
+  }
+
   // ── Compute cost from running sums: O(numClasses × criteria) ────
   function costFromSums() {
     let cost = 0;
     popNumeric.forEach(({ mean: overallMean, popVar }, ki) => {
       const { weight } = numericCriteria[ki];
-      if (popVar === 0) return;
+      if (popVar === 0) {
+        console.warn(`Criterion "${numericCriteria[ki].key}" has zero variance (all values are identical). This criterion is being skipped in the optimization.`);
+        return;
+      }
       let varOfMeans = 0;
       for (let c = 0; c < numClasses; c++) {
         const m = classSizes[c] > 0 ? classNumSums[c][ki] / classSizes[c] : overallMean;
@@ -447,52 +495,29 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       gVar += (fp - overallF) ** 2;
     }
     cost += gVar / numClasses;
-    // Total flags balance: variance of mean total flags per class (weight 2.0)
+    // Total flags balance: variance of mean total flags per class
     let tfVar = 0;
     for (let c = 0; c < numClasses; c++) {
       const tfMean = classSizes[c] > 0 ? classTotalFlags[c] / classSizes[c] : overallMeanTotalFlags;
       tfVar += (tfMean - overallMeanTotalFlags) ** 2;
     }
-    cost += 2.0 * tfVar / numClasses;
-    // Total score balance: variance of mean total score per class (weight 1.5)
+    cost += PW.TOTAL_FLAGS * tfVar / numClasses;
+    // Total score balance: variance of mean total score per class
     let tsVar = 0;
     for (let c = 0; c < numClasses; c++) {
       const tsMean = classSizes[c] > 0 ? classTotalScore[c] / classSizes[c] : overallMeanTotalScore;
       tsVar += (tsMean - overallMeanTotalScore) ** 2;
     }
-    cost += 1.5 * tsVar / numClasses;
+    cost += PW.TOTAL_SCORE * tsVar / numClasses;
     if (meanSize > 0) {
       const sVar = classSizes.reduce((s, sz) => s + (sz - meanSize) ** 2, 0) / numClasses;
-      cost += 3.0 * sVar / (meanSize ** 2);
+      cost += PW.CLASS_SIZE * sVar / (meanSize ** 2);
     }
-    // Keep Apart penalty: count of constrained pairs in same class (high weight)
-    const keepApartPenalty = keepApart.reduce((penalty, [id1, id2]) => {
-      const c1 = assignment[id1];
-      const c2 = assignment[id2];
-      return (c1 !== undefined && c2 !== undefined && c1 === c2) ? penalty + 1 : penalty;
-    }, 0);
-    cost += 100.0 * keepApartPenalty;
-
-    // Keep Together penalty: count of groups split across classes (very high weight)
-    // Note: This is a soft constraint - high penalty encourages togetherness but doesn't guarantee it
-    const keepTogetherPenalty = keepTogether.reduce((penalty, group) => {
-      if (group.length < 2) return penalty;
-      const classes = new Set();
-      for (const id of group) {
-        const c = assignment[id];
-        if (c !== undefined) classes.add(c);
-      }
-      // Penalty if group members are in more than 1 class
-      return classes.size > 1 ? penalty + 1 : penalty;
-    }, 0);
-    cost += 200.0 * keepTogetherPenalty;
-
-    // Keep Out of Class penalty: count of students assigned to their forbidden class
-    const keepOutOfClassPenalty = keepOutOfClass.reduce((penalty, { studentId, classIndex }) => {
-      const assignedClass = assignment[studentId];
-      return (assignedClass !== undefined && assignedClass === classIndex) ? penalty + 1 : penalty;
-    }, 0);
-    cost += 150.0 * keepOutOfClassPenalty;
+    // Constraint penalties
+    const { keepApartPenalty, keepTogetherPenalty, keepOutOfClassPenalty } = calculateConstraintPenalties();
+    cost += PW.KEEP_APART * keepApartPenalty;
+    cost += PW.KEEP_TOGETHER * keepTogetherPenalty;
+    cost += PW.KEEP_OUT_OF_CLASS * keepOutOfClassPenalty;
 
     return cost;
   }
@@ -545,18 +570,18 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     const tf2 = studentTotalFlags.get(s2.id);
     const newTF1 = (classTotalFlags[c1] - tf1 + tf2) / sz1;
     const newTF2 = (classTotalFlags[c2] - tf2 + tf1) / sz2;
-    delta += 2.0 / numClasses * (
+    delta += PW.TOTAL_FLAGS / numClasses * (
       (newTF1 - overallMeanTotalFlags) ** 2 + (newTF2 - overallMeanTotalFlags) ** 2 -
       (oldTF1 - overallMeanTotalFlags) ** 2 - (oldTF2 - overallMeanTotalFlags) ** 2
     );
-    // Total score balance (weight 1.5)
+    // Total score balance
     const oldTS1 = sz1 > 0 ? classTotalScore[c1] / sz1 : overallMeanTotalScore;
     const oldTS2 = sz2 > 0 ? classTotalScore[c2] / sz2 : overallMeanTotalScore;
     const ts1 = studentTotalScore.get(s1.id);
     const ts2 = studentTotalScore.get(s2.id);
     const newTS1 = (classTotalScore[c1] - ts1 + ts2) / sz1;
     const newTS2 = (classTotalScore[c2] - ts2 + ts1) / sz2;
-    delta += 1.5 / numClasses * (
+    delta += PW.TOTAL_SCORE / numClasses * (
       (newTS1 - overallMeanTotalScore) ** 2 + (newTS2 - overallMeanTotalScore) ** 2 -
       (oldTS1 - overallMeanTotalScore) ** 2 - (oldTS2 - overallMeanTotalScore) ** 2
     );
@@ -574,7 +599,7 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       if (wasViolating && !isViolating) keepApartDelta -= 1;
       else if (!wasViolating && isViolating) keepApartDelta += 1;
     }
-    delta += 100.0 * keepApartDelta;
+    delta += PW.KEEP_APART * keepApartDelta;
 
     // Keep Together delta: changes if swap splits or joins a group
     let keepTogetherDelta = 0;
@@ -607,7 +632,7 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       if (!wasSplit && isSplit) keepTogetherDelta += 1;
       else if (wasSplit && !isSplit) keepTogetherDelta -= 1;
     }
-    delta += 200.0 * keepTogetherDelta;
+    delta += PW.KEEP_TOGETHER * keepTogetherDelta;
 
     // Keep Out of Class delta: changes if swap moves a student into/out of their forbidden class
     let keepOutOfClassDelta = 0;
@@ -620,7 +645,7 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       if (!wasViolating && isViolating) keepOutOfClassDelta += 1;
       else if (wasViolating && !isViolating) keepOutOfClassDelta -= 1;
     }
-    delta += 150.0 * keepOutOfClassDelta;
+    delta += PW.KEEP_OUT_OF_CLASS * keepOutOfClassDelta;
 
     // Class sizes don't change in a same-depth swap
     return delta;
@@ -659,9 +684,14 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   // ── Simulated annealing: O(criteria) per iteration ──────────────
   let temp = 4.0;
   const cooling = 0.99965;
-  const iters = 100000;
+  const maxIters = 100000;
+  const convergenceThreshold = 0.001; // Temperature threshold for early exit
+  const convergenceWindow = 5000;    // Iterations without improvement to trigger exit
 
-  for (let i = 0; i < iters; i++) {
+  let bestCost = currentCost;
+  let iterationsSinceImprovement = 0;
+
+  for (let i = 0; i < maxIters; i++) {
     const i1 = Math.floor(rand() * unlocked.length);
     const i2 = Math.floor(rand() * unlocked.length);
     if (i1 === i2) continue;
@@ -674,8 +704,24 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     if (delta < 0 || rand() < Math.exp(-delta / temp)) {
       applySwap(s1, c1, s2, c2);
       currentCost += delta;
+      
+      // Track best cost for convergence detection
+      if (currentCost < bestCost) {
+        bestCost = currentCost;
+        iterationsSinceImprovement = 0;
+      } else {
+        iterationsSinceImprovement++;
+      }
+    } else {
+      iterationsSinceImprovement++;
     }
+    
     temp *= cooling;
+    
+    // Convergence-based early exit
+    if (temp < convergenceThreshold && iterationsSinceImprovement >= convergenceWindow) {
+      break;
+    }
   }
 
   return assignment;

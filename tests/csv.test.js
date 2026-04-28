@@ -5,6 +5,7 @@ import {
   parseCSV,
   exportStudentsToCSV,
   exportClassListsToCSV,
+  escapeCSVValue,
 } from '../src/csv.js';
 
 const numericCriteria = [
@@ -18,6 +19,37 @@ const flagCriteria = [
 ];
 
 describe('CSV', () => {
+  describe('escapeCSVValue', () => {
+    test('returns plain string for values without special characters', () => {
+      expect(escapeCSVValue('Alice')).toBe('Alice');
+      expect(escapeCSVValue(123)).toBe('123');
+      expect(escapeCSVValue(null)).toBe('');
+      expect(escapeCSVValue(undefined)).toBe('');
+    });
+
+    test('wraps values containing commas in quotes', () => {
+      expect(escapeCSVValue('Doe, Alice')).toBe('"Doe, Alice"');
+    });
+
+    test('wraps values containing quotes in quotes and doubles the quotes', () => {
+      // Values without special characters remain unchanged
+      expect(escapeCSVValue('OBrien Jr')).toBe('OBrien Jr');
+      // Double quotes need escaping
+      expect(escapeCSVValue('Student "The Best"')).toBe('"Student ""The Best"""');
+      // Name with comma gets quoted (comma triggers it)
+      expect(escapeCSVValue('OBrien, Jr')).toBe('"OBrien, Jr"');
+    });
+
+    test('wraps values containing newlines in quotes', () => {
+      expect(escapeCSVValue('Line 1\nLine 2')).toBe('"Line 1\nLine 2"');
+      expect(escapeCSVValue('Line 1\r\nLine 2')).toBe('"Line 1\r\nLine 2"');
+    });
+
+    test('handles complex combinations', () => {
+      expect(escapeCSVValue('O\'Brien, Jr. "Nick"')).toBe('"O\'Brien, Jr. ""Nick"""');
+    });
+  });
+
   describe('generateCSVHeaders', () => {
     test('generates correct headers with default criteria', () => {
       // Act
@@ -485,8 +517,7 @@ Bob,F,`;
     });
 
     test('handles names with commas in round-trip', () => {
-      // Arrange - Note: export doesn't quote names, so commas will break
-      // This test documents current behavior
+      // Arrange - names with commas should be properly quoted
       const students = [
         { id: '1', name: 'Doe, Alice', gender: 'F', readingScore: 85 },
       ];
@@ -495,8 +526,8 @@ Bob,F,`;
       const csv = exportStudentsToCSV(students, [{ key: 'readingScore' }], []);
       const result = parseCSV(csv, [{ key: 'readingScore' }], []);
 
-      // Assert - the name is parsed as two fields (current behavior limitation)
-      expect(result.students[0].name).not.toBe('Doe, Alice');
+      // Assert - the name is properly escaped and parsed
+      expect(result.students[0].name).toBe('Doe, Alice');
     });
 
     test('round-trip preserves keep apart groups', () => {
