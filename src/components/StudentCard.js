@@ -1,18 +1,37 @@
 function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
-  const activeFlags = flagCriteria.filter(c => student[c.key]);
+  const activeFlags = useMemo(() => 
+    flagCriteria.filter(c => student[c.key]),
+    [flagCriteria, student]
+  );
   const [showDetail, setShowDetail] = useState(false);
   const didDrag = useRef(false);
 
-  // Check if student has any constraints
-  const hasKeepApart = keepApart.some(([id1, id2]) => id1 === student.id || id2 === student.id);
-  const hasKeepTogether = keepTogether.some(group => group.includes(student.id));
-  const hasKeepOutOfClass = keepOutOfClass.some(c => c.studentId === student.id);
-  const hasConstraints = hasKeepApart || hasKeepTogether || hasKeepOutOfClass;
+  // Memoize constraint calculations to prevent re-computation on every render
+  const constraints = useMemo(() => {
+    const hasKeepApart = keepApart.some(([id1, id2]) => id1 === student.id || id2 === student.id);
+    const hasKeepTogether = keepTogether.some(group => group.includes(student.id));
+    const hasKeepOutOfClass = keepOutOfClass.some(c => c.studentId === student.id);
+    
+    return {
+      hasKeepApart,
+      hasKeepTogether,
+      hasKeepOutOfClass,
+      hasConstraints: hasKeepApart || hasKeepTogether || hasKeepOutOfClass,
+      studentKeepApart: keepApart.filter(([id1, id2]) => id1 === student.id || id2 === student.id),
+      studentKeepTogether: keepTogether.filter(group => group.includes(student.id)),
+      studentKeepOutOfClass: keepOutOfClass.filter(c => c.studentId === student.id)
+    };
+  }, [keepApart, keepTogether, keepOutOfClass, student.id]);
 
-  // Get constraint details for this student
-  const studentKeepApart = keepApart.filter(([id1, id2]) => id1 === student.id || id2 === student.id);
-  const studentKeepTogether = keepTogether.filter(group => group.includes(student.id));
-  const studentKeepOutOfClass = keepOutOfClass.filter(c => c.studentId === student.id);
+  const {
+    hasKeepApart,
+    hasKeepTogether,
+    hasKeepOutOfClass,
+    hasConstraints,
+    studentKeepApart,
+    studentKeepTogether,
+    studentKeepOutOfClass
+  } = constraints;
 
   return (
     <>

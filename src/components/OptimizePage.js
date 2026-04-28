@@ -114,41 +114,51 @@ function OptimizePage({
     setDraggingId(null);
   }
 
-  // Calculate keep-apart violations for display
-  const apartViolations = keepApart.filter(([id1, id2]) => {
-    const c1 = assignment[id1];
-    const c2 = assignment[id2];
-    return c1 !== undefined && c2 !== undefined && c1 === c2;
-  });
+  // Memoize violation calculations to prevent re-computation on every render
+  const violations = useMemo(() => {
+    const apartViolations = keepApart.filter(([id1, id2]) => {
+      const c1 = assignment[id1];
+      const c2 = assignment[id2];
+      return c1 !== undefined && c2 !== undefined && c1 === c2;
+    });
 
-  // Calculate keep-together violations for display
-  const togetherViolations = keepTogether.filter(group => {
-    if (group.length < 2) return false;
-    const classes = new Set();
-    for (const id of group) {
-      const c = assignment[id];
-      if (c !== undefined) classes.add(c);
-    }
-    return classes.size > 1;
-  });
+    const togetherViolations = keepTogether.filter(group => {
+      if (group.length < 2) return false;
+      const classes = new Set();
+      for (const id of group) {
+        const c = assignment[id];
+        if (c !== undefined) classes.add(c);
+      }
+      return classes.size > 1;
+    });
 
-  // Calculate keep-out-of-class violations for display
-  const outOfClassViolations = keepOutOfClass.filter(({ studentId, classIndex }) => {
-    const assignedClass = assignment[studentId];
-    return assignedClass !== undefined && assignedClass === classIndex;
-  });
+    const outOfClassViolations = keepOutOfClass.filter(({ studentId, classIndex }) => {
+      const assignedClass = assignment[studentId];
+      return assignedClass !== undefined && assignedClass === classIndex;
+    });
 
-  // Total violations
-  const totalViolations = apartViolations.length + togetherViolations.length + outOfClassViolations.length;
+    return {
+      apartViolations,
+      togetherViolations,
+      outOfClassViolations,
+      totalViolations: apartViolations.length + togetherViolations.length + outOfClassViolations.length
+    };
+  }, [keepApart, keepTogether, keepOutOfClass, assignment]);
 
-  const classesByIdx = Array.from({ length: numClasses }, (_, i) =>
-    students.filter(s => assignment[s.id] === i)
-      .sort((a, b) => {
-        const aLocked = locked.has(a.id) ? 1 : 0;
-        const bLocked = locked.has(b.id) ? 1 : 0;
-        if (aLocked !== bLocked) return aLocked - bLocked;
-        return a.name.localeCompare(b.name);
-      })
+  const { apartViolations, togetherViolations, outOfClassViolations, totalViolations } = violations;
+
+  // Memoize class grouping and sorting
+  const classesByIdx = useMemo(() =>
+    Array.from({ length: numClasses }, (_, i) =>
+      students.filter(s => assignment[s.id] === i)
+        .sort((a, b) => {
+          const aLocked = locked.has(a.id) ? 1 : 0;
+          const bLocked = locked.has(b.id) ? 1 : 0;
+          if (aLocked !== bLocked) return aLocked - bLocked;
+          return a.name.localeCompare(b.name);
+        })
+    ),
+    [students, assignment, locked, numClasses]
   );
 
   const costColor = cost !== null
