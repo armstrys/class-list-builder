@@ -225,6 +225,7 @@
     const value = {
       students, setStudents,
       keepApart, keepTogether, keepOutOfClass,
+      setKeepApart, setKeepTogether, setKeepOutOfClass,
       assignment, setAssignment: setAssignmentWithUndo,
       locked, setLocked: setLockedWithUndo,
       optimizationResults, setOptimizationResults,

@@ -11,6 +11,10 @@
  * @property {Array} invalidItems.keepTogether - Invalid keepTogether groups
  */
 
+// PROJECT_FORMAT_VERSION is declared in projectSerializer.js (loaded first in the browser
+// bundle). In test contexts that import this file standalone, fall back to the known value.
+const EXPECTED_FORMAT_VERSION = (typeof PROJECT_FORMAT_VERSION !== 'undefined') ? PROJECT_FORMAT_VERSION : 1;
+
 /**
  * Parses a version string into components
  * @param {string} version - Version string like "1.3.2"
@@ -81,11 +85,11 @@ function checkVersionCompatibility(savedVersion, currentVersion) {
  * @returns {Object} { compatible: boolean, error: string|null }
  */
 function checkFormatCompatibility(savedFormatVersion) {
-  if (savedFormatVersion !== PROJECT_FORMAT_VERSION) {
+  if (savedFormatVersion !== EXPECTED_FORMAT_VERSION) {
     return {
       compatible: false,
       error: `Format version mismatch: Project uses format v${savedFormatVersion}, ` +
-             `but this app expects format v${PROJECT_FORMAT_VERSION}. ` +
+             `but this app expects format v${EXPECTED_FORMAT_VERSION}. ` +
              `The project file format may have changed significantly.`
     };
   }
@@ -568,6 +572,6 @@ if (typeof module !== 'undefined' && module.exports) {
     validateKeepApart,
     validateKeepTogether,
     validateKeepOutOfClass,
-    PROJECT_FORMAT_VERSION
+    PROJECT_FORMAT_VERSION: EXPECTED_FORMAT_VERSION,
   };
 }

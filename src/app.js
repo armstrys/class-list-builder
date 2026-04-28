@@ -29,7 +29,12 @@ function AppContent() {
     setTeachers,
   } = useAppStateExport();
 
-  const { students, setStudents, clearAllStudents, keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
+  const {
+    students, setStudents, clearAllStudents,
+    keepApart, keepTogether, keepOutOfClass,
+    setKeepApart, setKeepTogether, setKeepOutOfClass,
+    setAssignment, setLocked,
+  } = useStudentsExport();
   const { numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria } = useCriteriaExport();
 
   // Keyboard shortcuts
@@ -55,14 +60,23 @@ function AppContent() {
     if (data.teachers) setTeachers(data.teachers);
     if (data.numericCriteria) setNumericCriteria(data.numericCriteria);
     if (data.flagCriteria) setFlagCriteria(data.flagCriteria);
-    
-    // Other data is handled by context internals
+    setKeepApart(data.keepApart || []);
+    setKeepTogether(data.keepTogether || []);
+    setKeepOutOfClass(data.keepOutOfClass || []);
+    setAssignment(data.assignment || {});
+    setLocked(new Set(data.locked || []));
+
     if (data.assignment && Object.keys(data.assignment).length > 0) {
       navigateToOptimize();
     } else if (data.students?.length > 0) {
       navigateToSetup();
     }
-  }, [setStudents, setTeachers, setNumericCriteria, setFlagCriteria, navigateToOptimize, navigateToSetup]);
+  }, [
+    setStudents, setTeachers, setNumericCriteria, setFlagCriteria,
+    setKeepApart, setKeepTogether, setKeepOutOfClass,
+    setAssignment, setLocked,
+    navigateToOptimize, navigateToSetup,
+  ]);
 
   // Handle settings save
   const handleSaveSettings = useCallback((newNumCriteria, newFlagCriteria) => {
