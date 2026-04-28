@@ -447,7 +447,7 @@ function deserializeProject(projectData, options = {}) {
   warnings.push(...criteriaCheck.warnings);
   
   // Process assignment if present (now a standard field)
-  let assignment = {};
+  const assignment = {};
   if (projectState.assignment) {
     // Validate assignment - only include valid student/teacher pairs
     Object.entries(projectState.assignment).forEach(([studentId, teacherIndex]) => {

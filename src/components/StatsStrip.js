@@ -11,11 +11,10 @@
 function StatsStrip({ numClasses }) {
   const { students, assignment } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
-  
-  if (!students?.length) return null;
 
   // Memoize expensive calculations to prevent re-computation on every render
   const allItems = useMemo(() => {
+    if (!students?.length) return [];
     const classes = Array.from({ length: numClasses }, (_, i) =>
       students.filter(s => assignment[s.id] === i)
     );
@@ -106,6 +105,8 @@ function StatsStrip({ numClasses }) {
     if (cv < 0.25) return 'warn';
     return 'bad';
   }
+
+  if (allItems.length === 0) return null;
 
   return (
     <div className="stats-strip">

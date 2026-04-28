@@ -108,7 +108,7 @@ describe('CSV', () => {
 
     test('parses line with escaped quotes', () => {
       // Act
-      const fields = parseCSVLine('"John ""Johnny\"" Doe",F,85,90,true,false');
+      const fields = parseCSVLine('"John ""Johnny"" Doe",F,85,90,true,false');
 
       // Assert
       expect(fields).toEqual(['John "Johnny" Doe', 'F', '85', '90', 'true', 'false']);
