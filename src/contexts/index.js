@@ -250,10 +250,10 @@
     return context;
   }
 
-  // Export
-  var StudentsContextExport = StudentsContext;
-  var StudentsProviderExport = StudentsProvider;
-  var useStudentsExport = useStudents;
+  // Export to global scope for concatenated build
+  window.StudentsContextExport = StudentsContext;
+  window.StudentsProviderExport = StudentsProvider;
+  window.useStudentsExport = useStudents;
 }
 
 // CriteriaContext
@@ -365,9 +365,10 @@
     return context;
   }
 
-  var CriteriaContextExport = CriteriaContext;
-  var CriteriaProviderExport = CriteriaProvider;
-  var useCriteriaExport = useCriteria;
+  // Export to global scope for concatenated build
+  window.CriteriaContextExport = CriteriaContext;
+  window.CriteriaProviderExport = CriteriaProvider;
+  window.useCriteriaExport = useCriteria;
 }
 
 // AppStateContext
@@ -416,7 +417,8 @@
     return context;
   }
 
-  var AppStateContextExport = AppStateContext;
-  var AppStateProviderExport = AppStateProvider;
-  var useAppStateExport = useAppState;
+  // Export to global scope for concatenated build
+  window.AppStateContextExport = AppStateContext;
+  window.AppStateProviderExport = AppStateProvider;
+  window.useAppStateExport = useAppState;
 }
