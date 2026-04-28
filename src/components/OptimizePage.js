@@ -31,6 +31,10 @@ function OptimizePage({
     removeKeepTogether,
     addKeepOutOfClass,
     removeKeepOutOfClass,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useStudentsExport();
 
   const { numericCriteria, flagCriteria } = useCriteriaExport();
@@ -181,6 +185,24 @@ function OptimizePage({
           <span>locked</span>
           <button className="btn btn-ghost btn-sm" onClick={handleLockAll}>Lock All</button>
           <button className="btn btn-ghost btn-sm" onClick={handleUnlockAll}>Unlock All</button>
+        </div>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={undo}
+            disabled={!canUndo}
+            title="Undo (Cmd/Ctrl+Z)"
+          >
+            ↶ Undo
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={redo}
+            disabled={!canRedo}
+            title="Redo (Cmd/Ctrl+Shift+Z)"
+          >
+            ↷ Redo
+          </button>
         </div>
         {cost !== null && (
           <div className="score-badge">
