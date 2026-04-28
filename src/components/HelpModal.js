@@ -1,4 +1,14 @@
-function HelpModal({ onClose, numericCriteria, flagCriteria }) {
+/**
+ * HelpModal - Display help information about optimization
+ * 
+ * Uses contexts:
+ * - useCriteria: To show configured criteria
+ * 
+ * @param {Object} props
+ * @param {Function} props.onClose - Close callback
+ */
+function HelpModal({ onClose }) {
+  const { numericCriteria, flagCriteria } = useCriteriaExport();
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal modal-lg">

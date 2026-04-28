@@ -1,24 +1,39 @@
+/**
+ * OptimizePage - Main optimization results view with drag-and-drop class management.
+ * 
+ * Uses contexts:
+ * - useStudents: Student data, constraints, assignments, locks
+ * - useCriteria: Criteria configuration
+ * 
+ * @param {Object} props
+ * @param {Array<{id: string, name: string}>} props.teachers - Class/teacher definitions
+ * @param {Function} props.setTeachers - Update teachers state
+ * @param {Function} props.onBack - Navigate back to setup view
+ */
 function OptimizePage({
-  students,
   teachers,
   setTeachers,
   onBack,
-  numericCriteria,
-  flagCriteria,
-  keepApart = [],
-  onAddKeepApart,
-  onRemoveKeepApart,
-  keepTogether = [],
-  onAddKeepTogether,
-  onRemoveKeepTogether,
-  keepOutOfClass = [],
-  onAddKeepOutOfClass,
-  onRemoveKeepOutOfClass,
-  assignment,
-  setAssignment,
-  locked,
-  setLocked,
 }) {
+  // Get data from contexts
+  const { 
+    students, 
+    keepApart, 
+    keepTogether, 
+    keepOutOfClass,
+    assignment, 
+    setAssignment,
+    locked, 
+    setLocked,
+    addKeepApart,
+    removeKeepApart,
+    addKeepTogether,
+    removeKeepTogether,
+    addKeepOutOfClass,
+    removeKeepOutOfClass,
+  } = useStudentsExport();
+  
+  const { numericCriteria, flagCriteria } = useCriteriaExport();
   const [draggingId, setDraggingId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showConstraints, setShowConstraints] = useState(false);
@@ -262,29 +277,13 @@ function OptimizePage({
         </button>
       )}
 
-      {!fullscreen && <StatsStrip
-        students={students}
-        assignment={assignment}
-        numClasses={numClasses}
-        numericCriteria={numericCriteria}
-        flagCriteria={flagCriteria}
-      />}
+      {!fullscreen && <StatsStrip numClasses={numClasses} />}
 
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} numericCriteria={numericCriteria} flagCriteria={flagCriteria} />}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {showConstraints && (
-        <ConstraintManager
-          students={students}
-          keepApart={keepApart}
-          onAddKeepApart={onAddKeepApart}
-          onRemoveKeepApart={onRemoveKeepApart}
-          keepTogether={keepTogether}
-          onAddKeepTogether={onAddKeepTogether}
-          onRemoveKeepTogether={onRemoveKeepTogether}
-          keepOutOfClass={keepOutOfClass}
+        <ConstraintModal
           teachers={teachers}
-          onAddKeepOutOfClass={onAddKeepOutOfClass}
-          onRemoveKeepOutOfClass={onRemoveKeepOutOfClass}
           onClose={() => setShowConstraints(false)}
         />
       )}

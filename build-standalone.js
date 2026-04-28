@@ -11,9 +11,146 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const zlib = require('zlib');
 
 const SOURCE_FILE = 'class-list-optimizer-source.html';
 const OUTPUT_DIR = 'dist';
+
+// Size thresholds for warnings
+const SIZE_THRESHOLDS = {
+  WARN_MB: 3.0,    // Yellow warning at 3MB
+  ERROR_MB: 5.0,   // Red error at 5MB
+};
+
+/**
+ * Format bytes to human-readable string
+ * @param {number} bytes
+ * @returns {string}
+ */
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Get gzip size estimate for a buffer
+ * @param {Buffer} buffer
+ * @returns {number}
+ */
+function getGzipSize(buffer) {
+  return zlib.gzipSync(buffer).length;
+}
+
+/**
+ * Display bundle size report with warnings
+ * @param {string} outputFile
+ */
+function displayBundleReport(outputFile) {
+  const stats = fs.statSync(outputFile);
+  const content = fs.readFileSync(outputFile);
+  const gzipSize = getGzipSize(content);
+  const sizeMB = stats.size / 1024 / 1024;
+
+  console.log('\n' + '═'.repeat(60));
+  console.log('📦 Bundle Size Report');
+  console.log('═'.repeat(60));
+  console.log(`   Original: ${formatBytes(stats.size)}`);
+  console.log(`   Gzipped:  ${formatBytes(gzipSize)} (~${((gzipSize / stats.size) * 100).toFixed(1)}% of original)`);
+  console.log('─'.repeat(60));
+
+  // Warning levels
+  if (sizeMB >= SIZE_THRESHOLDS.ERROR_MB) {
+    console.log(`   ⚠️  CRITICAL: Bundle exceeds ${SIZE_THRESHOLDS.ERROR_MB}MB threshold`);
+    console.log(`      Consider code splitting or lazy loading`);
+  } else if (sizeMB >= SIZE_THRESHOLDS.WARN_MB) {
+    console.log(`   ⚠️  WARNING: Bundle exceeds ${SIZE_THRESHOLDS.WARN_MB}MB threshold`);
+    console.log(`      Monitor size growth carefully`);
+  } else {
+    console.log(`   ✅ Bundle size is healthy`);
+  }
+
+  // Calculate breakdown
+  const htmlSize = content.toString().length;
+  const scriptMatches = content.toString().match(/<script[^>]*>([\s\S]*?)<\/script>/gi) || [];
+  const styleMatches = content.toString().match(/<style[^>]*>([\s\S]*?)<\/style>/gi) || [];
+
+  let scriptSize = 0;
+  scriptMatches.forEach(match => {
+    scriptSize += match.length;
+  });
+
+  let styleSize = 0;
+  styleMatches.forEach(match => {
+    styleSize += match.length;
+  });
+
+  console.log('\n   Breakdown:');
+  console.log(`      Scripts: ${formatBytes(scriptSize)} (${((scriptSize / htmlSize) * 100).toFixed(1)}%)`);
+  console.log(`      Styles:  ${formatBytes(styleSize)} (${((styleSize / htmlSize) * 100).toFixed(1)}%)`);
+  console.log(`      HTML:    ${formatBytes(htmlSize - scriptSize - styleSize)} (${(((htmlSize - scriptSize - styleSize) / htmlSize) * 100).toFixed(1)}%)`);
+  console.log('═'.repeat(60));
+}
+
+/**
+ * Analyze source files for code quality metrics
+ */
+function analyzeSourceFiles() {
+  console.log('\n🔍 Analyzing source files...\n');
+
+  const srcDir = path.join(__dirname, 'src');
+  const componentsDir = path.join(srcDir, 'components');
+  const files = [];
+
+  // Collect all JS files
+  function collectFiles(dir, prefix = '') {
+    if (!fs.existsSync(dir)) return;
+    const items = fs.readdirSync(dir);
+    items.forEach(item => {
+      const fullPath = path.join(dir, item);
+      const stat = fs.statSync(fullPath);
+      if (stat.isDirectory()) {
+        collectFiles(fullPath, path.join(prefix, item));
+      } else if (item.endsWith('.js')) {
+        files.push({
+          path: fullPath,
+          relative: path.join(prefix, item),
+          size: stat.size,
+          lines: fs.readFileSync(fullPath, 'utf8').split('\n').length
+        });
+      }
+    });
+  }
+
+  collectFiles(srcDir);
+
+  // Sort by line count
+  files.sort((a, b) => b.lines - a.lines);
+
+  console.log('   File                          Lines    Size');
+  console.log('   ' + '─'.repeat(55));
+
+  let oversizedCount = 0;
+  files.forEach(file => {
+    const sizeStr = formatBytes(file.size).padStart(10);
+    const linesStr = file.lines.toString().padStart(6);
+    const status = file.lines > 300 ? ' ⚠️' : file.lines > 200 ? ' ⚡' : '  ';
+    if (file.lines > 300) oversizedCount++;
+    console.log(`   ${status} ${file.relative.padEnd(28)} ${linesStr} ${sizeStr}`);
+  });
+
+  console.log('   ' + '─'.repeat(55));
+
+  if (oversizedCount > 0) {
+    console.log(`   ⚠️  ${oversizedCount} file(s) exceed 300 lines (recommend < 200)`);
+  } else {
+    console.log('   ✅ All files under 300 lines');
+  }
+
+  return files;
+}
 
 // CDN resources to inline
 const RESOURCES = {
@@ -134,21 +271,26 @@ async function inlineGoogleFonts(cssBuffer) {
 
 // Main build function
 async function build() {
+  const startTime = Date.now();
+
   try {
+    // Analyze source files first
+    analyzeSourceFiles();
+
     // Read version from package.json
     const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     const version = packageJson.version;
 
-    // Read source HTML
-    console.log(`Reading source file: ${SOURCE_FILE}`);
+    console.log(`\n📄 Reading source file: ${SOURCE_FILE}`);
     let html = fs.readFileSync(SOURCE_FILE, 'utf8');
 
     // Inline local sources (CSS + JS) before fetching CDN resources
-    console.log('Inlining local source files…');
+    console.log('\n📝 Inlining local source files…');
     html = inlineLocalStyles(html);
     html = inlineLocalScripts(html);
 
     // Fetch and inline each resource
+    console.log('\n🌐 Fetching CDN resources…');
     for (const [url, info] of Object.entries(RESOURCES)) {
       try {
         let contentBuffer = await fetchUrl(url);
@@ -187,9 +329,9 @@ async function build() {
           );
         }
 
-        console.log(`  Inlined: ${url}`);
+        console.log(`  ✅ Inlined: ${url.split('/').pop()}`);
       } catch (err) {
-        console.error(`  Error fetching ${url}:`, err.message);
+        console.error(`  ❌ Error fetching ${url}:`, err.message);
         process.exit(1);
       }
     }
@@ -203,11 +345,19 @@ async function build() {
     const outputFile = path.join(OUTPUT_DIR, `class-list-optimizer-v${version}.html`);
     fs.writeFileSync(outputFile, html);
 
-    console.log(`\n✅ Build complete: ${outputFile}`);
-    console.log(`   Size: ${(fs.statSync(outputFile).size / 1024 / 1024).toFixed(2)} MB`);
+    // Display comprehensive report
+    const duration = Date.now() - startTime;
+    console.log(`\n✅ Build complete in ${duration}ms`);
+    console.log(`   Output: ${outputFile}`);
+
+    displayBundleReport(outputFile);
+
+    console.log('\n💡 Next steps:');
+    console.log('   • Run tests: npm test');
+    console.log('   • Run lint: npm run lint (after: npm install eslint)');
 
   } catch (err) {
-    console.error('Build failed:', err.message);
+    console.error('\n❌ Build failed:', err.message);
     process.exit(1);
   }
 }

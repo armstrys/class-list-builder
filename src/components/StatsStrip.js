@@ -1,4 +1,18 @@
-function StatsStrip({ students, assignment, numClasses, numericCriteria, flagCriteria }) {
+/**
+ * StatsStrip - Display optimization statistics
+ * 
+ * Uses contexts:
+ * - useStudents: Student data and assignment
+ * - useCriteria: Criteria configuration
+ * 
+ * @param {Object} props
+ * @param {number} props.numClasses - Number of classes
+ */
+function StatsStrip({ numClasses }) {
+  const { students, assignment } = useStudentsExport();
+  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  
+  if (!students?.length) return null;
   if (!students.length) return null;
 
   const classes = Array.from({ length: numClasses }, (_, i) =>

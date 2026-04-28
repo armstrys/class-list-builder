@@ -1,4 +1,27 @@
-function ClassColumn({ classIdx, name, onNameChange, students, locked, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [] }) {
+/**
+ * ClassColumn - Display a single class column with students
+ * 
+ * Uses contexts:
+ * - useStudents: For locked state and constraint info
+ * - useCriteria: For criteria configuration
+ * 
+ * @param {Object} props
+ * @param {number} props.classIdx - Class index
+ * @param {string} props.name - Class name
+ * @param {Function} props.onNameChange - Name change callback
+ * @param {Array} props.students - Students in this class
+ * @param {Function} props.onToggleLock - Lock toggle callback
+ * @param {Function} props.onDragStart - Drag start callback
+ * @param {Function} props.onDrop - Drop callback
+ * @param {string|null} props.draggingId - Currently dragging student ID
+ * @param {Array} props.allStudents - All students for population stats
+ * @param {boolean} props.fullscreen - Whether in fullscreen mode
+ */
+function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen }) {
+  // Get criteria and locked state from contexts
+  const { locked, keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
+  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  
   const [dragOver, setDragOver] = useState(false);
 
   const avg = key => students.length
