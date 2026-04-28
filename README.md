@@ -21,7 +21,13 @@ Building fair class lists by hand is time-consuming and hard to get right when y
 
 ---
 
+## Try It Now
+
+**🚀 [Use it now in your browser](https://armstrys.github.io/class-list-optimizer/)** — No download required. Your data stays on your computer.
+
 ## Download & Open
+
+Prefer an offline copy? Download once and use forever:
 
 1. Go to the **[Releases](../../releases)** page
 2. Download the latest `class-list-optimizer-vX.Y.Z.html` file
