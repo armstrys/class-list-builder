@@ -52,7 +52,9 @@
     "generateSampleStudents": "readonly",
     "PROJECT_FORMAT_VERSION": "readonly",
     "escapeCSVValue": "readonly",
-    "Modal": "readonly"
+    "Modal": "readonly",
+    "ViolationsModal": "readonly",
+    "ClassFilterDropdown": "readonly"
   },
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
