@@ -28,7 +28,7 @@ function AppContent() {
     showLoadProject, openLoadProject, closeLoadProject
   } = useAppStateExport();
   
-  const { students, setStudents, clearAllStudents } = useStudentsExport();
+  const { students, setStudents, clearAllStudents, keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
   const { numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria } = useCriteriaExport();
   
   // Local state for teachers (not global)
@@ -95,7 +95,6 @@ function AppContent() {
 
   // Export students helper
   const handleExportStudents = useCallback(() => {
-    const { keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
     const csv = exportStudentsToCSV(
       students, 
       numericCriteria, 
@@ -113,7 +112,7 @@ function AppContent() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [students, numericCriteria, flagCriteria]);
+  }, [students, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
