@@ -260,7 +260,7 @@ function SettingsModal({
         footer={footer}
         closeOnOverlayClick={!confirmRemove && !confirmClear}
       >
-      <div>
+        <div>
           {hasStudentData && (
             <div style={{
               background: 'var(--amber-light)',
@@ -400,8 +400,8 @@ function SettingsModal({
               {error}
             </div>
           )}
-      </div>
-    </Modal>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={!!confirmRemove}
