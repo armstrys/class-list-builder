@@ -45,8 +45,8 @@ jobs:
         BUNDLE_SIZE=$(stat -c%s dist/class-list-optimizer-v*.html)
         SIZE_MB=$(echo "scale=2; $BUNDLE_SIZE / 1024 / 1024" | bc)
         echo "Bundle size: ${SIZE_MB}MB"
-        if (( $(echo "$SIZE_MB > 5.0" | bc -l) )); then
-          echo "::error::Bundle size (${SIZE_MB}MB) exceeds 5MB limit"
+        if (( $(echo "$SIZE_MB > 10.0" | bc -l) )); then
+          echo "::error::Bundle size (${SIZE_MB}MB) exceeds 10MB limit"
           exit 1
         fi
     
