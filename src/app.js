@@ -21,22 +21,21 @@ function AppProviders({ children }) {
 
 function AppContent() {
   // Context hooks
-  const { 
+  const {
     view, navigateToSetup, navigateToOptimize,
     showSettings, openSettings, closeSettings,
     showSaveProject, openSaveProject, closeSaveProject,
-    showLoadProject, openLoadProject, closeLoadProject
+    showLoadProject, openLoadProject, closeLoadProject,
+    setTeachers,
   } = useAppStateExport();
-  
-  const { students, setStudents, clearAllStudents } = useStudentsExport();
+
+  const {
+    students, setStudents, clearAllStudents,
+    keepApart, keepTogether, keepOutOfClass,
+    setKeepApart, setKeepTogether, setKeepOutOfClass,
+    setAssignment, setLocked,
+  } = useStudentsExport();
   const { numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria } = useCriteriaExport();
-  
-  // Local state for teachers (not global)
-  const [teachers, setTeachers] = useState([
-    { id: 'T1', name: 'Class A' },
-    { id: 'T2', name: 'Class B' },
-    { id: 'T3', name: 'Class C' },
-  ]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -61,14 +60,23 @@ function AppContent() {
     if (data.teachers) setTeachers(data.teachers);
     if (data.numericCriteria) setNumericCriteria(data.numericCriteria);
     if (data.flagCriteria) setFlagCriteria(data.flagCriteria);
-    
-    // Other data is handled by context internals
+    setKeepApart(data.keepApart || []);
+    setKeepTogether(data.keepTogether || []);
+    setKeepOutOfClass(data.keepOutOfClass || []);
+    setAssignment(data.assignment || {});
+    setLocked(new Set(data.locked || []));
+
     if (data.assignment && Object.keys(data.assignment).length > 0) {
       navigateToOptimize();
     } else if (data.students?.length > 0) {
       navigateToSetup();
     }
-  }, [setStudents, setTeachers, setNumericCriteria, setFlagCriteria, navigateToOptimize, navigateToSetup]);
+  }, [
+    setStudents, setTeachers, setNumericCriteria, setFlagCriteria,
+    setKeepApart, setKeepTogether, setKeepOutOfClass,
+    setAssignment, setLocked,
+    navigateToOptimize, navigateToSetup,
+  ]);
 
   // Handle settings save
   const handleSaveSettings = useCallback((newNumCriteria, newFlagCriteria) => {
@@ -95,7 +103,6 @@ function AppContent() {
 
   // Export students helper
   const handleExportStudents = useCallback(() => {
-    const { keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
     const csv = exportStudentsToCSV(
       students, 
       numericCriteria, 
@@ -113,14 +120,11 @@ function AppContent() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [students, numericCriteria, flagCriteria]);
+  }, [students, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <Header 
-        view={view}
-        students={students}
-        teachers={teachers}
+      <Header
         onNavigateSetup={navigateToSetup}
         onNavigateOptimize={navigateToOptimize}
         onOpenSettings={openSettings}
@@ -129,17 +133,9 @@ function AppContent() {
       />
 
       {view === 'setup' ? (
-        <SetupPage
-          teachers={teachers}
-          setTeachers={setTeachers}
-          onOptimize={navigateToOptimize}
-        />
+        <SetupPage onOptimize={navigateToOptimize} />
       ) : (
-        <OptimizePage
-          teachers={teachers}
-          setTeachers={setTeachers}
-          onBack={navigateToSetup}
-        />
+        <OptimizePage onBack={navigateToSetup} />
       )}
 
       {showSettings && (
@@ -153,10 +149,7 @@ function AppContent() {
       )}
 
       {showSaveProject && (
-        <SaveProjectModal
-          teachers={teachers}
-          onClose={closeSaveProject}
-        />
+        <SaveProjectModal onClose={closeSaveProject} />
       )}
 
       {showLoadProject && (
@@ -173,16 +166,15 @@ function AppContent() {
 /**
  * Header component extracted from main App
  */
-function Header({ 
-  view, 
-  students, 
-  teachers, 
-  onNavigateSetup, 
+function Header({
+  onNavigateSetup,
   onNavigateOptimize,
   onOpenSettings,
   onOpenSave,
-  onOpenLoad
+  onOpenLoad,
 }) {
+  const { view, teachers } = useAppStateExport();
+  const { students } = useStudentsExport();
   return (
     <header className="app-header">
       <div className="app-logo">Class<span>List</span> Optimizer</div>

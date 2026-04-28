@@ -29,9 +29,32 @@
     "optimize": "readonly",
     "computeCost": "readonly",
     "exportStudentsToCSV": "readonly",
+    "exportClassListsToCSV": "readonly",
+    "triggerDownload": "readonly",
     "STORAGE_KEYS": "readonly",
     "DEFAULT_NUMERIC_CRITERIA": "readonly",
-    "DEFAULT_FLAG_CRITERIA": "readonly"
+    "DEFAULT_FLAG_CRITERIA": "readonly",
+    "APP_VERSION": "readonly",
+    "uid": "readonly",
+    "generateColor": "readonly",
+    "generateKeyFromLabel": "readonly",
+    "useStudentsExport": "readonly",
+    "useCriteriaExport": "readonly",
+    "useAppStateExport": "readonly",
+    "generateCSVHeaders": "readonly",
+    "parseCSV": "readonly",
+    "XLSX": "readonly",
+    "readProjectFile": "readonly",
+    "deserializeProject": "readonly",
+    "serializeProject": "readonly",
+    "PENALTY_WEIGHTS": "readonly",
+    "saveProject": "readonly",
+    "generateSampleStudents": "readonly",
+    "PROJECT_FORMAT_VERSION": "readonly",
+    "escapeCSVValue": "readonly",
+    "Modal": "readonly",
+    "ViolationsModal": "readonly",
+    "ClassFilterDropdown": "readonly"
   },
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
@@ -72,6 +95,20 @@
       "files": ["src/components/**/*.js"],
       "rules": {
         "max-lines": ["warn", { "max": 200, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/contexts/**/*.js"],
+      "rules": {
+        "no-inner-declarations": "off",
+        "no-var": "off"
+      }
+    },
+    {
+      "files": ["src/utils/**/*.js"],
+      "rules": {
+        "no-inner-declarations": "off",
+        "no-var": "off"
       }
     }
   ]

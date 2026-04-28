@@ -1,14 +1,14 @@
 /**
  * ConstraintModal - Main constraint management modal
- * 
+ *
  * Uses contexts:
  * - useStudents: For students and constraint data
- * 
+ * - useAppState: teachers/classes
+ *
  * @param {Object} props
- * @param {Array<{id: string, name: string}>} props.teachers - Class/teacher definitions
  * @param {Function} props.onClose - Close callback
  */
-function ConstraintModal({ teachers, onClose }) {
+function ConstraintModal({ onClose }) {
   const [activeTab, setActiveTab] = useState('apart');
 
   const {
@@ -23,6 +23,7 @@ function ConstraintModal({ teachers, onClose }) {
     addKeepOutOfClass,
     removeKeepOutOfClass,
   } = useStudentsExport();
+  const { teachers } = useAppStateExport();
 
   const totalConstraints = keepApart.length + keepTogether.length + keepOutOfClass.length;
 
@@ -36,15 +37,19 @@ function ConstraintModal({ teachers, onClose }) {
     { id: 'outofclass', label: 'Keep Out of Class', count: keepOutOfClass.length, color: 'var(--warning)' },
   ];
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 700, width: '90%' }}>
-        <div className="modal-header">
-          <h3 style={{ margin: 0 }}>Student Constraints {totalConstraints > 0 && `(${totalConstraints})`}</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
-        </div>
+  const title = (
+    <span>Student Constraints {totalConstraints > 0 && <span style={{ color: 'var(--text2)', fontWeight: 400 }}>({totalConstraints})</span>}</span>
+  );
 
-        <div className="modal-body" style={{ padding: 0 }}>
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={title}
+      size="lg"
+      style={{ width: '90%' }}
+    >
+      <div style={{ margin: '-16px -24px' }}>
           {/* Tabs */}
           <div style={{
             display: 'flex',
@@ -106,8 +111,7 @@ function ConstraintModal({ teachers, onClose }) {
               />
             )}
           </div>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

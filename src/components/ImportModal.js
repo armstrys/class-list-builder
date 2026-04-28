@@ -143,15 +143,27 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
     }
   }
 
+  const footer = (
+    <>
+      <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      <button 
+        className="btn btn-primary" 
+        onClick={handleImport} 
+        disabled={!text.trim() || isLoading}
+      >
+        Import {totalRows > 0 ? `${totalRows} student${totalRows !== 1 ? 's' : ''}` : ''}
+      </button>
+    </>
+  );
+
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 560 }}>
-        <div className="modal-header">
-          <div className="modal-title">Import Students</div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
-        </div>
-        
-        <div className="modal-body">
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Import Students"
+      size="lg"
+      footer={footer}
+    >
           {/* Append warning banner */}
           <div className="import-warning-banner">
             <div className="import-warning-icon">ℹ️</div>
@@ -271,19 +283,6 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
           )}
 
           {error && <p className="import-error">{error}</p>}
-        </div>
-        
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleImport} 
-            disabled={!text.trim() || isLoading}
-          >
-            Import {totalRows > 0 ? `${totalRows} student${totalRows !== 1 ? 's' : ''}` : ''}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

@@ -21,6 +21,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
   // Get criteria and locked state from contexts
   const { locked, keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { teachers } = useAppStateExport();
   
   const [dragOver, setDragOver] = useState(false);
 

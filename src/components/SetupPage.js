@@ -4,27 +4,23 @@
  * Uses contexts:
  * - useStudents: Student data and constraint management
  * - useCriteria: Criteria configuration
- * - useAppState: Navigation and modal state
- * 
+ * - useAppState: Navigation, modal state, teachers/classes
+ *
  * @param {Object} props
- * @param {Array<{id: string, name: string}>} props.teachers - Teacher/class definitions
- * @param {Function} props.setTeachers - Update teachers
  * @param {Function} props.onOptimize - Navigate to optimize view
  */
-function SetupPage({
-  teachers,
-  setTeachers,
-  onOptimize,
-}) {
+function SetupPage({ onOptimize }) {
   // Context hooks
-  const { 
-    students, 
+  const {
+    students,
     setStudents,
     removeStudentConstraints,
-    clearAllStudents: clearAllStudentsContext
+    clearAllStudents: clearAllStudentsContext,
+    keepApart,
+    keepTogether,
   } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
-  const { openSettings } = useAppStateExport();
+  const { openSettings, teachers, setTeachers } = useAppStateExport();
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [showImport, setShowImport] = useState(false);
@@ -264,10 +260,7 @@ function SetupPage({
         />
       )}
       {showConstraintModal && (
-        <ConstraintModal
-          teachers={teachers}
-          onClose={() => setShowConstraintModal(false)}
-        />
+        <ConstraintModal onClose={() => setShowConstraintModal(false)} />
       )}
     </>
   );

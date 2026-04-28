@@ -23,6 +23,123 @@
     const [locked, setLocked] = useState(new Set());
     const [optimizationResults, setOptimizationResults] = useState(null);
 
+    // Undo stack - ring buffer of last 20 snapshots
+    const UNDO_LIMIT = 20;
+    const [undoStack, setUndoStack] = useState([]);
+    const [redoStack, setRedoStack] = useState([]);
+    const [canUndo, setCanUndo] = useState(false);
+    const [canRedo, setCanRedo] = useState(false);
+
+    // Create a snapshot of the current state for undo
+    const createSnapshot = useCallback(() => ({
+      assignment: { ...assignment },
+      locked: new Set(locked),
+      timestamp: Date.now()
+    }), [assignment, locked]);
+
+    // Push a snapshot to the undo stack
+    const pushSnapshot = useCallback(() => {
+      const snapshot = createSnapshot();
+      setUndoStack(prev => {
+        const next = [...prev, snapshot];
+        if (next.length > UNDO_LIMIT) {
+          next.shift(); // Remove oldest
+        }
+        return next;
+      });
+      setCanUndo(true);
+      // Clear redo stack when new action occurs
+      setRedoStack([]);
+      setCanRedo(false);
+    }, [createSnapshot]);
+
+    // Undo the last action
+    const undo = useCallback(() => {
+      if (undoStack.length === 0) return;
+      
+      // Save current state to redo stack
+      const currentSnapshot = createSnapshot();
+      setRedoStack(prev => {
+        const next = [...prev, currentSnapshot];
+        if (next.length > UNDO_LIMIT) {
+          next.shift();
+        }
+        return next;
+      });
+      setCanRedo(true);
+
+      // Restore previous state
+      const previousSnapshot = undoStack[undoStack.length - 1];
+      setAssignment(previousSnapshot.assignment);
+      setLocked(previousSnapshot.locked);
+
+      // Remove from undo stack
+      setUndoStack(prev => {
+        const next = prev.slice(0, -1);
+        setCanUndo(next.length > 0);
+        return next;
+      });
+    }, [undoStack, createSnapshot]);
+
+    // Redo the last undone action
+    const redo = useCallback(() => {
+      if (redoStack.length === 0) return;
+
+      // Save current state to undo stack
+      const currentSnapshot = createSnapshot();
+      setUndoStack(prev => {
+        const next = [...prev, currentSnapshot];
+        if (next.length > UNDO_LIMIT) {
+          next.shift();
+        }
+        return next;
+      });
+      setCanUndo(true);
+
+      // Restore redo state
+      const redoSnapshot = redoStack[redoStack.length - 1];
+      setAssignment(redoSnapshot.assignment);
+      setLocked(redoSnapshot.locked);
+
+      // Remove from redo stack
+      setRedoStack(prev => {
+        const next = prev.slice(0, -1);
+        setCanRedo(next.length > 0);
+        return next;
+      });
+    }, [redoStack, createSnapshot]);
+
+    // Keyboard shortcut handler for undo/redo
+    useEffect(() => {
+      function handleKeyDown(e) {
+        // Cmd/Ctrl + Z for undo
+        if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        }
+        // Cmd/Ctrl + Shift + Z or Cmd/Ctrl + Y for redo
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+          e.preventDefault();
+          redo();
+        }
+      }
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [undo, redo]);
+
+    // Wrap setAssignment to automatically push snapshot before change
+    const setAssignmentWithUndo = useCallback((newAssignment) => {
+      pushSnapshot();
+      setAssignment(newAssignment);
+    }, [pushSnapshot]);
+
+    // Wrap setLocked to automatically push snapshot before change
+    const setLockedWithUndo = useCallback((newLocked) => {
+      pushSnapshot();
+      setLocked(newLocked);
+    }, [pushSnapshot]);
+
     const addKeepApart = useCallback((id1, id2) => {
       if (id1 === id2) return;
       const pair = id1 < id2 ? [id1, id2] : [id2, id1];
@@ -77,20 +194,23 @@
     }, []);
 
     const toggleLocked = useCallback((studentId) => {
+      pushSnapshot();
       setLocked(prev => {
         const next = new Set(prev);
         next.has(studentId) ? next.delete(studentId) : next.add(studentId);
         return next;
       });
-    }, []);
+    }, [pushSnapshot]);
 
     const lockAll = useCallback(() => {
+      pushSnapshot();
       setLocked(new Set(students.map(s => s.id)));
-    }, [students]);
+    }, [students, pushSnapshot]);
 
     const unlockAll = useCallback(() => {
+      pushSnapshot();
       setLocked(new Set());
-    }, []);
+    }, [pushSnapshot]);
 
     const clearAllStudents = useCallback(() => {
       setStudents([]);
@@ -105,8 +225,9 @@
     const value = {
       students, setStudents,
       keepApart, keepTogether, keepOutOfClass,
-      assignment, setAssignment,
-      locked, setLocked,
+      setKeepApart, setKeepTogether, setKeepOutOfClass,
+      assignment, setAssignment: setAssignmentWithUndo,
+      locked, setLocked: setLockedWithUndo,
       optimizationResults, setOptimizationResults,
       addKeepApart, removeKeepApart,
       addKeepTogether, removeKeepTogether,
@@ -114,6 +235,7 @@
       removeStudentConstraints, clearAllConstraints,
       toggleLocked, lockAll, unlockAll,
       clearAllStudents,
+      undo, redo, canUndo, canRedo,
     };
 
     return (
@@ -129,10 +251,10 @@
     return context;
   }
 
-  // Export
-  var StudentsContextExport = StudentsContext;
-  var StudentsProviderExport = StudentsProvider;
-  var useStudentsExport = useStudents;
+  // Export to global scope for concatenated build
+  window.StudentsContextExport = StudentsContext;
+  window.StudentsProviderExport = StudentsProvider;
+  window.useStudentsExport = useStudents;
 }
 
 // CriteriaContext
@@ -244,9 +366,10 @@
     return context;
   }
 
-  var CriteriaContextExport = CriteriaContext;
-  var CriteriaProviderExport = CriteriaProvider;
-  var useCriteriaExport = useCriteria;
+  // Export to global scope for concatenated build
+  window.CriteriaContextExport = CriteriaContext;
+  window.CriteriaProviderExport = CriteriaProvider;
+  window.useCriteriaExport = useCriteria;
 }
 
 // AppStateContext
@@ -258,6 +381,11 @@
     const [showSettings, setShowSettings] = useState(false);
     const [showSaveProject, setShowSaveProject] = useState(false);
     const [showLoadProject, setShowLoadProject] = useState(false);
+    const [teachers, setTeachers] = useState([
+      { id: 'T1', name: 'Class A' },
+      { id: 'T2', name: 'Class B' },
+      { id: 'T3', name: 'Class C' },
+    ]);
 
     const navigateToOptimize = useCallback(() => setView('optimize'), []);
     const navigateToSetup = useCallback(() => setView('setup'), []);
@@ -280,6 +408,7 @@
       openSaveProject, closeSaveProject,
       openLoadProject, closeLoadProject,
       closeAllModals,
+      teachers, setTeachers,
     };
 
     return (
@@ -295,7 +424,8 @@
     return context;
   }
 
-  var AppStateContextExport = AppStateContext;
-  var AppStateProviderExport = AppStateProvider;
-  var useAppStateExport = useAppState;
+  // Export to global scope for concatenated build
+  window.AppStateContextExport = AppStateContext;
+  window.AppStateProviderExport = AppStateProvider;
+  window.useAppStateExport = useAppState;
 }

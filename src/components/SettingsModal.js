@@ -243,14 +243,24 @@ function SettingsModal({
     return () => window.removeEventListener('keydown', onKey);
   }, [confirmRemove, confirmClear]);
 
+  const footer = (
+    <>
+      <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      <button className="btn btn-primary" onClick={handleSave}>Save Settings</button>
+    </>
+  );
+
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && !confirmRemove && !confirmClear && onClose()}>
-      <div className="modal modal-xl">
-        <div className="modal-header">
-          <div className="modal-title">Criteria Settings</div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-body">
+    <>
+      <Modal
+        isOpen={true}
+        onClose={onClose}
+        title="Criteria Settings"
+        size="xl"
+        footer={footer}
+        closeOnOverlayClick={!confirmRemove && !confirmClear}
+      >
+        <div>
           {hasStudentData && (
             <div style={{
               background: 'var(--amber-light)',
@@ -391,98 +401,87 @@ function SettingsModal({
             </div>
           )}
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave}>Save Settings</button>
-        </div>
-      </div>
+      </Modal>
 
-      {confirmRemove && (
-        <div className="modal-overlay" style={{ zIndex: 1100 }}>
-          <div className="modal" style={{ maxWidth: 400 }}>
-            <div className="modal-header">
-              <div className="modal-title">Confirm Removal</div>
-            </div>
-            <div className="modal-body">
-              <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-                Student data exists. Removing "{confirmRemove.label}" will delete this data from all student records.
-                This cannot be undone.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>Cancel</button>
-              <button
-                className="btn btn-danger"
-                onClick={() => confirmRemove.type === 'numeric'
-                  ? removeNumCriterion(confirmRemove.index)
-                  : removeFlagCriterion(confirmRemove.index)
-                }
-              >
-                Remove Field
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        isOpen={!!confirmRemove}
+        onClose={() => setConfirmRemove(null)}
+        title="Confirm Removal"
+        size="sm"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>Cancel</button>
+            <button
+              className="btn btn-danger"
+              onClick={() => confirmRemove.type === 'numeric'
+                ? removeNumCriterion(confirmRemove.index)
+                : removeFlagCriterion(confirmRemove.index)
+              }
+            >
+              Remove Field
+            </button>
+          </>
+        }
+      >
+        <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
+          Student data exists. Removing "{confirmRemove?.label}" will delete this data from all student records.
+          This cannot be undone.
+        </p>
+      </Modal>
 
-      {confirmClear && (
-        <div className="modal-overlay" style={{ zIndex: 1100 }}>
-          <div className="modal" style={{ maxWidth: 420 }}>
-            <div className="modal-header">
-              <div className="modal-title">Clear Saved Settings?</div>
-            </div>
-            <div className="modal-body">
-              <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-                This will reset your criteria configuration to factory defaults and clear the saved cache.
-                Click Save Settings afterward to apply the defaults.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setConfirmClear(false)}>Cancel</button>
-              <button className="btn btn-danger" onClick={clearSavedSettings}>Reset to Defaults</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        isOpen={confirmClear}
+        onClose={() => setConfirmClear(false)}
+        title="Clear Saved Settings?"
+        size="sm"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setConfirmClear(false)}>Cancel</button>
+            <button className="btn btn-danger" onClick={clearSavedSettings}>Reset to Defaults</button>
+          </>
+        }
+      >
+        <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
+          This will reset your criteria configuration to factory defaults and clear the saved cache.
+          Click Save Settings afterward to apply the defaults.
+        </p>
+      </Modal>
 
-      {configConflict && (
-        <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setConfigConflict(null)}>
-          <div className="modal" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title">⚠️ Config Import Blocked</div>
-              <button className="btn btn-ghost btn-sm" onClick={() => setConfigConflict(null)}>✕</button>
-            </div>
-            <div className="modal-body">
-              <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>
-                {configConflict.message}
-              </p>
-              <div style={{
-                background: 'var(--surface2)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '12px 16px',
-                marginBottom: 16,
-                fontSize: 13
-              }}>
-                <strong>What you can do:</strong>
-                <ol style={{ margin: '8px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
-                  <li><strong>Export</strong> your current students as CSV (optional backup)</li>
-                  <li><strong>Clear</strong> student data to remove the conflict</li>
-                  <li>The new config will be applied automatically</li>
-                </ol>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>
-                Tip: You can re-import your student data later if the fields match the new config.
-              </p>
-            </div>
-            <div className="modal-footer" style={{ flexWrap: 'wrap', gap: 8 }}>
-              <button className="btn btn-secondary" onClick={() => setConfigConflict(null)}>Cancel</button>
-              <button className="btn btn-secondary" onClick={handleExportOnly}>⬇ Export Students</button>
-              <button className="btn btn-danger" onClick={handleClearAndApply}>Clear & Apply Config</button>
-            </div>
-          </div>
+      <Modal
+        isOpen={!!configConflict}
+        onClose={() => setConfigConflict(null)}
+        title="⚠️ Config Import Blocked"
+        size="md"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setConfigConflict(null)}>Cancel</button>
+            <button className="btn btn-secondary" onClick={handleExportOnly}>⬇ Export Students</button>
+            <button className="btn btn-danger" onClick={handleClearAndApply}>Clear & Apply Config</button>
+          </>
+        }
+      >
+        <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>
+          {configConflict?.message}
+        </p>
+        <div style={{
+          background: 'var(--surface2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '12px 16px',
+          marginBottom: 16,
+          fontSize: 13
+        }}>
+          <strong>What you can do:</strong>
+          <ol style={{ margin: '8px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
+            <li><strong>Export</strong> your current students as CSV (optional backup)</li>
+            <li><strong>Clear</strong> student data to remove the conflict</li>
+            <li>The new config will be applied automatically</li>
+          </ol>
         </div>
-      )}
-    </div>
+        <p style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>
+          Tip: You can re-import your student data later if the fields match the new config.
+        </p>
+      </Modal>
+    </>
   );
 }

@@ -10,13 +10,12 @@
 function HelpModal({ onClose }) {
   const { numericCriteria, flagCriteria } = useCriteriaExport();
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-lg">
-        <div className="modal-header">
-          <div className="modal-title">How Optimization Works</div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕ Close</button>
-        </div>
-        <div className="modal-body">
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="How Optimization Works"
+      size="lg"
+    >
           <div className="help-section">
             <h3>Goal</h3>
             <p>The optimizer distributes students across classes so that every class is as similar as possible across all measured dimensions — academic scores, intervention needs, behavior, and gender balance.</p>
@@ -81,8 +80,6 @@ function HelpModal({ onClose }) {
             <h3>Locked Students</h3>
             <p>Locking a student pins them to their current class. Subsequent optimization only moves unlocked students. Use this for overrides.</p>
           </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

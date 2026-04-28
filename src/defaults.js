@@ -1,7 +1,7 @@
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 // App version for save/load compatibility checking
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.5.1";
 
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
@@ -23,6 +23,21 @@ const DEFAULT_FLAG_CRITERIA = [
 const STORAGE_KEYS = {
   NUMERIC_CRITERIA: 'class-optimizer-numeric-criteria',
   FLAG_CRITERIA: 'class-optimizer-flag-criteria',
+};
+
+// Optimization penalty weights
+// These control the severity of constraint violations and balance metrics
+const PENALTY_WEIGHTS = {
+  // Constraint penalties (higher = stricter enforcement)
+  KEEP_APART: 100.0,      // Weight for keep-apart constraint violations
+  KEEP_TOGETHER: 200.0,   // Weight for keep-together constraint violations
+  KEEP_OUT_OF_CLASS: 150.0, // Weight for keep-out-of-class constraint violations
+
+  // Balance metric weights
+  TOTAL_FLAGS: 2.0,       // Weight for total flags balance variance
+  TOTAL_SCORE: 1.5,       // Weight for total z-score balance variance
+  CLASS_SIZE: 3.0,        // Weight for class size balance variance
+  GENDER: 1.0,            // Weight for gender balance variance (default, used when not specified)
 };
 
 function generateColor(key) {

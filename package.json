@@ -1,18 +1,20 @@
 {
   "name": "class-list-optimizer",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "A tool for optimizing class list distributions",
   "scripts": {
     "build": "node build-standalone.js",
     "dev": "npx --yes serve -l 3000 .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src/ tests/ --ext .js",
+    "lint": "eslint src/ tests/ --ext .js --max-warnings 120",
     "lint:fix": "eslint src/ tests/ --ext .js --fix",
     "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\" \"*.js\" \"*.json\"",
     "format:check": "prettier --check \"src/**/*.js\" \"tests/**/*.js\" \"*.js\" \"*.json\""
   },
   "devDependencies": {
+    "acorn": "^8.16.0",
+    "acorn-jsx": "^5.3.2",
     "vitest": "^2.1.9",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.37.2",
