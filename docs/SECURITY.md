@@ -500,6 +500,44 @@ If you have questions about the security of this application or believe you have
 
 ---
 
+## GitHub Pages Deployment vs. Local File
+
+The Class List Optimizer is available in two forms: **locally downloaded file** or **GitHub Pages hosted**. Both provide identical client-side-only functionality.
+
+### What's the Same
+
+Both versions:
+- ✅ Run entirely in your browser
+- ✅ Never transmit student data anywhere
+- ✅ Work offline after initial load (Pages version caches in browser)
+- ✅ Use the same code
+
+### What's Different
+
+| Aspect | Local File | GitHub Pages |
+|--------|------------|--------------|
+| **First load** | No network | Connects to `github.io` |
+| **Subsequent use** | Works offline | Works offline (cached) |
+| **IP address exposed** | None | To GitHub on first load only |
+| **Code updates** | Manual download | Automatic on refresh |
+
+### The Only Risk: IP Address
+
+When using the GitHub Pages version, your IP address is visible to GitHub when you first load the page. This is the same as visiting any website. Once loaded, **no further network activity occurs** — the CSP blocks all connections, including any that might leak data.
+
+**Student data (names, scores, flags) is never transmitted.** It exists only in your browser's memory and localStorage, just like the downloaded file.
+
+### Recommendation
+
+**Either version is safe for real student data.** Choose based on preference:
+
+- **Download** if you want zero network traffic or need offline/air-gapped use
+- **GitHub Pages** if you want instant access and don't mind GitHub seeing your IP once
+
+For FERPA compliance: both versions keep student data under your institution's control. The hosted version meets FERPA requirements because no student data leaves your computer.
+
+---
+
 ## Summary for Different Audiences
 
 ### For School Administrators
@@ -520,9 +558,9 @@ If you have questions about the security of this application or believe you have
 
 | Field | Value |
 |-------|-------|
-| **Document Version** | 1.0 |
-| **Application Version** | 1.3.0 |
-| **Last Updated** | April 26, 2026 |
+| **Document Version** | 1.1 |
+| **Application Version** | 1.5.3 |
+| **Last Updated** | April 28, 2026 |
 | **Review Cycle** | Annual or on major release |
 | **Author** | Class List Optimizer Development Team |
 | **Classification** | Public — Safe to share with auditors |
