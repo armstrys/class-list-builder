@@ -29,6 +29,9 @@ function AppContent() {
     setTeachers,
   } = useAppStateExport();
 
+  // Welcome modal state
+  const [, setShowWelcome] = React.useState(true);
+
   const {
     students, setStudents, clearAllStudents,
     keepApart, keepTogether, keepOutOfClass,
@@ -159,6 +162,16 @@ function AppContent() {
           hasExistingData={students.length > 0}
         />
       )}
+
+      <WelcomeModal
+        onClose={() => setShowWelcome(false)}
+        onLoadDemo={() => {
+          // Load demo data with default sample students
+          const demoStudents = generateSampleStudents(27, numericCriteria, flagCriteria);
+          setStudents(demoStudents);
+          setShowWelcome(false);
+        }}
+      />
     </div>
   );
 }

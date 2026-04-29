@@ -23,7 +23,7 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
     // Generate scores based on criteria
     const student = {
       id: uid(),
-      name: `${ln} ${fn}`,
+      name: `${fn} ${ln}`,
       gender,
     };
 
