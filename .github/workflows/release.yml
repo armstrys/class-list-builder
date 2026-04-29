@@ -53,12 +53,12 @@ jobs:
           git push origin "v${VERSION}"
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@c074443f1aee8d04a8490ee4e8db8d00577c2b72  # v2.2.3
+        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2  # v2.2.3
         with:
           subject-path: 'dist/class-list-optimizer-v*.html'
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@c95fe14e0d0b7edf5c92acbc5811fa854e950955  # v2.2.2
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631  # v2.2.2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
