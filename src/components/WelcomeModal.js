@@ -135,8 +135,10 @@ function WelcomeModal({ onClose, forceShow = false }) {
 
         {/* Offline Note */}
         <div className="welcome-note">
-          <strong>💡 Tip:</strong> Want to use this offline? Download the standalone HTML file from the
-          <a href="https://github.com/armstrys/class-list-optimizer/releases" target="_blank" rel="noopener noreferrer"> Releases page</a>.
+          <strong>💡 Tip:</strong> Want to use this offline? Download the standalone HTML file from the Releases page.
+          <div style={{ marginTop: '8px' }}>
+            <a href="https://github.com/armstrys/class-list-optimizer/releases" target="_blank" rel="noopener noreferrer" className="releases-link">➡️ Visit Releases Page</a>
+          </div>
         </div>
       </div>
     </Modal>
