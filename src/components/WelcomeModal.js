@@ -11,21 +11,18 @@
  * @param {Function} props.onLoadDemo - Callback to load demo/sample data
  * @param {boolean} [props.forceShow=false] - Force display regardless of domain/localStorage (for testing)
  */
-function WelcomeModal({ onClose, onLoadDemo, forceShow = false }) {
+function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
   const [isVisible, setIsVisible] = React.useState(false);
 
   React.useEffect(() => {
-    // Check if we're on GitHub Pages
-    const isGitHubPages = window.location.hostname.includes('github.io');
-
     // Check for URL parameter to skip welcome (for power users)
     const urlParams = new URLSearchParams(window.location.search);
     const skipWelcome = urlParams.get('skipwelcome') === '1';
 
-    // Always show modal on GitHub Pages unless:
+    // Always show modal unless:
     // 1. skipwelcome=1 URL parameter is set
     // 2. forceShow prop is explicitly false
-    if (isGitHubPages && !skipWelcome && forceShow !== false) {
+    if (!skipWelcome && forceShow !== false) {
       setIsVisible(true);
     }
   }, [forceShow]);
