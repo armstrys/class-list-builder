@@ -30,13 +30,7 @@ function AppContent() {
   } = useAppStateExport();
 
   // Welcome modal state
-  const [showWelcome, setShowWelcome] = React.useState(true);
-
-  // Reset welcome modal (for testing or if user wants to see it again)
-  const resetWelcomeModal = React.useCallback(() => {
-    localStorage.removeItem('welcomeModalSeen');
-    setShowWelcome(true);
-  }, []);
+  const [, setShowWelcome] = React.useState(true);
 
   const {
     students, setStudents, clearAllStudents,
