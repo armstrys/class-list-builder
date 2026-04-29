@@ -10,8 +10,8 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
   const fileInputRef = useRef(null);
 
   const csvTemplate = 'id,' + generateCSVHeaders(numericCriteria, flagCriteria).join(',') + ',keep_apart_group,keep_together_group\n' +
-    'stu001,Emma,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') + ',,\n' +
-    'stu002,Liam,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',') + ',,';
+    'stu001,Emma Smith,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') + ',,\n' +
+    'stu002,Liam Johnson,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',') + ',,';
 
   function processFile(file) {
     if (!file) return;
