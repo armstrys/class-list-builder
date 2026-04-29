@@ -1,6 +1,6 @@
 # Security & Privacy
 
-**Version:** 1.5.9 | **Last Updated:** April 29, 2026
+**Version:** 1.6.0 | **Last Updated:** April 30, 2026
 
 ---
 
@@ -245,7 +245,7 @@ Each release includes a cryptographically signed attestation proving the artifac
 
 **Verification command:**
 ```bash
-gh attestation verify class-list-optimizer-v1.5.9.html \
+gh attestation verify class-list-optimizer-v1.6.0.html \
   --repo armstrys/class-list-optimizer
 ```
 
