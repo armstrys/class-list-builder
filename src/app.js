@@ -167,7 +167,7 @@ function AppContent() {
         onClose={() => setShowWelcome(false)}
         onLoadDemo={() => {
           // Load demo data with default sample students
-          const demoStudents = generateSampleStudents(27, numericCriteria, flagCriteria);
+          const demoStudents = generateSampleStudents(100, numericCriteria, flagCriteria);
           setStudents(demoStudents);
           setShowWelcome(false);
         }}

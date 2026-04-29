@@ -385,6 +385,8 @@
       { id: 'T1', name: 'Class A' },
       { id: 'T2', name: 'Class B' },
       { id: 'T3', name: 'Class C' },
+      { id: 'T4', name: 'Class D' },
+      { id: 'T5', name: 'Class E' },
     ]);
 
     const navigateToOptimize = useCallback(() => setView('optimize'), []);
