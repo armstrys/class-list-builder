@@ -1,9 +1,9 @@
 /**
- * WelcomeModal - Privacy-focused splash screen for GitHub Pages visitors
+ * WelcomeModal - Privacy splash screen for GitHub Pages visitors
  *
- * Displays on first visit to GitHub Pages to inform users about:
- * - Privacy: Data stays on their computer
- * - Features: Brief overview of what the tool does
+ * Displays on first visit to GitHub Pages to explain:
+ * - Privacy: Data stays on your computer
+ * - Features: What the tool does
  * - Documentation: Link to README
  *
  * @param {Object} props

@@ -1,39 +1,39 @@
 # Class List Optimizer
 
-Create balanced class lists in minutes. No more spreadsheet juggling.
+Create balanced class lists in minutes.
 
 ![App Screenshot](docs/images/app-screenshot.png)
 
-Class List Optimizer automatically distributes students across classrooms while balancing academic scores, intervention needs, gender, and more. It runs entirely in your browser: **your student data never leaves your computer.**
+This tool distributes students across classrooms while balancing academic scores, intervention needs, gender, and class size. It runs entirely in your browser. **Student data never leaves your computer.**
 
 ---
 
 ## Why Use It?
 
-Building fair class lists by hand is time-consuming and hard to get right when you're balancing a dozen factors at once. This tool:
+Building fair class lists by hand takes too long. You're juggling a dozen factors at once, and it's hard to keep them all balanced. This tool speeds that up.
 
-- **Saves time.** Go from a student roster to balanced class lists in minutes.
-- **Balances your criteria:** Scores, SPED, Extended Learning, ELL, behavior, interventions, gender, and class size all at once. No more juggling factors one at a time.
-- **Handles constraints:** Keep specific students together (siblings, support pairs) or apart (conflicts, separations).
-- **Consistent and defensible:** the same data always produces the same result so that you and your teammates can reproduce your results.
-- **Private**: Runs entirely in your browser with third party server or data transmission off of your machine. Private student data stays private.
-- **Scalable**: This tool can handle rosters of any size, from small to large schools. The optimization runs in seconds even with thousands of students and hundreds of classes.
+- **Saves time.** Import a roster and get balanced lists in minutes.
+- **Balances everything at once.** Scores, SPED, Extended Learning, ELL, behavior, interventions, gender, and class size. Stop juggling factors one by one.
+- **Handles constraints.** Keep siblings together. Separate students who shouldn't be in the same class.
+- **Gives consistent results.** The same data produces the same output. You and your teammates can reproduce your work.
+- **Keeps data private.** Nothing uploads. Nothing goes to a server. It runs in your browser and works offline.
+- **Handles any size.** Small schools or large districts. The optimization runs in seconds even with thousands of students.
 
 ---
 
 ## Try It Now
 
-**🚀 [Use it now in your browser](https://armstrys.github.io/class-list-optimizer/)** — No download required. Your data stays on your computer.
+**[Use it in your browser](https://armstrys.github.io/class-list-optimizer/)** — No download needed. Your data stays local.
 
 ## Download & Open
 
-Prefer an offline copy? Download once and use forever:
+Prefer an offline copy?
 
 1. Go to the **[Releases](../../releases)** page
 2. Download the latest `class-list-optimizer-vX.Y.Z.html` file
-3. **Double-click** to open in any modern browser (Chrome, Safari, Firefox, Edge)
+3. Double-click to open in any browser
 
-That's it. No installation, no account, no internet connection required.
+That's it. No installation, no account, no internet needed.
 
 ---
 
@@ -41,17 +41,15 @@ That's it. No installation, no account, no internet connection required.
 
 ### Step 1 — Configure Your Criteria
 
-> **Do this before importing students.** Your criteria configuration determines what columns the optimizer expects in your CSV.
+Click **Settings** in the top-right to set up what the optimizer balances.
 
-Click **⚙ Settings** in the top-right corner to configure what the optimizer balances.
+**Numeric criteria** are score columns where higher numbers mean stronger performance (reading, math, language scores on a 0–100 scale). The optimizer balances the average score of each class. **Scores are optional.** Remove those criteria or leave the columns blank if you don't have them.
 
-**Numeric criteria** are score columns where a higher number means stronger performance (e.g., reading, math, or language scores on a 0–100 scale). The optimizer balances the average score of each class. **Scores are optional.** If you don't have them, simply remove those criteria or leave the columns blank.
+**Flag criteria** are yes/no attributes (Extended Learning, SPED, ELL, behavior). The optimizer spreads students with each flag evenly across classes.
 
-**Flag criteria** are yes/no attributes (e.g., Extended Learning, SPED, ELL, behavior). The optimizer spreads students with each flag evenly across classes.
+The optimizer always balances **gender** and **class size** automatically. You don't configure those.
 
-The optimizer also always balances **gender** and **class size** automatically. You don't need to configure those.
-
-**Weights** control how hard the optimizer works to balance each factor. A weight of `2.0` means that criterion is twice as important as one with weight `1.0`. The defaults are a reasonable starting point for most schools. Raise a weight if one factor matters most to you.
+**Weights** control how hard the optimizer works to balance each factor. A weight of `2.0` means that criterion is twice as important as one with weight `1.0`. The defaults work for most schools. Raise a weight if one factor matters most.
 
 ---
 
@@ -60,23 +58,23 @@ The optimizer also always balances **gender** and **class size** automatically. 
 In the **Teachers / Classes** panel on the left:
 
 - Set the **number of classes**
-- Give each class a name: teacher names, room numbers, or anything you like
+- Name each class: teacher names, room numbers, or whatever works
 
 ---
 
 ### Step 3 — Add Your Students
 
-**Option A: Import a CSV** *(recommended for most rosters)*
+**Option A: Import a CSV** (recommended for most rosters)
 
-1. Click **⬆ Import CSV** and paste your data
+1. Click **Import CSV** and paste your data
 
-Your CSV needs at minimum a `name` column and a `gender` column (`M` or `F`). All score and flag columns are optional — leave them blank if you don't have that data. For flag columns, use `1` or `yes` (or `true`, `y`, `x`) for yes, and `0` or leave blank for no.
+Your CSV needs at minimum a `name` column and a `gender` column (`M` or `F`). All score and flag columns are optional. Leave them blank if you don't have that data. For flag columns, use `1` or `yes` (or `true`, `y`, `x`) for yes, and `0` or leave blank for no.
 
-**Import appends** to your current student list. Use the **Clear All** button first if you want to replace your entire list.
+**Import appends** to your current student list. Click **Clear All** first if you want to replace your entire list.
 
 **Constraint Columns (optional):**
-- `keep_apart_group` — students with the same value will be kept in different classes
-- `keep_together_group` — students with the same value will be kept in the same class
+- `keep_apart_group` — students with the same value stay in different classes
+- `keep_together_group` — students with the same value stay in the same class
 
 Example CSV:
 ```
@@ -89,21 +87,21 @@ Diana,F,92,,1
 
 **Option B: Add students manually**
 
-Click **+ Add Student** to enter students one at a time using a form.
+Click **+ Add Student** to enter students one at a time.
 
 **Option C: Try sample data**
 
-Click **Sample Data** to generate a randomized roster for testing or demonstration. This creates realistic test data so you can see how the optimizer works before entering your real students.
+Click **Sample Data** to generate a randomized roster for testing. This creates realistic test data so you can see how the optimizer works before entering real students.
 
 **Need a template?**
 
-Generate sample data first, then click **⬇ Save Students** to save a CSV with the correct column headers for your criteria configuration. Use that as a template for your real data.
+Generate sample data first, then click **Save Students** to save a CSV with the correct column headers for your criteria configuration. Use that as a template for your real data.
 
 ---
 
 ### Step 4 — Optimize
 
-Click **Optimize Classes →** at the bottom of the screen. The optimizer runs automatically (usually in under a second) and takes you straight to your results.
+Click **Optimize Classes** at the bottom of the screen. The optimizer runs automatically (usually in under a second) and takes you to your results.
 
 ---
 
@@ -111,7 +109,7 @@ Click **Optimize Classes →** at the bottom of the screen. The optimizer runs a
 
 ### Balance Score
 
-The **Balance score** in the toolbar tells you how evenly your classes are distributed across all criteria combined. Lower is better.
+The **Balance score** in the toolbar tells you how evenly your classes are distributed across all criteria. Lower is better.
 
 | Score | Color | What it means |
 |-------|-------|---------------|
@@ -123,13 +121,13 @@ With a typical roster, the optimizer usually reaches green.
 
 ### Per-Class Stats
 
-At the bottom of each class column you'll see:
+At the bottom of each class column:
 - **Score bars:** each bar shows how that class's average compares across all classes. All bars at the same height means perfect balance.
 - **Flag badges:** a count of students with each active flag (e.g., "ExtL 3", "SPED 2")
 
 ### Stats Strip
 
-The strip at the bottom of the screen shows a mini bar chart for every criterion across all classes. The **CV%** number under each chart is a technical measure of how spread out the classes are. You don't need to understand the math. Just know that lower is better, and green means you're in good shape.
+The strip at the bottom of the screen shows a mini bar chart for every criterion across all classes. The **CV%** number under each chart measures how spread out the classes are. Lower is better. Green means you're in good shape.
 
 ---
 
@@ -137,28 +135,28 @@ The strip at the bottom of the screen shows a mini bar chart for every criterion
 
 ### Drag and Drop
 
-Drag any student card to move them to a different class. The balance score updates live so you can see the impact of each move. There is no undo for drag-and-drop. If you move someone by mistake, just drag them back, or click **⟳ Re-Optimize** to start fresh from the current locked assignments.
+Drag any student card to move them to a different class. The balance score updates live so you can see the impact of each move. There is no undo for drag-and-drop. If you move someone by mistake, drag them back, or click **Re-Optimize** to start fresh from the current locked assignments.
 
 Click on any student card to view their full detail.
 
 ### Locking Students
 
-Sometimes a student must be in a specific class (a separation request, a particular teacher, a support need). Use the 🔒 button on any student card to **lock** them to their current class.
+Sometimes a student must be in a specific class (a separation request, a particular teacher, a support need). Use the lock button on any student card to **lock** them to their current class.
 
-Once you've locked the students who need to stay put, click **⟳ Re-Optimize** to redistribute only the unlocked students around them.
+Once you've locked the students who need to stay put, click **Re-Optimize** to redistribute only the unlocked students around them.
 
 You can also use **Lock All** and **Unlock All** in the toolbar for bulk changes.
 
-> **Recommended workflow:** Run the initial optimization first. Then lock any students where you need to override the placement, and click Re-Optimize to let the optimizer work around your manual decisions.
+**Recommended workflow:** Run the initial optimization first. Then lock any students where you need to override the placement, and click Re-Optimize to let the optimizer work around your manual decisions.
 
 ### Student Constraints
 
-Click **🔗 Constraints** on the Setup page to keep specific students together or apart:
+Click **Constraints** on the Setup page to keep specific students together or apart:
 
-- **Keep Apart** — select 2+ students; each pair will be placed in different classes
-- **Keep Together** — select 2+ students; they'll be placed in the same class
+- **Keep Apart** — select 2+ students; each pair goes in different classes
+- **Keep Together** — select 2+ students; they go in the same class
 
-Constraints are treated as high-priority requests, not absolute rules. If the optimizer can't satisfy all constraints, you'll see a **⚠️ X violations** badge. Click it to see which constraints were violated and why. Common reasons:
+Constraints are treated as high-priority requests, not absolute rules. If the optimizer can't satisfy all constraints, you'll see a **X violations** badge. Click it to see which constraints were violated and why. Common reasons:
 - Conflicting constraints (e.g., A must be with B, but A must be apart from C, and B and C are together)
 - Class size limits (asking 15 students to stay together when classes max at 12)
 - Balance trade-offs where satisfying constraints would make classes extremely unbalanced
@@ -169,8 +167,8 @@ Constraints are cleared when you import new students. Use the `keep_apart_group`
 
 At any time, you can export your student data:
 
-- **On the Setup page:** Click **⬇ Save Students** to save a CSV with all student data (useful as a template or for backup)
-- **After optimizing:** Click **⬇ Save Lists** in the toolbar to save class assignments with all student data
+- **On the Setup page:** Click **Save Students** to save a CSV with all student data (useful as a template or for backup)
+- **After optimizing:** Click **Save Lists** in the toolbar to save class assignments with all student data
 
 Open the CSV in Excel or Google Sheets to format it, print it, or share it with your principal.
 
@@ -179,23 +177,23 @@ Open the CSV in Excel or Google Sheets to format it, print it, or share it with 
 Working on class lists over multiple sessions? Use **Save Project** and **Load Project** in the header to preserve your complete working state:
 
 - Saves all students, classes, criteria settings, constraints, and optimization results
-- Perfect for saving progress and continuing later
+- Saves progress so you can continue later
 - Validates compatibility when loading (warns about version or criteria mismatches)
 - Keyboard shortcuts: **Ctrl+S** to save, **Ctrl+O** to load
 
-Project files are JSON format and contain all student data—store them securely.
+Project files are JSON format and contain all student data. Store them securely.
 
 ---
 
 ## Privacy & Security
 
-> **Student data stays on your computer.** The tool runs entirely in your browser, with no uploads or accounts — and it works offline, so you can verify that for yourself anytime.
+**Student data stays on your computer.** The tool runs entirely in your browser, with no uploads or accounts. It works offline, so you can verify that for yourself anytime.
 
-- ✅ **Runs entirely in your browser** — No internet connection needed after download
-- ✅ **Student data never leaves your computer** — No uploads, no servers, no cloud
-- ✅ **No accounts or logins required** — No user tracking or analytics
-- ✅ **Works completely offline** — Disconnect WiFi and it keeps working
-- ✅ **FERPA-aligned** — Student data remains under your institution's control
+- **Runs entirely in your browser** — No internet connection needed after download
+- **Student data never leaves your computer** — No uploads, no servers, no cloud
+- **No accounts or logins required** — No user tracking or analytics
+- **Works completely offline** — Disconnect WiFi and it keeps working
+- **FERPA-aligned** — Student data remains under your institution's control
 
 **For IT Administrators & Security Teams:**  
 See [docs/SECURITY.md](docs/SECURITY.md) for pre-deployment verification, security audit procedures, deployment recommendations, and compliance information.
