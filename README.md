@@ -189,14 +189,16 @@ Project files are JSON format and contain all student data—store them securely
 
 ## Privacy & Security
 
-**Your data never leaves your computer.**
+> **Student data stays on your computer.** The tool runs entirely in your browser, with no uploads or accounts — and it works offline, so you can verify that for yourself anytime.
 
-- Runs entirely in your browser. No internet connection needed after download.
-- No data is sent to any server
-- No accounts, no logins, no tracking
-- Works completely offline
+- ✅ **Runs entirely in your browser** — No internet connection needed after download
+- ✅ **Student data never leaves your computer** — No uploads, no servers, no cloud
+- ✅ **No accounts or logins required** — No user tracking or analytics
+- ✅ **Works completely offline** — Disconnect WiFi and it keeps working
+- ✅ **FERPA-aligned** — Student data remains under your institution's control
 
-For detailed security information, architecture details, and verification steps for IT professionals, see [docs/SECURITY.md](docs/SECURITY.md).
+**For IT Administrators & Security Teams:**  
+See [docs/SECURITY.md](docs/SECURITY.md) for pre-deployment verification, security audit procedures, deployment recommendations, and compliance information.
 
 ---
 

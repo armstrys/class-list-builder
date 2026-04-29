@@ -12,11 +12,33 @@
 
 | Question | Answer |
 |----------|--------|
-| Where is student data stored? | **Only on your computer** — in your browser's local storage |
+| Where is student data stored? | **Only on your computer** — in your browser's memory and local storage |
 | Is data sent to the internet? | **No** — the app works completely offline |
 | Are accounts required? | **No** — no login, no registration, no user tracking |
-| Can IT verify these claims? | **Yes** — see [Verification Steps](#verification-steps) below |
+| Can IT verify these claims? | **Yes** — see [IT Deployment Guide](#it-deployment-guide) below |
 | Does this comply with FERPA? | **Yes** — student data never leaves your institution's control |
+
+---
+
+## Usage by Role
+
+### Teachers
+
+**How to use it:**
+
+1. Open the page in your browser.
+2. Add your students or import your CSV. Work as normal.
+3. Export your class lists when you're done.
+
+**About your students' data:** Everything happens on your computer, in your browser. Nothing gets sent anywhere — no uploads, no accounts, no servers. The tool works the same whether you're online or offline.
+
+**Curious how that works?** Load the page, then turn off your wifi. The tool keeps running. That's because all the actual work happens locally — once the page is open, the internet isn't doing anything. You can do all your class list work offline if you'd like.
+
+---
+
+### IT Administrators & Security Teams
+
+See the [IT Deployment Guide](#it-deployment-guide) section for pre-deployment verification, security audit procedures, and deployment recommendations.
 
 ---
 
@@ -535,6 +557,121 @@ When using the GitHub Pages version, your IP address is visible to GitHub when y
 - **GitHub Pages** if you want instant access and don't mind GitHub seeing your IP once
 
 For FERPA compliance: both versions keep student data under your institution's control. The hosted version meets FERPA requirements because no student data leaves your computer.
+
+---
+
+---
+
+## IT Deployment Guide
+
+This section provides pre-deployment verification procedures, security audit steps, and deployment recommendations for IT administrators and security teams.
+
+### Web + Teacher Deployment
+
+**How to use it:**
+
+1. Open the page in your browser.
+2. Add your students or import your CSV. Work as normal.
+3. Export your class lists when you're done.
+
+**About your students' data:** Everything happens on your computer, in your browser. Nothing gets sent anywhere — no uploads, no accounts, no servers. The tool works the same whether you're online or offline.
+
+**Curious how that works?** Load the page, then turn off your wifi. The tool keeps running. That's because all the actual work happens locally — once the page is open, the internet isn't doing anything. You can do all your class list work offline if you'd like.
+
+### Download + Teacher Deployment
+
+**How to use it:**
+
+1. Go to the Releases page on GitHub and download the latest `class-list-optimizer-vX.Y.Z.html` file.
+2. Save it somewhere you'll find it again — Desktop or Documents works fine.
+3. Double-click to open it in your browser. Work as normal.
+
+**Why download instead of using the website:** The file lives on your computer. You can use it without internet, save it for next year, or share it with a colleague by email or USB stick. Same tool, just yours to keep.
+
+---
+
+### Web + IT (GitHub Pages) Pre-Deployment Evaluation
+
+**1. Source review**
+
+Repo at `github.com/armstrys/class-list-optimizer`. MIT licensed, single maintainer, build pipeline in `.github/workflows/`. Confirm `npm run build` produces the inlined HTML deployed to GitHub Pages via `actions/deploy-pages@v4`.
+
+**2. CSP verification**
+
+View source on the deployed page and confirm the `<meta http-equiv="Content-Security-Policy">` tag includes `connect-src 'none'`, `img-src 'self' data:`, `font-src 'self' data:`. Browser-enforced defense in depth.
+
+**3. Build provenance**
+
+If the maintainer publishes attestations via `actions/attest-build-provenance`, verify the deployed artifact against the attestation for the corresponding commit.
+
+**4. Behavioral test**
+
+Open DevTools → Network tab. Load the page and observe initial requests (should resolve to `armstrys.github.io` plus any external CDN dependencies that aren't inlined; in the built artifact these should be minimal or zero). Disconnect from network. Exercise every feature: add students, import CSV with synthetic data, optimize, export. App must remain fully functional. Reconnect, clear the Network tab, and exercise features again — no requests should appear after initial load.
+
+**5. Confirm zero outbound traffic during use**
+
+Any unexpected request after initial load is a finding.
+
+**Residual risk:** GitHub Pages serves the most recent deploy. A compromised maintainer account could ship a modified build between evaluation and user session. The CSP mitigates exfiltration in-browser. For staff use against real PII, the architecture supports — but does not require — disconnected operation; document this as available verification rather than mandated workflow.
+
+**Recommend the hosted version when:** individual teachers want low-friction access for occasional use and your environment doesn't require a frozen artifact under change control.
+
+---
+
+### Download + IT Pre-Deployment Verification
+
+**1. Pin a release**
+
+Download `class-list-optimizer-vX.Y.Z.html` from the Releases page. The file is the unit of trust — version it, archive it, distribute it.
+
+**2. Verify SHA-256**
+
+Compute locally and compare against the value in release notes:
+
+- **macOS/Linux:** `shasum -a 256 class-list-optimizer-v1.0.0.html`
+- **Windows PowerShell:** `Get-FileHash class-list-optimizer-v1.0.0.html -Algorithm SHA256`
+
+Mismatch = do not deploy.
+
+**3. Verify build provenance** (if attestations are published):
+
+```bash
+gh attestation verify class-list-optimizer-v1.0.0.html --repo armstrys/class-list-optimizer
+```
+
+Cryptographically confirms the file was built by the expected GitHub Actions workflow from a specific commit.
+
+**4. Inspect the artifact**
+
+Open the file in a text editor. Confirm: no remote `<script src="http...">` references, no `fetch()` / `XMLHttpRequest` / `WebSocket` / `navigator.sendBeacon` calls in inlined JS, no telemetry, no analytics. Greppable; any hits warrant scrutiny.
+
+**5. Behavioral test**
+
+Open the file on a machine with network physically disconnected (or a VM with no network adapter). Every feature must work end-to-end. Confirms no hidden network dependency.
+
+**6. Reproducibility check**
+
+Diff the inlined script against the concatenated `src/*.js` files at the tagged commit. Running `build-standalone.js` locally on a clean checkout of the tag should reproduce the released artifact (modulo any deterministic build metadata).
+
+---
+
+### Deployment Options (in order of increasing assurance)
+
+1. **Direct distribution** — Intranet share, MDM, email. Staff open the file locally. Simple, sufficient for most environments.
+
+2. **Self-host internally** — Place the verified file on internal infrastructure, serve from a trusted URL with appropriate CSP response headers. Eliminates external dependencies.
+
+3. **Air-gap deployment** — For strict data handling environments, distribute on machines that never touch the public internet. The architecture supports this natively.
+
+---
+
+### Operational Considerations
+
+- The release file is your unit of change control. Re-verify on every version bump.
+- Subscribe to repo releases via GitHub notifications for awareness of updates.
+- The maintainer is an individual on a personal GitHub account. For long-term institutional use, consider forking to your organization's GitHub or archiving verified releases in your own systems.
+
+**Recommend the downloaded version when:** any institutional deployment, use against real PII at scale, formal data handling requirements, or any time a frozen artifact under your control is preferred.
 
 ---
 

@@ -140,6 +140,12 @@ function WelcomeModal({ onClose, forceShow = false }) {
             <a href="https://github.com/armstrys/class-list-optimizer/releases" target="_blank" rel="noopener noreferrer" className="releases-link">➡️ Visit Releases Page</a>
           </div>
         </div>
+
+        {/* IT/Administrator Note */}
+        <div className="welcome-admin-note">
+          <strong>🔍 Admin or IT?</strong> Review our
+          <a href="https://github.com/armstrys/class-list-optimizer/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer"> security documentation</a> for pre-deployment verification, audit procedures, and compliance information.
+        </div>
       </div>
     </Modal>
   );
