@@ -78,9 +78,9 @@ function WelcomeModal({ onClose, forceShow = false }) {
         <div className="welcome-section welcome-privacy">
           <div className="welcome-icon">🔒</div>
           <div className="welcome-section-content">
-            <h3>Your Data Stays Private</h3>
+            <h3>Student Data Stays Private</h3>
             <p>
-              This tool runs entirely in your browser. <strong>Your student data never leaves your computer</strong> —
+              This tool runs entirely in your browser. <strong>Student data never leaves your computer</strong> —
               no uploads, no accounts, no servers. You can even verify this by turning off your internet connection
               after the page loads; the tool continues to work normally.
             </p>
