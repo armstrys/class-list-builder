@@ -696,7 +696,7 @@ Diff the inlined script against the concatenated `src/*.js` files at the tagged 
 | Field | Value |
 |-------|-------|
 | **Document Version** | 1.1 |
-| **Application Version** | 1.5.5 |
+| **Application Version** | 1.5.6 |
 | **Last Updated** | April 28, 2026 |
 | **Review Cycle** | Annual or on major release |
 | **Author** | Class List Optimizer Development Team |

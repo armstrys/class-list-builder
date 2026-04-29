@@ -18,25 +18,19 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = false }) {
     // Check if we're on GitHub Pages
     const isGitHubPages = window.location.hostname.includes('github.io');
 
-    // Check if user has already seen the welcome modal
-    const hasSeenWelcome = localStorage.getItem('welcomeModalSeen');
-
-    // Check for URL parameter to force show (for local testing)
+    // Check for URL parameter to skip welcome (for power users)
     const urlParams = new URLSearchParams(window.location.search);
-    const forceWelcome = urlParams.get('welcome') === '1';
+    const skipWelcome = urlParams.get('skipwelcome') === '1';
 
-    // Show modal if:
-    // 1. We're on GitHub Pages AND user hasn't seen it, OR
-    // 2. Force show prop is enabled (for testing), OR
-    // 3. URL parameter welcome=1 is set (for local testing)
-    if ((isGitHubPages && !hasSeenWelcome) || forceShow || forceWelcome) {
+    // Always show modal on GitHub Pages unless:
+    // 1. skipwelcome=1 URL parameter is set
+    // 2. forceShow prop is explicitly false
+    if (isGitHubPages && !skipWelcome && forceShow !== false) {
       setIsVisible(true);
     }
   }, [forceShow]);
 
   const handleClose = (loadDemo = false) => {
-    // Mark as seen in localStorage
-    localStorage.setItem('welcomeModalSeen', 'true');
     setIsVisible(false);
     if (loadDemo && onLoadDemo) {
       onLoadDemo();
