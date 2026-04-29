@@ -87,6 +87,12 @@ function WelcomeModal({ onClose, forceShow = false }) {
           </div>
         </div>
 
+        {/* Admin/IT Note - moved under privacy */}
+        <div className="welcome-admin-note">
+          <strong>🔍 Admin or IT?</strong> Review our
+          <a href="https://github.com/armstrys/class-list-optimizer/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer"> security documentation</a>.
+        </div>
+
         {/* Features Section */}
         <div className="welcome-section">
           <h3>What You Can Do</h3>
@@ -95,28 +101,28 @@ function WelcomeModal({ onClose, forceShow = false }) {
               <div className="feature-icon">⚖️</div>
               <div className="feature-text">
                 <strong>Balance Classes</strong>
-                <span>Automatically distribute students across classes while balancing academic scores, intervention needs, gender, and more.</span>
+                <span>Balance scores, gender, intervention needs, and more.</span>
               </div>
             </div>
             <div className="feature-item">
               <div className="feature-icon">🔗</div>
               <div className="feature-text">
                 <strong>Set Constraints</strong>
-                <span>Keep specific students together (siblings, support pairs) or apart (conflicts, separations).</span>
+                <span>Keep students together or apart (siblings, conflicts, etc.).</span>
               </div>
             </div>
             <div className="feature-item">
               <div className="feature-icon">📊</div>
               <div className="feature-text">
                 <strong>Import & Export</strong>
-                <span>Import your roster from CSV, then export balanced class lists when you're done.</span>
+                <span>Import from CSV, export balanced lists.</span>
               </div>
             </div>
             <div className="feature-item">
               <div className="feature-icon">💾</div>
               <div className="feature-text">
                 <strong>Save Progress</strong>
-                <span>Save your complete working state and continue later with all your data intact.</span>
+                <span>Save your work and continue later.</span>
               </div>
             </div>
           </div>
@@ -139,12 +145,6 @@ function WelcomeModal({ onClose, forceShow = false }) {
           <div style={{ marginTop: '8px' }}>
             <a href="https://github.com/armstrys/class-list-optimizer/releases" target="_blank" rel="noopener noreferrer" className="releases-link">➡️ Visit Releases Page</a>
           </div>
-        </div>
-
-        {/* IT/Administrator Note */}
-        <div className="welcome-admin-note">
-          <strong>🔍 Admin or IT?</strong> Review our
-          <a href="https://github.com/armstrys/class-list-optimizer/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer"> security documentation</a> for pre-deployment verification, audit procedures, and compliance information.
         </div>
       </div>
     </Modal>
