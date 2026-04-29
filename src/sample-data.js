@@ -12,8 +12,7 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
   const students = [];
   for (let i = 0; i < count; i++) {
     const gender = p(0.5) ? 'F' : 'M';
-    const fn = gender === 'F' ? FN_F[i % FN_F.length] : FN_M[i % FN_M.length];
-    const ln = LN[i % LN.length];
+    const name = gender === 'F' ? FN_F[i % FN_F.length] : FN_M[i % FN_M.length];
 
     const gt = p(0.13);
     const sped = p(0.11);
@@ -23,7 +22,7 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
     // Generate scores based on criteria
     const student = {
       id: uid(),
-      name: `${ln} ${fn}`,
+      name,
       gender,
     };
 

@@ -41,8 +41,8 @@ function StudentFormModal({ student, onSave, onClose, numericCriteria, flagCrite
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div className="form-row cols2">
           <div className="form-group">
-            <label className="form-label">Full Name (Last First — no commas)</label>
-            <input className="form-input" value={form.name} onChange={e => set('name', e.target.value.replace(/,/g, ''))} placeholder="Smith Emma" />
+            <label className="form-label">Student Name</label>
+            <input className="form-input" value={form.name} onChange={e => set('name', e.target.value.replace(/,/g, ''))} placeholder="Enter name..." />
           </div>
           <div className="form-group">
             <label className="form-label">Gender</label>
