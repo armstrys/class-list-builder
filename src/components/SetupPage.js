@@ -26,7 +26,7 @@ function SetupPage({ onOptimize }) {
   const [showImport, setShowImport] = useState(false);
   const [showSampleDialog, setShowSampleDialog] = useState(false);
   const [showConstraintModal, setShowConstraintModal] = useState(false);
-  const [sampleCount, setSampleCount] = useState(27);
+  const [sampleCount, setSampleCount] = useState(100);
   const [numTeachers, setNumTeachers] = useState(String(teachers.length || 3));
   const [idFilter, setIdFilter] = useState('');
   const [nameFilter, setNameFilter] = useState('');
