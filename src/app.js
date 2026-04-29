@@ -169,7 +169,15 @@ function AppContent() {
         />
       )}
 
-      <WelcomeModal onClose={() => setShowWelcome(false)} />
+      <WelcomeModal
+        onClose={() => setShowWelcome(false)}
+        onLoadDemo={() => {
+          // Load demo data with default sample students
+          const demoStudents = generateSampleStudents(27, numericCriteria, flagCriteria);
+          setStudents(demoStudents);
+          setShowWelcome(false);
+        }}
+      />
     </div>
   );
 }

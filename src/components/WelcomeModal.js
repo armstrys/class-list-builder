@@ -8,9 +8,10 @@
  *
  * @param {Object} props
  * @param {Function} props.onClose - Close callback
+ * @param {Function} props.onLoadDemo - Callback to load demo/sample data
  * @param {boolean} [props.forceShow=false] - Force display regardless of domain/localStorage (for testing)
  */
-function WelcomeModal({ onClose, forceShow = false }) {
+function WelcomeModal({ onClose, onLoadDemo, forceShow = false }) {
   const [isVisible, setIsVisible] = React.useState(false);
 
   React.useEffect(() => {
@@ -33,10 +34,13 @@ function WelcomeModal({ onClose, forceShow = false }) {
     }
   }, [forceShow]);
 
-  const handleClose = () => {
+  const handleClose = (loadDemo = false) => {
     // Mark as seen in localStorage
     localStorage.setItem('welcomeModalSeen', 'true');
     setIsVisible(false);
+    if (loadDemo && onLoadDemo) {
+      onLoadDemo();
+    }
     if (onClose) onClose();
   };
 
@@ -63,13 +67,22 @@ function WelcomeModal({ onClose, forceShow = false }) {
           >
             📖 Read Documentation
           </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleClose}
-            type="button"
-          >
-            Get Started →
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => handleClose(true)}
+              type="button"
+            >
+              ▶️ Demo
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => handleClose(false)}
+              type="button"
+            >
+              Close
+            </button>
+          </div>
         </div>
       }
     >
