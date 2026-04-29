@@ -9,21 +9,22 @@
  * @param {Object} props
  * @param {Function} props.onClose - Close callback
  * @param {Function} props.onLoadDemo - Callback to load demo/sample data
- * @param {boolean} [props.forceShow=false] - Force display regardless of domain/localStorage (for testing)
+ * @param {boolean} [props.forceShow=true] - Force display regardless of build flag (for testing)
  */
 function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
   const [isVisible, setIsVisible] = React.useState(false);
 
   React.useEffect(() => {
-    // Check for URL parameter to skip welcome (for power users)
     const urlParams = new URLSearchParams(window.location.search);
     const skipWelcome = urlParams.get('skipwelcome') === '1';
+    const forceWelcome = urlParams.get('welcome') === '1';
 
-    // Only show modal if:
-    // 1. GitHub Pages build flag is set (injected during build)
-    // 2. user hasn't skipped with URL parameter
-    // 3. forceShow prop isn't explicitly false
-    if (window.SHOW_WELCOME_MODAL && !skipWelcome && forceShow !== false) {
+    // Show modal if:
+    // 1. GitHub Pages build flag is set (injected during build), OR
+    // 2. welcome=1 URL parameter is set (for dev testing)
+    // ...but NOT if skipwelcome=1 is set or forceShow prop is false
+    const shouldShow = (window.SHOW_WELCOME_MODAL || forceWelcome) && !skipWelcome && forceShow !== false;
+    if (shouldShow) {
       setIsVisible(true);
     }
   }, [forceShow]);

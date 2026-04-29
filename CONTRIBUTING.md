@@ -57,6 +57,29 @@ node build-standalone.js
 # Output: dist/class-list-optimizer-vX.Y.Z.html
 ```
 
+## Testing the Welcome Modal
+
+The welcome modal is injected only in GitHub Pages builds. To test it during development:
+
+**Option 1: Use the dev script**
+```bash
+npm run dev:welcome
+```
+This starts the dev server at `http://localhost:3000` and automatically appends `?welcome=1` to force the modal.
+
+**Option 2: Manual URL parameter**
+Open the URL with `?welcome=1` appended:
+```
+http://localhost:3000/class-list-optimizer-source.html?welcome=1
+```
+
+**To skip the welcome modal during testing:**
+```
+http://localhost:3000/class-list-optimizer-source.html?skipwelcome=1
+```
+
+**Why this is needed:** The modal checks for `window.SHOW_WELCOME_MODAL` flag (injected by the GitHub Pages workflow) OR the `?welcome=1` parameter. Downloaded releases don't have the flag, so they never show the modal.
+
 ## Optimization Algorithm
 
 The core optimizer lives in the `optimize()` function in `class-list-optimizer-source.html`.
