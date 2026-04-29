@@ -1,6 +1,6 @@
 # Security & Privacy
 
-**Version:** 1.5.8 | **Last Updated:** April 29, 2026
+**Version:** 1.5.9 | **Last Updated:** April 29, 2026
 
 ---
 
@@ -232,6 +232,32 @@ Visit `https://armstrys.github.io/class-list-optimizer/`:
 - The release file is your unit of change control — re-verify on version bumps
 - Subscribe to repo releases for update notifications
 - Consider forking to your organization's GitHub for long-term use
+
+---
+
+### Build Verification
+
+Each release includes a cryptographically signed attestation proving the artifact was built by GitHub Actions from the source code.
+
+**Requirements:**
+- GitHub CLI (`gh`) installed
+- Logged into GitHub: `gh auth login`
+
+**Verification command:**
+```bash
+gh attestation verify class-list-optimizer-v1.5.9.html \
+  --repo armstrys/class-list-optimizer
+```
+
+**Expected output:**
+```
+✓ Verification succeeded!
+
+- The artifact was signed with a GitHub-generated OIDC token
+- The artifact was built from the expected source code
+```
+
+This confirms the HTML file was built from the repository source and has not been tampered with.
 
 ---
 
