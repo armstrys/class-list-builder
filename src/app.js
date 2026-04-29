@@ -29,6 +29,15 @@ function AppContent() {
     setTeachers,
   } = useAppStateExport();
 
+  // Welcome modal state
+  const [showWelcome, setShowWelcome] = React.useState(true);
+
+  // Reset welcome modal (for testing or if user wants to see it again)
+  const resetWelcomeModal = React.useCallback(() => {
+    localStorage.removeItem('welcomeModalSeen');
+    setShowWelcome(true);
+  }, []);
+
   const {
     students, setStudents, clearAllStudents,
     keepApart, keepTogether, keepOutOfClass,
@@ -159,6 +168,8 @@ function AppContent() {
           hasExistingData={students.length > 0}
         />
       )}
+
+      <WelcomeModal onClose={() => setShowWelcome(false)} />
     </div>
   );
 }
