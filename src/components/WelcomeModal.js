@@ -15,14 +15,17 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
   const [isVisible, setIsVisible] = React.useState(false);
 
   React.useEffect(() => {
+    // Only show on GitHub Pages
+    const isGitHubPages = window.location.hostname.includes('github.io');
+
     // Check for URL parameter to skip welcome (for power users)
     const urlParams = new URLSearchParams(window.location.search);
     const skipWelcome = urlParams.get('skipwelcome') === '1';
 
-    // Always show modal unless:
+    // Only show modal on GitHub Pages unless:
     // 1. skipwelcome=1 URL parameter is set
     // 2. forceShow prop is explicitly false
-    if (!skipWelcome && forceShow !== false) {
+    if (isGitHubPages && !skipWelcome && forceShow !== false) {
       setIsVisible(true);
     }
   }, [forceShow]);
