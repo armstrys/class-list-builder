@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@cdca7365115ca9bedb2d2b7b5c6254e0f5a7f0e9  # v4.3.0
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
