@@ -250,6 +250,32 @@
       setOptimizationResults(null);
     }, []);
 
+    /**
+     * Clear assignments when the number of classes changes.
+     * This ensures all students are redistributed by the optimizer
+     * rather than trying to map old assignments to new class indices.
+     * @param {number} numClasses - The new number of classes
+     */
+    const clearAssignmentsForClassCountChange = useCallback(
+      numClasses => {
+        if (numClasses <= 0) return;
+
+        // Check if any assignments would become invalid
+        const hasInvalidAssignments = Object.values(assignment).some(
+          classIdx => classIdx < 0 || classIdx >= numClasses
+        );
+
+        // If we have invalid assignments or if any assignments exist,
+        // clear them so the optimizer starts fresh
+        if (hasInvalidAssignments || Object.keys(assignment).length > 0) {
+          setAssignment({});
+          // Also clear locked status since assignments are being reset
+          setLocked(new Set());
+        }
+      },
+      [assignment, setAssignment, setLocked]
+    );
+
     const value = {
       students,
       setStudents,
@@ -278,6 +304,7 @@
       unlockAll,
       clearAllStudents,
       replaceAllStudents,
+      clearAssignmentsForClassCountChange,
       undo,
       redo,
       canUndo,
