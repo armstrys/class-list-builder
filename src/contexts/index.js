@@ -1,13 +1,13 @@
 /**
  * Contexts index - Central export for all React contexts
- * 
+ *
  * @module contexts
  */
 
 // StudentsContext
 {
   const StudentsContext = React.createContext(null);
-  
+
   /**
    * Provider component for student-related state
    * @param {Object} props
@@ -31,11 +31,14 @@
     const [canRedo, setCanRedo] = useState(false);
 
     // Create a snapshot of the current state for undo
-    const createSnapshot = useCallback(() => ({
-      assignment: { ...assignment },
-      locked: new Set(locked),
-      timestamp: Date.now()
-    }), [assignment, locked]);
+    const createSnapshot = useCallback(
+      () => ({
+        assignment: { ...assignment },
+        locked: new Set(locked),
+        timestamp: Date.now(),
+      }),
+      [assignment, locked]
+    );
 
     // Push a snapshot to the undo stack
     const pushSnapshot = useCallback(() => {
@@ -56,7 +59,7 @@
     // Undo the last action
     const undo = useCallback(() => {
       if (undoStack.length === 0) return;
-      
+
       // Save current state to redo stack
       const currentSnapshot = createSnapshot();
       setRedoStack(prev => {
@@ -129,16 +132,22 @@
     }, [undo, redo]);
 
     // Wrap setAssignment to automatically push snapshot before change
-    const setAssignmentWithUndo = useCallback((newAssignment) => {
-      pushSnapshot();
-      setAssignment(newAssignment);
-    }, [pushSnapshot]);
+    const setAssignmentWithUndo = useCallback(
+      newAssignment => {
+        pushSnapshot();
+        setAssignment(newAssignment);
+      },
+      [pushSnapshot]
+    );
 
     // Wrap setLocked to automatically push snapshot before change
-    const setLockedWithUndo = useCallback((newLocked) => {
-      pushSnapshot();
-      setLocked(newLocked);
-    }, [pushSnapshot]);
+    const setLockedWithUndo = useCallback(
+      newLocked => {
+        pushSnapshot();
+        setLocked(newLocked);
+      },
+      [pushSnapshot]
+    );
 
     const addKeepApart = useCallback((id1, id2) => {
       if (id1 === id2) return;
@@ -154,19 +163,18 @@
       setKeepApart(prev => prev.filter(p => !(p[0] === pair[0] && p[1] === pair[1])));
     }, []);
 
-    const addKeepTogether = useCallback((studentIds) => {
+    const addKeepTogether = useCallback(studentIds => {
       if (studentIds.length < 2) return;
       const sortedIds = [...studentIds].sort();
       setKeepTogether(prev => {
-        const exists = prev.some(group =>
-          group.length === sortedIds.length &&
-          group.every((id, i) => id === sortedIds[i])
+        const exists = prev.some(
+          group => group.length === sortedIds.length && group.every((id, i) => id === sortedIds[i])
         );
         return exists ? prev : [...prev, sortedIds];
       });
     }, []);
 
-    const removeKeepTogether = useCallback((groupIndex) => {
+    const removeKeepTogether = useCallback(groupIndex => {
       setKeepTogether(prev => prev.filter((_, i) => i !== groupIndex));
     }, []);
 
@@ -178,10 +186,12 @@
     }, []);
 
     const removeKeepOutOfClass = useCallback((studentId, classIndex) => {
-      setKeepOutOfClass(prev => prev.filter(c => !(c.studentId === studentId && c.classIndex === classIndex)));
+      setKeepOutOfClass(prev =>
+        prev.filter(c => !(c.studentId === studentId && c.classIndex === classIndex))
+      );
     }, []);
 
-    const removeStudentConstraints = useCallback((studentId) => {
+    const removeStudentConstraints = useCallback(studentId => {
       setKeepApart(prev => prev.filter(p => p[0] !== studentId && p[1] !== studentId));
       setKeepTogether(prev => prev.filter(group => !group.includes(studentId)));
       setKeepOutOfClass(prev => prev.filter(c => c.studentId !== studentId));
@@ -193,14 +203,17 @@
       setKeepOutOfClass([]);
     }, []);
 
-    const toggleLocked = useCallback((studentId) => {
-      pushSnapshot();
-      setLocked(prev => {
-        const next = new Set(prev);
-        next.has(studentId) ? next.delete(studentId) : next.add(studentId);
-        return next;
-      });
-    }, [pushSnapshot]);
+    const toggleLocked = useCallback(
+      studentId => {
+        pushSnapshot();
+        setLocked(prev => {
+          const next = new Set(prev);
+          next.has(studentId) ? next.delete(studentId) : next.add(studentId);
+          return next;
+        });
+      },
+      [pushSnapshot]
+    );
 
     const lockAll = useCallback(() => {
       pushSnapshot();
@@ -222,27 +235,56 @@
       setOptimizationResults(null);
     }, []);
 
+    /**
+     * Replace all students with a new list, clearing related state.
+     * Use this when loading/importing/generating completely new student data.
+     * @param {Array} newStudents - New array of student objects
+     */
+    const replaceAllStudents = useCallback(newStudents => {
+      setStudents(newStudents);
+      setKeepApart([]);
+      setKeepTogether([]);
+      setKeepOutOfClass([]);
+      setAssignment({});
+      setLocked(new Set());
+      setOptimizationResults(null);
+    }, []);
+
     const value = {
-      students, setStudents,
-      keepApart, keepTogether, keepOutOfClass,
-      setKeepApart, setKeepTogether, setKeepOutOfClass,
-      assignment, setAssignment: setAssignmentWithUndo,
-      locked, setLocked: setLockedWithUndo,
-      optimizationResults, setOptimizationResults,
-      addKeepApart, removeKeepApart,
-      addKeepTogether, removeKeepTogether,
-      addKeepOutOfClass, removeKeepOutOfClass,
-      removeStudentConstraints, clearAllConstraints,
-      toggleLocked, lockAll, unlockAll,
+      students,
+      setStudents,
+      keepApart,
+      keepTogether,
+      keepOutOfClass,
+      setKeepApart,
+      setKeepTogether,
+      setKeepOutOfClass,
+      assignment,
+      setAssignment: setAssignmentWithUndo,
+      locked,
+      setLocked: setLockedWithUndo,
+      optimizationResults,
+      setOptimizationResults,
+      addKeepApart,
+      removeKeepApart,
+      addKeepTogether,
+      removeKeepTogether,
+      addKeepOutOfClass,
+      removeKeepOutOfClass,
+      removeStudentConstraints,
+      clearAllConstraints,
+      toggleLocked,
+      lockAll,
+      unlockAll,
       clearAllStudents,
-      undo, redo, canUndo, canRedo,
+      replaceAllStudents,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
     };
 
-    return (
-      <StudentsContext.Provider value={value}>
-        {children}
-      </StudentsContext.Provider>
-    );
+    return <StudentsContext.Provider value={value}>{children}</StudentsContext.Provider>;
   }
 
   function useStudents() {
@@ -268,7 +310,9 @@
       const savedNumeric = localStorage.getItem(STORAGE_KEY_NUMERIC);
       const savedFlag = localStorage.getItem(STORAGE_KEY_FLAG);
       return {
-        numeric: savedNumeric ? JSON.parse(savedNumeric) : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
+        numeric: savedNumeric
+          ? JSON.parse(savedNumeric)
+          : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
         flag: savedFlag ? JSON.parse(savedFlag) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
       };
     } catch (e) {
@@ -291,41 +335,47 @@
       }
     }, [criteria]);
 
-    const setNumericCriteria = useCallback((newCriteria) => {
+    const setNumericCriteria = useCallback(newCriteria => {
       setCriteria(prev => ({ ...prev, numeric: newCriteria }));
     }, []);
 
-    const setFlagCriteria = useCallback((newCriteria) => {
+    const setFlagCriteria = useCallback(newCriteria => {
       setCriteria(prev => ({ ...prev, flag: newCriteria }));
     }, []);
 
     const updateNumericCriterion = useCallback((index, field, value) => {
       setCriteria(prev => ({
         ...prev,
-        numeric: prev.numeric.map((c, i) => i === index ? { ...c, [field]: value } : c)
+        numeric: prev.numeric.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
       }));
     }, []);
 
     const updateFlagCriterion = useCallback((index, field, value) => {
       setCriteria(prev => ({
         ...prev,
-        flag: prev.flag.map((c, i) => i === index ? { ...c, [field]: value } : c)
+        flag: prev.flag.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
       }));
     }, []);
 
-    const addNumericCriterion = useCallback((criterion = { key: '', label: '', short: '', weight: 1.0 }) => {
-      setCriteria(prev => ({ ...prev, numeric: [...prev.numeric, criterion] }));
-    }, []);
+    const addNumericCriterion = useCallback(
+      (criterion = { key: '', label: '', short: '', weight: 1.0 }) => {
+        setCriteria(prev => ({ ...prev, numeric: [...prev.numeric, criterion] }));
+      },
+      []
+    );
 
-    const addFlagCriterion = useCallback((criterion = { key: '', label: '', short: '', weight: 1.0 }) => {
-      setCriteria(prev => ({ ...prev, flag: [...prev.flag, criterion] }));
-    }, []);
+    const addFlagCriterion = useCallback(
+      (criterion = { key: '', label: '', short: '', weight: 1.0 }) => {
+        setCriteria(prev => ({ ...prev, flag: [...prev.flag, criterion] }));
+      },
+      []
+    );
 
-    const removeNumericCriterion = useCallback((index) => {
+    const removeNumericCriterion = useCallback(index => {
       setCriteria(prev => ({ ...prev, numeric: prev.numeric.filter((_, i) => i !== index) }));
     }, []);
 
-    const removeFlagCriterion = useCallback((index) => {
+    const removeFlagCriterion = useCallback(index => {
       setCriteria(prev => ({ ...prev, flag: prev.flag.filter((_, i) => i !== index) }));
     }, []);
 
@@ -336,7 +386,7 @@
       });
     }, []);
 
-    const replaceCriteria = useCallback((newCriteria) => {
+    const replaceCriteria = useCallback(newCriteria => {
       setCriteria({
         numeric: newCriteria.numeric.map(c => ({ ...c })),
         flag: newCriteria.flag.map(c => ({ ...c })),
@@ -346,18 +396,19 @@
     const value = {
       numericCriteria: criteria.numeric,
       flagCriteria: criteria.flag,
-      setNumericCriteria, setFlagCriteria,
-      updateNumericCriterion, updateFlagCriterion,
-      addNumericCriterion, addFlagCriterion,
-      removeNumericCriterion, removeFlagCriterion,
-      resetToDefaults, replaceCriteria,
+      setNumericCriteria,
+      setFlagCriteria,
+      updateNumericCriterion,
+      updateFlagCriterion,
+      addNumericCriterion,
+      addFlagCriterion,
+      removeNumericCriterion,
+      removeFlagCriterion,
+      resetToDefaults,
+      replaceCriteria,
     };
 
-    return (
-      <CriteriaContext.Provider value={value}>
-        {children}
-      </CriteriaContext.Provider>
-    );
+    return <CriteriaContext.Provider value={value}>{children}</CriteriaContext.Provider>;
   }
 
   function useCriteria() {
@@ -404,20 +455,25 @@
     }, []);
 
     const value = {
-      view, setView, navigateToOptimize, navigateToSetup,
-      showSettings, showSaveProject, showLoadProject,
-      openSettings, closeSettings,
-      openSaveProject, closeSaveProject,
-      openLoadProject, closeLoadProject,
+      view,
+      setView,
+      navigateToOptimize,
+      navigateToSetup,
+      showSettings,
+      showSaveProject,
+      showLoadProject,
+      openSettings,
+      closeSettings,
+      openSaveProject,
+      closeSaveProject,
+      openLoadProject,
+      closeLoadProject,
       closeAllModals,
-      teachers, setTeachers,
+      teachers,
+      setTeachers,
     };
 
-    return (
-      <AppStateContext.Provider value={value}>
-        {children}
-      </AppStateContext.Provider>
-    );
+    return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
   }
 
   function useAppState() {
