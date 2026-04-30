@@ -1,85 +1,124 @@
 /**
  * HelpModal - Display help information about optimization
- * 
+ *
  * Uses contexts:
  * - useCriteria: To show configured criteria
- * 
+ *
  * @param {Object} props
  * @param {Function} props.onClose - Close callback
  */
 function HelpModal({ onClose }) {
   const { numericCriteria, flagCriteria } = useCriteriaExport();
   return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      title="How Optimization Works"
-      size="lg"
-    >
-          <div className="help-section">
-            <h3>Goal</h3>
-            <p>The optimizer distributes students across classes so that every class is as similar as possible across all measured dimensions — academic scores, intervention needs, behavior, and gender balance.</p>
-          </div>
+    <Modal isOpen={true} onClose={onClose} title="How It Works" size="lg">
+      <div className="help-section">
+        <h3>What This Tool Does</h3>
+        <p>
+          This tool creates balanced class lists by distributing students evenly across classes. It considers academic scores, intervention flags, and gender to ensure every class has a similar mix of students.
+        </p>
+        <p>
+          <strong>Results are repeatable and defensible.</strong> The same data always produces the same result. Results are ready almost instantly.
+        </p>
+      </div>
 
-          <div className="help-section">
-            <h3>Cost Function</h3>
-            <p>A single <strong>cost score</strong> measures total imbalance. Lower is better. The optimizer finds the assignment that minimizes this cost:</p>
-            <div className="help-formula">{`Cost = Σ_m  weight_m × normalized_variance_m
+      <div className="help-section">
+        <h3>What Gets Balanced</h3>
+        <p>
+          The optimizer balances each factor <strong>individually</strong> (each score and flag on its own) and <strong>combined</strong> (overall totals to prevent any class from being overloaded).
+        </p>
+        <table className="help-table">
+          <thead>
+            <tr>
+              <th>Factor</th>
+              <th>Type</th>
+              <th>Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            {numericCriteria.map((m) => (
+              <tr key={m.key}>
+                <td>{m.label}</td>
+                <td>Score</td>
+                <td>{m.weight.toFixed(1)}</td>
+              </tr>
+            ))}
+            {flagCriteria.map((m) => (
+              <tr key={m.key}>
+                <td>{m.label}</td>
+                <td>Flag</td>
+                <td>{m.weight.toFixed(1)}</td>
+              </tr>
+            ))}
+            <tr>
+              <td>Total Flags</td>
+              <td>Combined</td>
+              <td>2.0</td>
+            </tr>
+            <tr>
+              <td>Total Score</td>
+              <td>Combined</td>
+              <td>1.5</td>
+            </tr>
+            <tr>
+              <td>Gender</td>
+              <td>Balance</td>
+              <td>1.0</td>
+            </tr>
+            <tr>
+              <td>Class Size</td>
+              <td>Count</td>
+              <td>3.0</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          <strong>How it works:</strong> Scores use class averages (e.g., each class has a similar average reading score). Flags use percentages (e.g., if 20% of students have a behavior flag, each class gets close to 20%). Total flags and scores act as safety nets to catch overall imbalances.
+        </p>
+      </div>
 
-  For numeric scores:
-    normalized_variance_m = Var(class_means) / Var(all_students)
+      <div className="help-section">
+        <h3>Built-In Settings</h3>
+        <p>These behaviors are always applied and cannot be changed:</p>
+        <p>
+          <strong>Gender and class size are always balanced.</strong> Every class will have similar boy/girl ratios and counts (within 1 student).
+        </p>
+        <p>
+          <strong>Total flags have higher priority than individual flags.</strong> This prevents a class from having too many flagged students overall.
+        </p>
+      </div>
 
-    This ratio is scale-agnostic: a 5% spread in Reading Score
-    contributes the same as a 5% spread in Language Score.
+      <div className="help-section">
+        <h3>Balance Score</h3>
+        <p>
+          After optimizing, you will see a <strong>Balance Score</strong>. Lower is better (like golf). There is no "perfect" score to aim for — use it to compare different arrangements.
+        </p>
+      </div>
 
-  For binary flags (Behavior, Extended Learning, SPED, …):
-    normalized_variance_m = Var(class_proportions)
+      <div className="help-section">
+        <h3>Constraints</h3>
+        <p>
+          Set rules for specific students. These are strong preferences, not guarantees:
+        </p>
+        <p>
+          <strong>Keep Apart:</strong> Two students who should not be in the same class.
+        </p>
+        <p>
+          <strong>Keep Together:</strong> Two students who should be in the same class.
+        </p>
+        <p>
+          <strong>Keep Out of Class:</strong> A student who must not be in a specific class.
+        </p>
+        <p>
+          If honoring a constraint would make classes severely unbalanced, the tool may override it. Use <strong>locked students</strong> for absolute requirements.
+        </p>
+      </div>
 
-  For total flags (composite):
-    normalized_variance = Var(mean_total_flags_per_class)
-    (penalizes one teacher getting many flagged students)
-
-  For total score (composite):
-    normalized_variance = Var(mean_zscore_sum_per_class)
-    (uses z-score normalization to balance overall academic strength)
-
-  For gender balance:
-    term = Var(female_proportion per class)
-
-  For class size:
-    term = 3.0 × Var(class_sizes) / mean_size²`}</div>
-          </div>
-
-          <div className="help-section">
-            <h3>Metric Weights</h3>
-            <table className="help-table">
-              <thead>
-                <tr><th>Metric</th><th>Type</th><th>Weight</th></tr>
-              </thead>
-              <tbody>
-                {numericCriteria.map(m => (
-                  <tr key={m.key}><td>{m.label}</td><td>Numeric</td><td>{m.weight.toFixed(1)}</td></tr>
-                ))}
-                {flagCriteria.map(m => (
-                  <tr key={m.key}><td>{m.label}</td><td>Boolean</td><td>{m.weight.toFixed(1)}</td></tr>
-                ))}
-                <tr><td>Total Flags</td><td>Composite</td><td>2.0</td></tr>
-                <tr><td>Total Score</td><td>Composite</td><td>1.5</td></tr>
-                <tr><td>Gender</td><td>Proportion</td><td>1.0</td></tr>
-                <tr><td>Class Size</td><td>Count</td><td>3.0</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="help-section">
-            <h3>Algorithm: Simulated Annealing</h3>
-            <p>Starting from a snake-draft greedy initialization, the optimizer runs <strong>10,000 iterations</strong> of random student swaps. It accepts any swap that lowers the cost, and occasionally accepts slightly worse swaps to escape local optima.</p>
-          </div>
-
-          <div className="help-section">
-            <h3>Locked Students</h3>
-            <p>Locking a student pins them to their current class. Subsequent optimization only moves unlocked students. Use this for overrides.</p>
-          </div>
+      <div className="help-section">
+        <h3>Locked Students</h3>
+        <p>
+          Lock students to specific classes before optimizing. The tool will not move locked students. Use this for non-negotiable placements (e.g., a student who must be with a specific teacher). Lock sparingly... the more you lock, the harder it is to find a good balance.
+        </p>
+      </div>
     </Modal>
   );
 }
