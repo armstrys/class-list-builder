@@ -251,39 +251,29 @@
     }, []);
 
     /**
-     * Validate and fix assignments when the number of classes changes.
-     * Removes assignments to invalid class indices and reassigns those students.
+     * Clear assignments when the number of classes changes.
+     * This ensures all students are redistributed by the optimizer
+     * rather than trying to map old assignments to new class indices.
      * @param {number} numClasses - The new number of classes
      */
-    const validateAssignmentsForClassCount = useCallback(
+    const clearAssignmentsForClassCountChange = useCallback(
       numClasses => {
         if (numClasses <= 0) return;
 
-        setAssignment(prev => {
-          const newAssignment = {};
-          const unassignedStudents = [];
+        // Check if any assignments would become invalid
+        const hasInvalidAssignments = Object.values(assignment).some(
+          classIdx => classIdx < 0 || classIdx >= numClasses
+        );
 
-          // Keep valid assignments, collect students with invalid assignments
-          Object.entries(prev).forEach(([studentId, classIdx]) => {
-            if (classIdx >= 0 && classIdx < numClasses) {
-              newAssignment[studentId] = classIdx;
-            } else {
-              unassignedStudents.push(studentId);
-            }
-          });
-
-          // Reassign students from removed classes to valid classes
-          // Distribute them round-robin across remaining classes
-          if (unassignedStudents.length > 0 && numClasses > 0) {
-            unassignedStudents.forEach((studentId, idx) => {
-              newAssignment[studentId] = idx % numClasses;
-            });
-          }
-
-          return newAssignment;
-        });
+        // If we have invalid assignments or if any assignments exist,
+        // clear them so the optimizer starts fresh
+        if (hasInvalidAssignments || Object.keys(assignment).length > 0) {
+          setAssignment({});
+          // Also clear locked status since assignments are being reset
+          setLocked(new Set());
+        }
       },
-      [setAssignment]
+      [assignment, setAssignment, setLocked]
     );
 
     const value = {
@@ -314,7 +304,7 @@
       unlockAll,
       clearAllStudents,
       replaceAllStudents,
-      validateAssignmentsForClassCount,
+      clearAssignmentsForClassCountChange,
       undo,
       redo,
       canUndo,
