@@ -11,9 +11,7 @@ function AppProviders({ children }) {
   return (
     <AppStateProviderExport>
       <CriteriaProviderExport>
-        <StudentsProviderExport>
-          {children}
-        </StudentsProviderExport>
+        <StudentsProviderExport>{children}</StudentsProviderExport>
       </CriteriaProviderExport>
     </AppStateProviderExport>
   );
@@ -22,10 +20,18 @@ function AppProviders({ children }) {
 function AppContent() {
   // Context hooks
   const {
-    view, navigateToSetup, navigateToOptimize,
-    showSettings, openSettings, closeSettings,
-    showSaveProject, openSaveProject, closeSaveProject,
-    showLoadProject, openLoadProject, closeLoadProject,
+    view,
+    navigateToSetup,
+    navigateToOptimize,
+    showSettings,
+    openSettings,
+    closeSettings,
+    showSaveProject,
+    openSaveProject,
+    closeSaveProject,
+    showLoadProject,
+    openLoadProject,
+    closeLoadProject,
     setTeachers,
   } = useAppStateExport();
 
@@ -33,12 +39,21 @@ function AppContent() {
   const [, setShowWelcome] = React.useState(true);
 
   const {
-    students, setStudents, clearAllStudents,
-    keepApart, keepTogether, keepOutOfClass,
-    setKeepApart, setKeepTogether, setKeepOutOfClass,
-    setAssignment, setLocked,
+    students,
+    setStudents,
+    clearAllStudents,
+    replaceAllStudents,
+    keepApart,
+    keepTogether,
+    keepOutOfClass,
+    setKeepApart,
+    setKeepTogether,
+    setKeepOutOfClass,
+    setAssignment,
+    setLocked,
   } = useStudentsExport();
-  const { numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria } =
+    useCriteriaExport();
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -52,66 +67,90 @@ function AppContent() {
         openLoadProject();
       }
     }
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [students.length, openSaveProject, openLoadProject]);
 
   // Handle project loading
-  const handleLoadProject = useCallback((data) => {
-    if (data.students) setStudents(data.students);
-    if (data.teachers) setTeachers(data.teachers);
-    if (data.numericCriteria) setNumericCriteria(data.numericCriteria);
-    if (data.flagCriteria) setFlagCriteria(data.flagCriteria);
-    setKeepApart(data.keepApart || []);
-    setKeepTogether(data.keepTogether || []);
-    setKeepOutOfClass(data.keepOutOfClass || []);
-    setAssignment(data.assignment || {});
-    setLocked(new Set(data.locked || []));
+  const handleLoadProject = useCallback(
+    data => {
+      // Use replaceAllStudents to ensure clean state when loading new project
+      if (data.students) {
+        replaceAllStudents(data.students);
+      }
+      if (data.teachers) setTeachers(data.teachers);
+      if (data.numericCriteria) setNumericCriteria(data.numericCriteria);
+      if (data.flagCriteria) setFlagCriteria(data.flagCriteria);
+      // Assignment, locked, constraints, and optimizationResults are already
+      // set by replaceAllStudents. Restore them from project if present.
+      if (data.keepApart?.length > 0) setKeepApart(data.keepApart);
+      if (data.keepTogether?.length > 0) setKeepTogether(data.keepTogether);
+      if (data.keepOutOfClass?.length > 0) setKeepOutOfClass(data.keepOutOfClass);
+      if (data.assignment && Object.keys(data.assignment).length > 0) {
+        setAssignment(data.assignment);
+      }
+      if (data.locked?.length > 0) {
+        setLocked(new Set(data.locked));
+      }
 
-    if (data.assignment && Object.keys(data.assignment).length > 0) {
-      navigateToOptimize();
-    } else if (data.students?.length > 0) {
-      navigateToSetup();
-    }
-  }, [
-    setStudents, setTeachers, setNumericCriteria, setFlagCriteria,
-    setKeepApart, setKeepTogether, setKeepOutOfClass,
-    setAssignment, setLocked,
-    navigateToOptimize, navigateToSetup,
-  ]);
+      if (data.assignment && Object.keys(data.assignment).length > 0) {
+        navigateToOptimize();
+      } else if (data.students?.length > 0) {
+        navigateToSetup();
+      }
+    },
+    [
+      replaceAllStudents,
+      setTeachers,
+      setNumericCriteria,
+      setFlagCriteria,
+      setKeepApart,
+      setKeepTogether,
+      setKeepOutOfClass,
+      setAssignment,
+      setLocked,
+      navigateToOptimize,
+      navigateToSetup,
+    ]
+  );
 
   // Handle settings save
-  const handleSaveSettings = useCallback((newNumCriteria, newFlagCriteria) => {
-    const oldNumKeys = new Set(numericCriteria.map(c => c.key));
-    const newNumKeys = new Set(newNumCriteria.map(c => c.key));
-    const oldFlagKeys = new Set(flagCriteria.map(c => c.key));
-    const newFlagKeys = new Set(newFlagCriteria.map(c => c.key));
+  const handleSaveSettings = useCallback(
+    (newNumCriteria, newFlagCriteria) => {
+      const oldNumKeys = new Set(numericCriteria.map(c => c.key));
+      const newNumKeys = new Set(newNumCriteria.map(c => c.key));
+      const oldFlagKeys = new Set(flagCriteria.map(c => c.key));
+      const newFlagKeys = new Set(newFlagCriteria.map(c => c.key));
 
-    const removedNum = [...oldNumKeys].filter(k => !newNumKeys.has(k));
-    const removedFlag = [...oldFlagKeys].filter(k => !newFlagKeys.has(k));
+      const removedNum = [...oldNumKeys].filter(k => !newNumKeys.has(k));
+      const removedFlag = [...oldFlagKeys].filter(k => !newFlagKeys.has(k));
 
-    if (removedNum.length > 0 || removedFlag.length > 0) {
-      setStudents(prev => prev.map(s => {
-        const updated = { ...s };
-        removedNum.forEach(k => delete updated[k]);
-        removedFlag.forEach(k => delete updated[k]);
-        return updated;
-      }));
-    }
+      if (removedNum.length > 0 || removedFlag.length > 0) {
+        setStudents(prev =>
+          prev.map(s => {
+            const updated = { ...s };
+            removedNum.forEach(k => delete updated[k]);
+            removedFlag.forEach(k => delete updated[k]);
+            return updated;
+          })
+        );
+      }
 
-    setNumericCriteria(newNumCriteria);
-    setFlagCriteria(newFlagCriteria);
-  }, [numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria, setStudents]);
+      setNumericCriteria(newNumCriteria);
+      setFlagCriteria(newFlagCriteria);
+    },
+    [numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria, setStudents]
+  );
 
   // Export students helper
   const handleExportStudents = useCallback(() => {
     const csv = exportStudentsToCSV(
-      students, 
-      numericCriteria, 
-      flagCriteria, 
-      keepApart, 
-      keepTogether, 
+      students,
+      numericCriteria,
+      flagCriteria,
+      keepApart,
+      keepTogether,
       keepOutOfClass
     );
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -151,9 +190,7 @@ function AppContent() {
         />
       )}
 
-      {showSaveProject && (
-        <SaveProjectModal onClose={closeSaveProject} />
-      )}
+      {showSaveProject && <SaveProjectModal onClose={closeSaveProject} />}
 
       {showLoadProject && (
         <LoadProjectModal
@@ -168,7 +205,7 @@ function AppContent() {
         onLoadDemo={() => {
           // Load demo data with default sample students
           const demoStudents = generateSampleStudents(100, numericCriteria, flagCriteria);
-          setStudents(demoStudents);
+          replaceAllStudents(demoStudents);
           setShowWelcome(false);
         }}
       />
@@ -179,21 +216,17 @@ function AppContent() {
 /**
  * Header component extracted from main App
  */
-function Header({
-  onNavigateSetup,
-  onNavigateOptimize,
-  onOpenSettings,
-  onOpenSave,
-  onOpenLoad,
-}) {
+function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSave, onOpenLoad }) {
   const { view, teachers } = useAppStateExport();
   const { students } = useStudentsExport();
   return (
     <header className="app-header">
-      <div className="app-logo">Class<span>List</span> Optimizer</div>
+      <div className="app-logo">
+        Class<span>List</span> Optimizer
+      </div>
       <div className="header-steps">
-        <button 
-          className={`step-pill ${view === 'setup' ? 'active' : 'done'}`} 
+        <button
+          className={`step-pill ${view === 'setup' ? 'active' : 'done'}`}
           onClick={onNavigateSetup}
         >
           1 · Setup
@@ -211,24 +244,20 @@ function Header({
           {students.length} students · {teachers.length} classes
         </span>
         {students.length > 0 && (
-          <button 
-            className="btn btn-ghost btn-sm" 
+          <button
+            className="btn btn-ghost btn-sm"
             onClick={onOpenSave}
             title="Save project (Ctrl+S)"
           >
             💾 Save Project
           </button>
         )}
-        <button 
-          className="btn btn-ghost btn-sm" 
-          onClick={onOpenLoad}
-          title="Load project (Ctrl+O)"
-        >
+        <button className="btn btn-ghost btn-sm" onClick={onOpenLoad} title="Load project (Ctrl+O)">
           📂 Load Project
         </button>
         {view === 'setup' && (
-          <button 
-            className="btn btn-ghost btn-sm" 
+          <button
+            className="btn btn-ghost btn-sm"
             onClick={onOpenSettings}
             title="Configure criteria"
           >

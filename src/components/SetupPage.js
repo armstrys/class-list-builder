@@ -1,6 +1,6 @@
 /**
  * SetupPage - Student roster setup and configuration view
- * 
+ *
  * Uses contexts:
  * - useStudents: Student data and constraint management
  * - useCriteria: Criteria configuration
@@ -16,6 +16,7 @@ function SetupPage({ onOptimize }) {
     setStudents,
     removeStudentConstraints,
     clearAllStudents: clearAllStudentsContext,
+    replaceAllStudents,
     keepApart,
     keepTogether,
   } = useStudentsExport();
@@ -34,7 +35,8 @@ function SetupPage({ onOptimize }) {
   // Filter students by ID and name
   const filteredStudents = students.filter(s => {
     const matchesId = idFilter === '' || s.id.toLowerCase().includes(idFilter.toLowerCase());
-    const matchesName = nameFilter === '' || s.name.toLowerCase().includes(nameFilter.toLowerCase());
+    const matchesName =
+      nameFilter === '' || s.name.toLowerCase().includes(nameFilter.toLowerCase());
     return matchesId && matchesName;
   });
 
@@ -54,7 +56,9 @@ function SetupPage({ onOptimize }) {
     const n = Math.max(2, Math.min(1000, parseInt(val) || 0));
     if (!parseInt(val) || parseInt(val) < 2) return;
     const next = [...teachers];
-    while (next.length < n) next.push({ id: 'T' + (next.length + 1), name: getDefaultClassName(next.length) });
+    while (next.length < n) {
+      next.push({ id: 'T' + (next.length + 1), name: getDefaultClassName(next.length) });
+    }
     setTeachers(next.slice(0, n));
   }
 
@@ -62,7 +66,7 @@ function SetupPage({ onOptimize }) {
     setStudents(prev => [...prev, s]);
   }
   function handleEditStudent(s) {
-    setStudents(prev => prev.map(x => x.id === s.id ? s : x));
+    setStudents(prev => prev.map(x => (x.id === s.id ? s : x)));
     setEditingStudent(null);
   }
   function handleDeleteStudent(id) {
@@ -74,13 +78,21 @@ function SetupPage({ onOptimize }) {
 
   function saveStudentsCSV() {
     if (students.length === 0) return;
-    const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart, keepTogether);
+    const csv = exportStudentsToCSV(
+      students,
+      numericCriteria,
+      flagCriteria,
+      keepApart,
+      keepTogether
+    );
     triggerDownload(csv, 'students.csv', 'text/csv');
   }
 
   function handleClearAllStudents() {
     if (students.length === 0) return;
-    const confirmClear = window.confirm(`Clear all ${students.length} students? This cannot be undone.`);
+    const confirmClear = window.confirm(
+      `Clear all ${students.length} students? This cannot be undone.`
+    );
     if (confirmClear) {
       clearAllStudentsContext();
     }
@@ -97,7 +109,9 @@ function SetupPage({ onOptimize }) {
               <label className="form-label">Number of classes</label>
               <input
                 className="form-input"
-                type="number" min="2" max="1000"
+                type="number"
+                min="2"
+                max="1000"
                 value={numTeachers}
                 onChange={e => syncTeachers(e.target.value)}
               />
@@ -111,7 +125,11 @@ function SetupPage({ onOptimize }) {
                     style={{ flex: 1 }}
                     value={t.name}
                     placeholder={getDefaultClassName(i)}
-                    onChange={e => setTeachers(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                    onChange={e =>
+                      setTeachers(prev =>
+                        prev.map((x, j) => (j === i ? { ...x, name: e.target.value } : x))
+                      )
+                    }
                   />
                 </div>
               ))}
@@ -126,16 +144,29 @@ function SetupPage({ onOptimize }) {
               </div>
               <span className="tag">{students.length}</span>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>⬆ Import CSV</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
+                  ⬆ Import CSV
+                </button>
                 {students.length > 0 && (
-                  <button className="btn btn-secondary btn-sm" onClick={saveStudentsCSV}>⬇ Save CSV</button>
+                  <button className="btn btn-secondary btn-sm" onClick={saveStudentsCSV}>
+                    ⬇ Save CSV
+                  </button>
                 )}
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowSampleDialog(true)}>Sample Data</button>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setShowSampleDialog(true)}
+                >
+                  Sample Data
+                </button>
                 {students.length > 0 && (
-                  <button className="btn btn-danger btn-sm" onClick={handleClearAllStudents}>Clear All</button>
+                  <button className="btn btn-danger btn-sm" onClick={handleClearAllStudents}>
+                    Clear All
+                  </button>
                 )}
                 <ConstraintButton onClick={() => setShowConstraintModal(true)} />
-                <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Add Student</button>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+                  + Add Student
+                </button>
               </div>
             </div>
 
@@ -144,7 +175,9 @@ function SetupPage({ onOptimize }) {
                 <div className="icon">👩‍🎓</div>
                 <div>No students yet — import a CSV or add sample data to get started.</div>
                 <div style={{ marginTop: 16 }}>
-                  <button className="btn btn-secondary" onClick={openSettings}>⚙️ Configure Criteria First</button>
+                  <button className="btn btn-secondary" onClick={openSettings}>
+                    ⚙️ Configure Criteria First
+                  </button>
                 </div>
               </div>
             ) : (
@@ -174,29 +207,70 @@ function SetupPage({ onOptimize }) {
                 <table className="students-table">
                   <thead>
                     <tr>
-                      <th className="col-id" style={{ fontSize: 11, width: 80 }}>ID</th>
+                      <th className="col-id" style={{ fontSize: 11, width: 80 }}>
+                        ID
+                      </th>
                       <th className="col-name">Name</th>
                       <th>G</th>
-                      {numericCriteria.map(c => <th key={c.key} className="col-num" title={c.label}>{c.short}</th>)}
-                      {flagCriteria.map(c => <th key={c.key} className="col-check" title={c.label}>{c.short}</th>)}
+                      {numericCriteria.map(c => (
+                        <th key={c.key} className="col-num" title={c.label}>
+                          {c.short}
+                        </th>
+                      ))}
+                      {flagCriteria.map(c => (
+                        <th key={c.key} className="col-check" title={c.label}>
+                          {c.short}
+                        </th>
+                      ))}
                       <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredStudents.map(s => (
                       <tr key={s.id}>
-                        <td className="col-id" style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>{s.id}</td>
+                        <td
+                          className="col-id"
+                          style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}
+                        >
+                          {s.id}
+                        </td>
                         <td className="col-name">{s.name}</td>
-                        <td><span className={`badge badge-${s.gender}`}>{s.gender}</span></td>
-                        {numericCriteria.map(c => <td key={c.key} className="col-num">{s[c.key] || 0}</td>)}
+                        <td>
+                          <span className={`badge badge-${s.gender}`}>{s.gender}</span>
+                        </td>
+                        {numericCriteria.map(c => (
+                          <td key={c.key} className="col-num">
+                            {s[c.key] || 0}
+                          </td>
+                        ))}
                         {flagCriteria.map(c => (
                           <td key={c.key} className="col-check">
-                            {s[c.key] && <span className="badge" style={{ background: generateColor(c.key).bg, color: generateColor(c.key).fg }}>✓</span>}
+                            {s[c.key] && (
+                              <span
+                                className="badge"
+                                style={{
+                                  background: generateColor(c.key).bg,
+                                  color: generateColor(c.key).fg,
+                                }}
+                              >
+                                ✓
+                              </span>
+                            )}
                           </td>
                         ))}
                         <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                          <button className="btn btn-ghost btn-sm" onClick={() => setEditingStudent(s)}>Edit</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteStudent(s.id)}>✕</button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setEditingStudent(s)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDeleteStudent(s.id)}
+                          >
+                            ✕
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -245,9 +319,9 @@ function SetupPage({ onOptimize }) {
       {showSampleDialog && (
         <SampleDataDialog
           defaultCount={sampleCount}
-          onGenerate={(n) => {
+          onGenerate={n => {
             setSampleCount(n);
-            setStudents(generateSampleStudents(n, numericCriteria, flagCriteria));
+            replaceAllStudents(generateSampleStudents(n, numericCriteria, flagCriteria));
             setShowSampleDialog(false);
           }}
           onClose={() => setShowSampleDialog(false)}
@@ -259,9 +333,7 @@ function SetupPage({ onOptimize }) {
           onClearAll={handleClearAllStudents}
         />
       )}
-      {showConstraintModal && (
-        <ConstraintModal onClose={() => setShowConstraintModal(false)} />
-      )}
+      {showConstraintModal && <ConstraintModal onClose={() => setShowConstraintModal(false)} />}
     </>
   );
 }
@@ -272,7 +344,7 @@ function SetupPage({ onOptimize }) {
 function ConstraintButton({ onClick }) {
   const { keepApart, keepTogether } = useStudentsExport();
   const count = keepApart.length + keepTogether.length;
-  
+
   return (
     <button className="btn btn-secondary btn-sm" onClick={onClick}>
       🔗 Constraints {count > 0 && `(${count})`}
@@ -286,17 +358,20 @@ function ConstraintButton({ onClick }) {
 function ImportModalWrapper({ onClose, onClearAll }) {
   const { students, setStudents, addKeepApart, addKeepTogether } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
-  
-  const handleImport = useCallback((ss, importedKeepApart, importedKeepTogether) => {
-    setStudents(prev => [...prev, ...ss]);
-    if (importedKeepApart?.length > 0) {
-      importedKeepApart.forEach(pair => addKeepApart(pair[0], pair[1]));
-    }
-    if (importedKeepTogether?.length > 0) {
-      importedKeepTogether.forEach(group => addKeepTogether(group));
-    }
-  }, [setStudents, addKeepApart, addKeepTogether]);
-  
+
+  const handleImport = useCallback(
+    (ss, importedKeepApart, importedKeepTogether) => {
+      setStudents(prev => [...prev, ...ss]);
+      if (importedKeepApart?.length > 0) {
+        importedKeepApart.forEach(pair => addKeepApart(pair[0], pair[1]));
+      }
+      if (importedKeepTogether?.length > 0) {
+        importedKeepTogether.forEach(group => addKeepTogether(group));
+      }
+    },
+    [setStudents, addKeepApart, addKeepTogether]
+  );
+
   return (
     <ImportModal
       onImport={handleImport}
@@ -308,5 +383,3 @@ function ImportModalWrapper({ onClose, onClearAll }) {
     />
   );
 }
-
-
