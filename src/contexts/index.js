@@ -250,6 +250,42 @@
       setOptimizationResults(null);
     }, []);
 
+    /**
+     * Validate and fix assignments when the number of classes changes.
+     * Removes assignments to invalid class indices and reassigns those students.
+     * @param {number} numClasses - The new number of classes
+     */
+    const validateAssignmentsForClassCount = useCallback(
+      numClasses => {
+        if (numClasses <= 0) return;
+
+        setAssignment(prev => {
+          const newAssignment = {};
+          const unassignedStudents = [];
+
+          // Keep valid assignments, collect students with invalid assignments
+          Object.entries(prev).forEach(([studentId, classIdx]) => {
+            if (classIdx >= 0 && classIdx < numClasses) {
+              newAssignment[studentId] = classIdx;
+            } else {
+              unassignedStudents.push(studentId);
+            }
+          });
+
+          // Reassign students from removed classes to valid classes
+          // Distribute them round-robin across remaining classes
+          if (unassignedStudents.length > 0 && numClasses > 0) {
+            unassignedStudents.forEach((studentId, idx) => {
+              newAssignment[studentId] = idx % numClasses;
+            });
+          }
+
+          return newAssignment;
+        });
+      },
+      [setAssignment]
+    );
+
     const value = {
       students,
       setStudents,
@@ -278,6 +314,7 @@
       unlockAll,
       clearAllStudents,
       replaceAllStudents,
+      validateAssignmentsForClassCount,
       undo,
       redo,
       canUndo,

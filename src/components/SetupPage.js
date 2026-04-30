@@ -17,6 +17,7 @@ function SetupPage({ onOptimize }) {
     removeStudentConstraints,
     clearAllStudents: clearAllStudentsContext,
     replaceAllStudents,
+    validateAssignmentsForClassCount,
     keepApart,
     keepTogether,
   } = useStudentsExport();
@@ -59,7 +60,10 @@ function SetupPage({ onOptimize }) {
     while (next.length < n) {
       next.push({ id: 'T' + (next.length + 1), name: getDefaultClassName(next.length) });
     }
-    setTeachers(next.slice(0, n));
+    const newTeachers = next.slice(0, n);
+    setTeachers(newTeachers);
+    // Validate and fix student assignments when class count changes
+    validateAssignmentsForClassCount(newTeachers.length);
   }
 
   function handleAddStudent(s) {
