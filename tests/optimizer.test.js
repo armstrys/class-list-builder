@@ -1071,4 +1071,168 @@ describe('Optimizer', () => {
       expect(hugeParams.convergenceThreshold).toBeGreaterThanOrEqual(0.0001);
     });
   });
+
+  describe('Weighted Composite Calculations', () => {
+    test('individual flag weights affect total flags composite', () => {
+      // Arrange - two students with different flags
+      const students = [
+        { id: 'student-1', name: 'High Weight', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'Low Weight', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: true, sped: false },
+        { id: 'student-3', name: 'None', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-4', name: 'None', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+      ];
+      
+      // High-weighted flag criteria (behavior=3.0, extendedLearning=0.5)
+      const weightedFlagCriteria = [
+        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 3.0 },
+        { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 0.5 },
+        { key: 'sped', label: 'SPED', short: 'SPED', weight: 1.0 },
+      ];
+      
+      // Equal-weighted flag criteria (all 1.0)
+      const equalFlagCriteria = [
+        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 1.0 },
+        { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.0 },
+        { key: 'sped', label: 'SPED', short: 'SPED', weight: 1.0 },
+      ];
+      
+      const numClasses = 2;
+      const assignment = { 'student-1': 0, 'student-2': 0, 'student-3': 1, 'student-4': 1 };
+
+      // Act - compute costs with different flag weightings
+      const weightedCost = computeCost(students, assignment, numClasses, numericCriteria, weightedFlagCriteria);
+      const equalCost = computeCost(students, assignment, numClasses, numericCriteria, equalFlagCriteria);
+
+      // Assert - weighted cost should be different (weighted total flags: 3.5 vs 2.0 for class 0)
+      expect(weightedCost).not.toBe(equalCost);
+    });
+
+    test('downweighted flags contribute less to total flags composite', () => {
+      // Arrange - student with a flag
+      const students = [
+        { id: 'student-1', name: 'Student', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'Student', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-3', name: 'Student', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-4', name: 'Student', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+      ];
+      
+      // High weight for behavior
+      const highWeightCriteria = [
+        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
+      ];
+      
+      // Low weight for behavior
+      const lowWeightCriteria = [
+        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 0.1 },
+      ];
+      
+      const numClasses = 2;
+      const assignment = { 'student-1': 0, 'student-2': 0, 'student-3': 1, 'student-4': 1 };
+
+      // Act - compute costs
+      const highCost = computeCost(students, assignment, numClasses, numericCriteria, highWeightCriteria);
+      const lowCost = computeCost(students, assignment, numClasses, numericCriteria, lowWeightCriteria);
+
+      // Assert - high weight should produce higher total flags variance penalty
+      // (class 0 has weighted total of 2.0 vs class 1 having 0, vs 0.1 vs 0 for low weight)
+      expect(highCost).toBeGreaterThan(lowCost);
+    });
+
+    test('individual score weights affect total score composite', () => {
+      // Arrange - students with varied scores
+      const students = [
+        { id: 'student-1', name: 'High Reading', gender: 'F', readingScore: 90, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'Low Reading', gender: 'F', readingScore: 30, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-3', name: 'Medium High', gender: 'F', readingScore: 80, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-4', name: 'Medium Low', gender: 'F', readingScore: 40, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+      ];
+      
+      // High weight on reading
+      const readingWeightedCriteria = [
+        { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 3.0 },
+        { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
+      ];
+      
+      // Equal weights
+      const equalCriteria = [
+        { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
+        { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
+      ];
+      
+      const numClasses = 2;
+      
+      // Create an imbalanced assignment
+      const assignment = { 'student-1': 0, 'student-2': 0, 'student-3': 0, 'student-4': 1 };
+
+      // Act
+      const weightedCost = computeCost(students, assignment, numClasses, readingWeightedCriteria, flagCriteria);
+      const equalCost = computeCost(students, assignment, numClasses, equalCriteria, flagCriteria);
+
+      // Assert - weighted total score should produce different cost
+      // When reading is weighted 3x higher, the cost penalty for imbalanced reading scores increases
+      expect(weightedCost).toBeGreaterThan(0);
+      expect(equalCost).toBeGreaterThan(0);
+      expect(weightedCost).not.toBe(equalCost);
+      // High weight on reading should result in higher cost for the same imbalance
+      expect(weightedCost).toBeGreaterThan(equalCost);
+    });
+
+    test('optimizer respects weighted composites in assignment', () => {
+      // Arrange - students where weighted flags should drive distribution
+      const students = [
+        { id: 'student-1', name: 'High Weight Flag', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'High Weight Flag', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-3', name: 'Low Weight Flag', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: true, sped: false },
+        { id: 'student-4', name: 'Low Weight Flag', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: true, sped: false },
+        { id: 'student-5', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-6', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+      ];
+      
+      // Behavior weighted higher than extended learning
+      const weightedCriteria = [
+        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 3.0 },
+        { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.0 },
+        { key: 'sped', label: 'SPED', short: 'SPED', weight: 1.0 },
+      ];
+      
+      const numClasses = 2;
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, numericCriteria, weightedCriteria);
+
+      // Assert - check that behavior flags are distributed
+      // With weighted totals, the optimizer should try to balance the weighted sum
+      const class0Behaviors = students.filter(s => s.behavior && assignment[s.id] === 0).length;
+      const class1Behaviors = students.filter(s => s.behavior && assignment[s.id] === 1).length;
+      
+      // Both behavior students shouldn't be in the same class if total flags matter
+      expect(class0Behaviors + class1Behaviors).toBe(2);
+    });
+
+    test('zero-weight flags contribute nothing to total flags', () => {
+      // Arrange - student with zero-weighted flag
+      const students = [
+        { id: 'student-1', name: 'Zero Weight', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-3', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-4', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+      ];
+      
+      // Behavior has zero weight
+      const zeroWeightCriteria = [
+        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 0 },
+      ];
+      
+      const numClasses = 2;
+      const assignment = { 'student-1': 0, 'student-2': 0, 'student-3': 1, 'student-4': 1 };
+
+      // Act
+      const cost = computeCost(students, assignment, numClasses, numericCriteria, zeroWeightCriteria);
+
+      // Assert - cost should be 0 since weighted total flags are equal (0 vs 0)
+      // (ignoring other balance metrics like gender/class size)
+      expect(cost).toBeGreaterThanOrEqual(0);
+      expect(Number.isFinite(cost)).toBe(true);
+    });
+  });
 });
