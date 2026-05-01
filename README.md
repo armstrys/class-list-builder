@@ -1,4 +1,4 @@
-# Class List Optimizer
+# Class List Builder
 
 Create balanced class lists in minutes.
 
@@ -23,14 +23,14 @@ Building fair class lists by hand takes too long. You're juggling a dozen factor
 
 ## Try It Now
 
-**[Use it in your browser](https://armstrys.github.io/class-list-optimizer/)** — No download needed. Your data stays local.
+**[Use it in your browser](https://armstrys.github.io/class-list-builder/)** — No download needed. Your data stays local.
 
 ## Download & Open
 
 Prefer an offline copy?
 
 1. Go to the **[Releases](../../releases)** page
-2. Download the latest `class-list-optimizer-vX.Y.Z.html` file
+2. Download the latest `class-list-builder-vX.Y.Z.html` file
 3. Double-click to open in any browser
 
 That's it. No installation, no account, no internet needed.

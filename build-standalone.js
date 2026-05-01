@@ -13,7 +13,7 @@ const path = require('path');
 const https = require('https');
 const zlib = require('zlib');
 
-const SOURCE_FILE = 'class-list-optimizer-source.html';
+const SOURCE_FILE = 'class-list-builder-source.html';
 const OUTPUT_DIR = 'dist';
 
 // Size thresholds for warnings
@@ -342,7 +342,7 @@ async function build() {
     }
 
     // Write output file
-    const outputFile = path.join(OUTPUT_DIR, `class-list-optimizer-v${version}.html`);
+    const outputFile = path.join(OUTPUT_DIR, `class-list-builder-v${version}.html`);
     fs.writeFileSync(outputFile, html);
 
     // Display comprehensive report

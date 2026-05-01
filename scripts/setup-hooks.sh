@@ -28,8 +28,8 @@ if [ -n "$STAGED_JS" ]; then
 fi
 
 # Check bundle size threshold
-if [ -f "dist/class-list-optimizer-v*.html" ]; then
-    BUNDLE_SIZE=$(stat -f%z dist/class-list-optimizer-v*.html 2>/dev/null || stat -c%s dist/class-list-optimizer-v*.html 2>/dev/null)
+if [ -f "dist/class-list-builder-v*.html" ]; then
+    BUNDLE_SIZE=$(stat -f%z dist/class-list-builder-v*.html 2>/dev/null || stat -c%s dist/class-list-builder-v*.html 2>/dev/null)
     SIZE_MB=$(echo "scale=2; $BUNDLE_SIZE / 1024 / 1024" | bc)
     if (( $(echo "$SIZE_MB > 5.0" | bc -l) )); then
         echo "❌ Error: Bundle size (${SIZE_MB}MB) exceeds 5MB threshold"

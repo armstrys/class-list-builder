@@ -38,7 +38,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
   };
 
   const handleReadMore = () => {
-    window.open('https://github.com/armstrys/class-list-optimizer#readme', '_blank');
+    window.open('https://github.com/armstrys/class-list-builder#readme', '_blank');
   };
 
   if (!isVisible) return null;
@@ -47,7 +47,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
     <Modal
       isOpen={true}
       onClose={handleClose}
-      title="Welcome to Class List Optimizer"
+      title="Welcome to Class List Builder"
       size="lg"
       closeOnOverlayClick={false}
       showCloseButton={false}
@@ -96,7 +96,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
         {/* Admin/IT Note - moved under privacy */}
         <div className="welcome-admin-note">
           <strong>🔍 Admin or IT?</strong> Review our
-          <a href="https://github.com/armstrys/class-list-optimizer/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer"> security documentation</a>.
+          <a href="https://github.com/armstrys/class-list-builder/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer"> security documentation</a>.
         </div>
 
         {/* Features Section */}
@@ -149,7 +149,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
         <div className="welcome-note">
           <strong>💡 Tip:</strong> Want to use this offline? Download the standalone HTML file.
           <div style={{ marginTop: '8px' }}>
-            <a href="https://github.com/armstrys/class-list-optimizer/releases" target="_blank" rel="noopener noreferrer" className="releases-link">➡️ Visit Releases Page</a>
+            <a href="https://github.com/armstrys/class-list-builder/releases" target="_blank" rel="noopener noreferrer" className="releases-link">➡️ Visit Releases Page</a>
           </div>
         </div>
       </div>

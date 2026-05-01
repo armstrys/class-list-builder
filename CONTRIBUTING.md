@@ -1,4 +1,4 @@
-# Contributing to Class List Optimizer
+# Contributing to Class List Builder
 
 ## Ways to Contribute
 
@@ -12,7 +12,7 @@
 ## Project Structure
 
 ```
-class-list-optimizer-source.html   # HTML shell — references files in src/
+class-list-builder-source.html   # HTML shell — references files in src/
 src/
   styles.css                       # All component styles
   defaults.js                      # Default criteria, color/key helpers, React destructure
@@ -37,12 +37,12 @@ npm run dev
 # Opens a static server on http://localhost:3000
 ```
 
-Then open <http://localhost:3000/class-list-optimizer-source.html> in your browser. Firefox is more permissive and will also load the source from `file://` directly, but `npm run dev` is the recommended path.
+Then open <http://localhost:3000/class-list-builder-source.html> in your browser. Firefox is more permissive and will also load the source from `file://` directly, but `npm run dev` is the recommended path.
 
 ## Making Changes
 
 1. Fork the repository
-2. Edit the relevant file in `src/` (or `class-list-optimizer-source.html` for HTML/structure changes)
+2. Edit the relevant file in `src/` (or `class-list-builder-source.html` for HTML/structure changes)
 3. Reload the page in your browser to see changes
 4. Submit a pull request
 
@@ -54,7 +54,7 @@ The standalone release bundles React, ReactDOM, Babel, and Google Fonts as inlin
 
 ```bash
 node build-standalone.js
-# Output: dist/class-list-optimizer-vX.Y.Z.html
+# Output: dist/class-list-builder-vX.Y.Z.html
 ```
 
 ## Testing the Welcome Modal
@@ -70,19 +70,19 @@ This starts the dev server at `http://localhost:3000` and automatically appends 
 **Option 2: Manual URL parameter**
 Open the URL with `?welcome=1` appended:
 ```
-http://localhost:3000/class-list-optimizer-source.html?welcome=1
+http://localhost:3000/class-list-builder-source.html?welcome=1
 ```
 
 **To skip the welcome modal during testing:**
 ```
-http://localhost:3000/class-list-optimizer-source.html?skipwelcome=1
+http://localhost:3000/class-list-builder-source.html?skipwelcome=1
 ```
 
 **Why this is needed:** The modal checks for `window.SHOW_WELCOME_MODAL` flag (injected by the GitHub Pages workflow) OR the `?welcome=1` parameter. Downloaded releases don't have the flag, so they never show the modal.
 
 ## Optimization Algorithm
 
-The core optimizer lives in the `optimize()` function in `class-list-optimizer-source.html`.
+The core optimizer lives in the `optimize()` function in `class-list-builder-source.html`.
 
 **Algorithm:** Greedy initialization + simulated annealing
 

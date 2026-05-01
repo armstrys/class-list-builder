@@ -17,7 +17,7 @@
 
 ## How Your Data is Protected
 
-The Class List Optimizer is a **single-file tool** that runs entirely in your browser:
+The Class List Builder is a **single-file tool** that runs entirely in your browser:
 
 - ✅ **Zero network transmission** — student data never leaves your device
 - ✅ **Works offline** — disconnect WiFi and it keeps working
@@ -49,7 +49,7 @@ This tool functions as a **local educational tool** under FERPA. It processes st
 │  ┌─────────────────────────────────┐    │
 │  │  Web Browser                    │    │
 │  │  ┌─────────────────────────┐   │    │
-│  │  │  Class List Optimizer   │   │    │
+│  │  │  Class List Builder   │   │    │
 │  │  │  ┌─────────────────┐    │   │    │
 │  │  │  │ React UI        │    │   │    │
 │  │  │  ├─────────────────┤    │   │    │
@@ -186,13 +186,13 @@ Loads from unpkg CDN with Subresource Integrity (SRI) hashes:
 ## Deployment Options
 
 ### Local File (Recommended)
-Download `class-list-optimizer-vX.Y.Z.html` from Releases:
+Download `class-list-builder-vX.Y.Z.html` from Releases:
 - Zero network traffic
 - Works offline/air-gapped
 - Fully under your control
 
 ### GitHub Pages (Convenient)
-Visit `https://armstrys.github.io/class-list-optimizer/`:
+Visit `https://armstrys.github.io/class-list-builder/`:
 - Same client-side-only functionality
 - IP visible to GitHub on first load only
 - CSP blocks all subsequent connections
@@ -206,7 +206,7 @@ Visit `https://armstrys.github.io/class-list-optimizer/`:
 ### Pre-Deployment Verification
 
 #### Option 1: Web (GitHub Pages)
-1. **Source review:** `github.com/armstrys/class-list-optimizer` — MIT licensed
+1. **Source review:** `github.com/armstrys/class-list-builder` — MIT licensed
 2. **CSP verification:** Confirm `connect-src 'none'` in deployed page source
 3. **Behavioral test:** DevTools Network tab → verify zero requests after initial load
 4. **Offline test:** Disconnect network, exercise all features
@@ -214,7 +214,7 @@ Visit `https://armstrys.github.io/class-list-optimizer/`:
 #### Option 2: Download (Recommended for PII)
 1. **Pin a release:** Download from Releases page
 2. **Verify SHA-256:** Compare against release notes
-3. **Verify build provenance:** `gh attestation verify <file> --repo armstrys/class-list-optimizer`
+3. **Verify build provenance:** `gh attestation verify <file> --repo armstrys/class-list-builder`
 4. **Inspect artifact:** Open in editor, confirm no remote scripts or network calls
 5. **Behavioral test:** Run on air-gapped machine, verify all features work
 6. **Reproducibility:** Build locally, diff against release
@@ -245,8 +245,8 @@ Each release includes a cryptographically signed attestation proving the artifac
 
 **Verification command:**
 ```bash
-gh attestation verify class-list-optimizer-v1.6.0.html \
-  --repo armstrys/class-list-optimizer
+gh attestation verify class-list-builder-v1.6.0.html \
+  --repo armstrys/class-list-builder
 ```
 
 **Expected output:**

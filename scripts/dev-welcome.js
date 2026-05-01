@@ -10,10 +10,10 @@ const { spawn } = require('child_process');
 const os = require('os');
 
 const PORT = 3000;
-const URL = `http://localhost:${PORT}/class-list-optimizer-source.html?welcome=1`;
+const URL = `http://localhost:${PORT}/class-list-builder-source.html?welcome=1`;
 
 console.log('\n' + '='.repeat(60));
-console.log('  Class List Optimizer - Dev Server (Welcome Mode)');
+console.log('  Class List Builder - Dev Server (Welcome Mode)');
 console.log('='.repeat(60) + '\n');
 
 console.log('Starting development server...\n');
