@@ -91,6 +91,13 @@ function OptimizePage({ onBack }) {
     runOptimize(lockedObj);
   }
 
+  // Auto-reoptimize when criteria change (respecting locked students)
+  useEffect(() => {
+    if (assignment && Object.keys(assignment).length > 0 && !optimizing) {
+      handleReoptimize();
+    }
+  }, [numericCriteria, flagCriteria]);
+
   function handleToggleLock(sid) {
     setLocked(prev => {
       const next = new Set(prev);
