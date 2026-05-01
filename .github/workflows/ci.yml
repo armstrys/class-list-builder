@@ -41,7 +41,7 @@ jobs:
 
     - name: Check bundle size
       run: |
-        BUNDLE_SIZE=$(stat -c%s dist/class-list-optimizer-v*.html)
+        BUNDLE_SIZE=$(stat -c%s dist/class-list-builder-v*.html)
         SIZE_MB=$(echo "scale=2; $BUNDLE_SIZE / 1024 / 1024" | bc)
         echo "Bundle size: ${SIZE_MB}MB"
         if (( $(echo "$SIZE_MB > 10.0" | bc -l) )); then
@@ -53,4 +53,4 @@ jobs:
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
       with:
         name: standalone-html
-        path: dist/class-list-optimizer-v*.html
+        path: dist/class-list-builder-v*.html

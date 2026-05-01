@@ -13,7 +13,7 @@ const acornJsx = require('acorn-jsx');
 
 const Parser = acorn.Parser.extend(acornJsx());
 
-const file = process.argv[2] || 'dist/class-list-optimizer-v1.5.0.html';
+const file = process.argv[2] || 'dist/class-list-builder-v1.5.0.html';
 
 if (!fs.existsSync(file)) {
   console.error(`File not found: ${file}`);

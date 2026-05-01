@@ -55,7 +55,7 @@ jobs:
       - name: Attest build provenance
         uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2  # v2.2.3
         with:
-          subject-path: 'dist/class-list-optimizer-v*.html'
+          subject-path: 'dist/class-list-builder-v*.html'
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631  # v2.2.2
@@ -65,23 +65,23 @@ jobs:
           body: |
             ## What's Changed
 
-            This release includes the bundled standalone version of Class List Optimizer.
+            This release includes the bundled standalone version of Class List Builder.
 
             ### Version v${{ steps.version.outputs.version }}
 
             ### Assets
-            - **class-list-optimizer-v${{ steps.version.outputs.version }}.html** - Self-contained HTML file with all dependencies inlined. Works offline.
+            - **class-list-builder-v${{ steps.version.outputs.version }}.html** - Self-contained HTML file with all dependencies inlined. Works offline.
 
             ### Build Verification
             This release includes a signed build attestation. Verify with:
             ```bash
-            gh attestation verify class-list-optimizer-v${{ steps.version.outputs.version }}.html --repo armstrys/class-list-optimizer
+            gh attestation verify class-list-builder-v${{ steps.version.outputs.version }}.html --repo armstrys/class-list-builder
             ```
 
             ### Usage
             Simply download and open the HTML file in any modern web browser. No internet connection required.
           files: |
-            dist/class-list-optimizer-v${{ steps.version.outputs.version }}.html
+            dist/class-list-builder-v${{ steps.version.outputs.version }}.html
           draft: false
           prerelease: false
         env:
