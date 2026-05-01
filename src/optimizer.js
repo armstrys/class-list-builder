@@ -180,9 +180,15 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
   const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id));
   for (const s of sortedStudents) {
     hash = fnv(hash, s.id.split('').reduce((h, c) => fnv(h, c.charCodeAt(0)), hash));
-    numericCriteria.forEach(({ key }) => hash = fnv(hash, Math.floor(s[key] || 0)));
+    numericCriteria.forEach(({ key, weight }) => {
+      hash = fnv(hash, Math.floor(s[key] || 0));
+      hash = fnv(hash, Math.floor((weight || 1) * 1000)); // Include weight in seed
+    });
     hash = fnv(hash, s.gender === 'F' ? 1 : s.gender === 'M' ? 2 : 3);
-    flagCriteria.forEach(({ key }) => hash = fnv(hash, s[key] ? 1 : 0));
+    flagCriteria.forEach(({ key, weight }) => {
+      hash = fnv(hash, s[key] ? 1 : 0);
+      hash = fnv(hash, Math.floor((weight || 1) * 1000)); // Include weight in seed
+    });
   }
 
   const lockedIds = Object.keys(lockedAssignments).sort();

@@ -57,7 +57,7 @@ function OptimizePage({ onBack }) {
 
   const numClasses = teachers.length;
 
-  function runOptimize(lockedAssignments) {
+  const runOptimize = useCallback((lockedAssignments) => {
     setOptimizing(true);
     setTimeout(() => {
       const lockedObj = {};
@@ -67,14 +67,21 @@ function OptimizePage({ onBack }) {
       setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
       setOptimizing(false);
     }, 30);
-  }
+  }, [students, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, setAssignment]);
 
   useEffect(() => {
     // Only run initial optimization if we don't have an assignment yet
     if (!assignment || Object.keys(assignment).length === 0) {
       runOptimize(new Map());
     }
-  }, []);
+  }, [assignment, runOptimize]);
+
+  // Recompute cost when criteria change (to reflect new weights in display)
+  useEffect(() => {
+    if (assignment && Object.keys(assignment).length > 0) {
+      setCost(computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
+    }
+  }, [numericCriteria, flagCriteria, students, assignment, numClasses, keepApart, keepTogether, keepOutOfClass]);
 
   function handleReoptimize() {
     const lockedObj = new Map();
