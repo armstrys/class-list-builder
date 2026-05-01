@@ -70,14 +70,15 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
   cost += PW.GENDER * gVariance;
 
   // Total flags balance: variance of mean total flags per class
+  // Weighted by individual flag criterion weights
   const studentTotalFlags = students.map(s =>
-    flagCriteria.reduce((sum, { key }) => sum + (s[key] ? 1 : 0), 0)
+    flagCriteria.reduce((sum, { key, weight }) => sum + (s[key] ? weight : 0), 0)
   );
   const overallMeanTotalFlags = studentTotalFlags.reduce((a, b) => a + b, 0) / studentTotalFlags.length;
   const classMeanTotalFlags = classes.map(cls => {
     if (!cls.length) return overallMeanTotalFlags;
     const total = cls.reduce((sum, s) => {
-      const tf = flagCriteria.reduce((fSum, { key }) => fSum + (s[key] ? 1 : 0), 0);
+      const tf = flagCriteria.reduce((fSum, { key, weight }) => fSum + (s[key] ? weight : 0), 0);
       return sum + tf;
     }, 0);
     return total / cls.length;
@@ -96,18 +97,20 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
   });
 
   const studentTotalScores = students.map(s =>
-    zScoreMeans.reduce((sum, { key, mean, stdDev }) => {
+    zScoreMeans.reduce((sum, { key, mean, stdDev }, ki) => {
       if (stdDev === 0) return sum;
-      return sum + ((s[key] || 0) - mean) / stdDev;
+      const weight = numericCriteria[ki]?.weight ?? 1.0;
+      return sum + weight * ((s[key] || 0) - mean) / stdDev;
     }, 0)
   );
   const overallMeanTotalScore = studentTotalScores.reduce((a, b) => a + b, 0) / studentTotalScores.length;
   const classMeanTotalScores = classes.map(cls => {
     if (!cls.length) return overallMeanTotalScore;
     const total = cls.reduce((sum, s) => {
-      const ts = zScoreMeans.reduce((tsSum, { key, mean, stdDev }) => {
+      const ts = zScoreMeans.reduce((tsSum, { key, mean, stdDev }, ki) => {
         if (stdDev === 0) return tsSum;
-        return tsSum + ((s[key] || 0) - mean) / stdDev;
+        const weight = numericCriteria[ki]?.weight ?? 1.0;
+        return tsSum + weight * ((s[key] || 0) - mean) / stdDev;
       }, 0);
       return sum + ts;
     }, 0);
@@ -372,10 +375,10 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   const nk = numericCriteria.length;
   const fk = flagCriteria.length;
 
-  // Compute total flags per student (sum of all boolean flags)
+  // Compute total flags per student (sum of all boolean flags, weighted by criterion weight)
   const studentTotalFlags = new Map();
   students.forEach(s => {
-    const total = flagCriteria.reduce((sum, { key }) => sum + (s[key] ? 1 : 0), 0);
+    const total = flagCriteria.reduce((sum, { key, weight }) => sum + (s[key] ? weight : 0), 0);
     studentTotalFlags.set(s.id, total);
   });
 
@@ -388,13 +391,14 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     return { key, mean, popVar, stdDev };
   });
 
-  // Calculate total score (sum of z-scores) for each student
+  // Calculate total score (weighted sum of z-scores) for each student
   const studentTotalScore = new Map();
   students.forEach(s => {
-    const totalZScore = popNumeric.reduce((sum, { key, mean, stdDev }) => {
+    const totalZScore = popNumeric.reduce((sum, { key, mean, stdDev }, ki) => {
       if (stdDev === 0) return sum; // skip if no variance
       const zScore = ((s[key] || 0) - mean) / stdDev;
-      return sum + zScore;
+      const weight = numericCriteria[ki]?.weight ?? 1.0;
+      return sum + weight * zScore;
     }, 0);
     studentTotalScore.set(s.id, totalZScore);
   });
