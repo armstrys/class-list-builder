@@ -222,7 +222,7 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
   return (
     <header className="app-header">
       <div className="app-logo">
-        Class<span>List</span> Optimizer
+        Class<span>List</span> Builder
       </div>
       <div className="header-steps">
         <button

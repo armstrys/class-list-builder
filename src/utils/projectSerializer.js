@@ -24,7 +24,7 @@ function serializeProject(state) {
       appVersion,
       formatVersion: PROJECT_FORMAT_VERSION,
       exportedAt: new Date().toISOString(),
-      description: 'Class List Optimizer Project File'
+      description: 'Class List Builder Project File'
     },
     data: {
       students: state.students || [],
