@@ -4,19 +4,19 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const APP_VERSION = "1.7.5";
 
 const DEFAULT_NUMERIC_CRITERIA = [
-  { key: 'englishlanguageartsscore', label: 'English Language Arts Score', short: 'ELA', weight: 1 },
-  { key: 'mathscore', label: 'Math Score', short: 'Math', weight: 1 },
-  { key: 'fluency', label: 'Fluency', short: 'Fluency', weight: 1 },
+  { key: 'englishlanguageartsscore', label: 'English Language Arts Score', short: 'ELA', weight: 1.0 },
+  { key: 'mathscore', label: 'Math Score', short: 'Math', weight: 1.0 },
+  { key: 'fluency', label: 'Fluency', short: 'Fluency', weight: 1.0 },
 ];
 
 const DEFAULT_FLAG_CRITERIA = [
   { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 1.2 },
-  { key: 'extendedlearning', label: 'Extended Learning', short: 'EXL', weight: 1 },
+  { key: 'extendedlearning', label: 'Extended Learning', short: 'EXL', weight: 1.0 },
   { key: 'sped', label: 'SPED', short: 'SPED', weight: 1.2 },
-  { key: '_504', label: '504', short: '504', weight: 1 },
-  { key: 'readingintervention', label: 'Reading Intervention', short: 'ReadI', weight: 1 },
-  { key: 'mathintervention', label: 'Math Intervention', short: 'MathI', weight: 1 },
-  { key: 'englishlanguagelearning', label: 'English Language Learning', short: 'ELL', weight: 1 },
+  { key: '_504', label: '504', short: '504', weight: 1.0 },
+  { key: 'readingintervention', label: 'Reading Intervention', short: 'ReadI', weight: 1.0 },
+  { key: 'mathintervention', label: 'Math Intervention', short: 'MathI', weight: 1.0 },
+  { key: 'englishlanguagelearning', label: 'English Language Learning', short: 'ELL', weight: 1.0 },
   { key: 'medicalplan', label: 'Medical Plan', short: 'Med', weight: 0.8 },
 ];
 
