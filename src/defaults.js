@@ -6,7 +6,7 @@ const APP_VERSION = "1.7.5";
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'englishlanguageartsscore', label: 'English Language Arts Score', short: 'ELA', weight: 1.0 },
   { key: 'mathscore', label: 'Math Score', short: 'Math', weight: 1.0 },
-  { key: 'fluency', label: 'Fluency', short: 'Fluency', weight: 1.0 },
+  { key: 'fluency', label: 'Fluency Score', short: 'Fluency', weight: 1.0 },
 ];
 
 const DEFAULT_FLAG_CRITERIA = [
