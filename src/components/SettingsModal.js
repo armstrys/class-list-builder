@@ -1,9 +1,9 @@
 /**
  * SettingsModal - Configure numeric and flag criteria
- * 
+ *
  * Uses contexts:
  * - useCriteria: Criteria configuration
- * 
+ *
  * @param {Object} props
  * @param {Function} props.onSave - Save callback
  * @param {Function} props.onClose - Close callback
@@ -11,6 +11,48 @@
  * @param {Function} props.onExportStudents - Export students callback
  * @param {Function} props.onClearStudents - Clear students callback
  */
+
+// Help text explaining how weights work (teacher-friendly language)
+const WEIGHTS_HELP_TEXT = `Weights are relative to each other. A weight of 2 has twice the impact of weight 1 when balancing classes.
+
+Tip: Start with all weights at 1.0, then adjust gradually to see how results change.`;
+
+// Simple help tooltip component - displays to bottom left
+function HelpTooltip({ content }) {
+  const [isVisible, setIsVisible] = useState(false);
+  const tooltipRef = useRef(null);
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (tooltipRef.current && !tooltipRef.current.contains(e.target)) setIsVisible(false);
+    }
+    if (isVisible) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isVisible]);
+  const btnStyle = { width: 18, height: 18, padding: 0, borderRadius: '50%', fontSize: 11, lineHeight: '18px', textTransform: 'none' };
+  const tooltipStyle = {
+    position: 'absolute', top: '100%', right: 0, marginTop: 6, background: 'var(--surface)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-md)', padding: '12px 16px', width: 280, maxWidth: 'calc(100vw - 40px)',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 10000, fontSize: 13, lineHeight: 1.5, color: 'var(--text)',
+    whiteSpace: 'pre-wrap', textTransform: 'none', fontWeight: 'normal'
+  };
+  const arrowStyle = {
+    position: 'absolute', top: -5, right: 6, width: 8, height: 8, background: 'var(--surface)',
+    borderLeft: '1px solid var(--border)', borderTop: '1px solid var(--border)', transform: 'rotate(45deg)'
+  };
+  return (
+    <span ref={tooltipRef} style={{ position: 'relative', display: 'inline-block' }}>
+      <button className="btn btn-ghost btn-sm" onClick={() => setIsVisible(!isVisible)} style={btnStyle} title="Click for help">?</button>
+      {isVisible && (
+        <div style={tooltipStyle}>
+          <div style={arrowStyle} />
+          {content}
+        </div>
+      )}
+    </span>
+  );
+}
 function SettingsModal({
   onSave,
   onClose,
@@ -309,7 +351,10 @@ function SettingsModal({
               <div className="criteria-header">
                 <div>Display Name</div>
                 <div>Short Name</div>
-                <div>Weight</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Weight
+                  <HelpTooltip content={WEIGHTS_HELP_TEXT} />
+                </div>
                 <div></div>
               </div>
               <div className="criteria-list">
@@ -355,7 +400,10 @@ function SettingsModal({
               <div className="criteria-header">
                 <div>Display Name</div>
                 <div>Short Name</div>
-                <div>Weight</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Weight
+                  <HelpTooltip content={WEIGHTS_HELP_TEXT} />
+                </div>
                 <div></div>
               </div>
               <div className="criteria-list">

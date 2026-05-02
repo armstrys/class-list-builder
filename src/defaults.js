@@ -1,23 +1,23 @@
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 // App version for save/load compatibility checking
-const APP_VERSION = "1.7.3";
+const APP_VERSION = "1.7.4";
 
 const DEFAULT_NUMERIC_CRITERIA = [
-  { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
+  { key: 'readingScore', label: 'English Language Arts', short: 'Read', weight: 1.0 },
   { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
-  { key: 'languageScore', label: 'Language Score', short: 'Lang', weight: 1.0 },
+  { key: 'languageScore', label: 'Fluency', short: 'Lang', weight: 1.0 },
 ];
 
 const DEFAULT_FLAG_CRITERIA = [
-  { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
-  { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.5 },
-  { key: 'sped', label: 'SPED', short: 'SPED', weight: 2.0 },
-  { key: '504', label: '504', short: '504', weight: 1.5 },
-  { key: 'readingIntervention', label: 'Reading Intervention', short: 'RdgI', weight: 1.5 },
-  { key: 'mathIntervention', label: 'Math Intervention', short: 'MathI', weight: 1.5 },
-  { key: 'englishLanguageLearning', label: 'English Language Learning', short: 'ELL', weight: 1.5 },
-  { key: 'medicalPlan', label: 'Medical Plan', short: 'Med', weight: 1.0 },
+  { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 1.2 },
+  { key: 'extendedLearning', label: 'Extended Learning', short: 'EXL', weight: 1.0 },
+  { key: 'sped', label: 'SPED', short: 'SPED', weight: 1.2 },
+  { key: '504', label: '504', short: '504', weight: 1.0 },
+  { key: 'readingIntervention', label: 'Reading Intervention', short: 'RdgI', weight: 1.0 },
+  { key: 'mathIntervention', label: 'Math Intervention', short: 'MathI', weight: 1.0 },
+  { key: 'englishLanguageLearning', label: 'English Language Learning', short: 'ELL', weight: 1.0 },
+  { key: 'medicalPlan', label: 'Medical Plan', short: 'Med', weight: 0.8 },
 ];
 
 const STORAGE_KEYS = {
