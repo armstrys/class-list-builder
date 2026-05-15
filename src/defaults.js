@@ -1,7 +1,7 @@
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 // App version for save/load compatibility checking
-const APP_VERSION = "1.7.5";
+const APP_VERSION = "1.7.6";
 
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'readingScore', label: 'English Language Arts', short: 'Read', weight: 1.0 },
