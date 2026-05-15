@@ -1,6 +1,6 @@
 /**
- * OutOfClassTab - Keep Out of Class constraint management
- * 
+ * OutOfClassTab - Keep Out of Class constraint management with multiselect
+ *
  * @param {Object} props
  * @param {Array} props.students - All students
  * @param {Array} props.teachers - Class/teacher definitions
@@ -9,7 +9,7 @@
  * @param {Function} props.onRemoveKeepOutOfClass - Remove constraint callback
  */
 function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass, onRemoveKeepOutOfClass }) {
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
   const [selectedClassIndex, setSelectedClassIndex] = useState('');
   const [filter, setFilter] = useState('');
 
@@ -17,6 +17,11 @@ function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass
 
   const filteredStudents = students.filter(s =>
     s.name.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  // Build a set of existing constraints for quick lookup
+  const existingConstraints = new Set(
+    keepOutOfClass.map(c => `${c.studentId}:${c.classIndex}`)
   );
 
   const constraints = keepOutOfClass.map((c, idx) => {
@@ -31,13 +36,54 @@ function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass
     };
   });
 
+  function toggleStudentSelection(studentId) {
+    setSelectedStudentIds(prev => {
+      const next = new Set(prev);
+      if (next.has(studentId)) {
+        next.delete(studentId);
+      } else {
+        next.add(studentId);
+      }
+      return next;
+    });
+  }
+
+  function selectAllVisible() {
+    setSelectedStudentIds(prev => {
+      const next = new Set(prev);
+      filteredStudents.forEach(s => next.add(s.id));
+      return next;
+    });
+  }
+
+  function deselectAllVisible() {
+    setSelectedStudentIds(prev => {
+      const next = new Set(prev);
+      filteredStudents.forEach(s => next.delete(s.id));
+      return next;
+    });
+  }
+
   function handleAdd() {
-    if (selectedStudentId && selectedClassIndex !== '') {
-      onAddKeepOutOfClass(selectedStudentId, parseInt(selectedClassIndex, 10));
-      setSelectedStudentId('');
+    if (selectedStudentIds.size > 0 && selectedClassIndex !== '') {
+      const classIdx = parseInt(selectedClassIndex, 10);
+      selectedStudentIds.forEach(studentId => {
+        onAddKeepOutOfClass(studentId, classIdx);
+      });
+      setSelectedStudentIds(new Set());
       setSelectedClassIndex('');
     }
   }
+
+  // Build disabled IDs set based on selected class
+  const disabledIds = selectedClassIndex !== ''
+    ? new Set(filteredStudents.filter(s => existingConstraints.has(`${s.id}:${selectedClassIndex}`)).map(s => s.id))
+    : new Set();
+
+  // Count how many selected students would get new constraints
+  const newConstraintsCount = selectedClassIndex !== '' && selectedStudentIds.size > 0
+    ? [...selectedStudentIds].filter(id => !existingConstraints.has(`${id}:${selectedClassIndex}`)).length
+    : 0;
 
   return (
     <>
@@ -85,10 +131,10 @@ function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass
       {/* Add New */}
       <div>
         <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 500 }}>
-          Add Keep-Out-of-Class Constraint
+          Add Keep-Out-of-Class Constraints
         </h4>
         <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--text3)' }}>
-          Select a student and class to block them from that class.
+          Select multiple students and a class to block them all at once.
         </p>
 
         <input
@@ -100,24 +146,14 @@ function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass
           style={{ marginBottom: 12 }}
         />
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 500 }}>
-            Select Student
-          </label>
-          <select
-            className="form-input"
-            value={selectedStudentId}
-            onChange={e => setSelectedStudentId(e.target.value)}
-            style={{ marginBottom: 12 }}
-          >
-            <option value="">Choose a student...</option>
-            {filteredStudents.map(s => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.id})
-              </option>
-            ))}
-          </select>
-        </div>
+        <StudentMultiselect
+          students={filteredStudents}
+          selectedIds={selectedStudentIds}
+          onToggle={toggleStudentSelection}
+          onSelectAll={selectAllVisible}
+          onDeselectAll={deselectAllVisible}
+          disabledIds={disabledIds}
+        />
 
         <div style={{ marginBottom: 12 }}>
           <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 500 }}>
@@ -137,13 +173,18 @@ function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass
           </select>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+          {newConstraintsCount > 0 && (
+            <span style={{ fontSize: 13, color: 'var(--text2)' }}>
+              Will add {newConstraintsCount} new constraint{newConstraintsCount === 1 ? '' : 's'}
+            </span>
+          )}
           <button
             className="btn btn-primary btn-sm"
-            disabled={!selectedStudentId || selectedClassIndex === ''}
+            disabled={selectedStudentIds.size === 0 || selectedClassIndex === ''}
             onClick={handleAdd}
           >
-            Add Constraint
+            Add Constraints
           </button>
         </div>
       </div>

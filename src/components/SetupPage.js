@@ -346,8 +346,8 @@ function SetupPage({ onOptimize }) {
  * ConstraintButton - Shows constraint count badge
  */
 function ConstraintButton({ onClick }) {
-  const { keepApart, keepTogether } = useStudentsExport();
-  const count = keepApart.length + keepTogether.length;
+  const { keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
+  const count = keepApart.length + keepTogether.length + keepOutOfClass.length;
 
   return (
     <button className="btn btn-secondary btn-sm" onClick={onClick}>
