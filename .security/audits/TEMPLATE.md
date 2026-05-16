@@ -7,6 +7,7 @@ manifest-sha256: sha256:REPLACE_ME
 sources-sha256: sha256:REPLACE_ME
 deps-sha256: sha256:REPLACE_ME
 claims-sha256: sha256:REPLACE_ME
+sbom_ref: "release asset: class-list-builder-vX.Y.Z.cdx.json"
 status: pass
 exceptions-cited: []
 ---
