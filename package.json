@@ -1,6 +1,6 @@
 {
   "name": "class-list-builder",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "A tool for optimizing class list distributions",
   "scripts": {
     "build": "node build-standalone.js",

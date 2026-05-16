@@ -37,7 +37,7 @@ jobs:
           node build-standalone.js
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@9f730e1469eaefa55b6ab5249d9569d6c2e8abf8  # v0.19.0
+        uses: anchore/sbom-action@9f7302141466aa6482940f15371237e9d9f4c34a  # v0.19.0
         with:
           format: cyclonedx-json
           output-file: sbom/class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
