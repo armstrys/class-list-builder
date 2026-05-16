@@ -1,7 +1,7 @@
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 // App version for save/load compatibility checking
-const APP_VERSION = "1.7.9";
+const APP_VERSION = "1.7.10";
 
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'englishlanguageartsscore', label: 'English Language Arts Score', weight: 1.0 },
@@ -21,8 +21,8 @@ const DEFAULT_FLAG_CRITERIA = [
 ];
 
 const STORAGE_KEYS = {
-  NUMERIC_CRITERIA: 'class-optimizer-numeric-criteria',
-  FLAG_CRITERIA: 'class-optimizer-flag-criteria',
+  NUMERIC_CRITERIA: 'classOptimizer_numericCriteria_v2',
+  FLAG_CRITERIA: 'classOptimizer_flagCriteria_v2',
 };
 
 // Optimization penalty weights

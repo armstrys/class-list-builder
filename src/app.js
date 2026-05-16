@@ -35,9 +35,6 @@ function AppContent() {
     setTeachers,
   } = useAppStateExport();
 
-  // Welcome modal state
-  const [, setShowWelcome] = React.useState(true);
-
   const {
     students,
     setStudents,
@@ -79,8 +76,8 @@ function AppContent() {
       if (data.teachers) setTeachers(data.teachers);
       if (data.numericCriteria) setNumericCriteria(data.numericCriteria);
       if (data.flagCriteria) setFlagCriteria(data.flagCriteria);
-      // Assignment, locked, constraints, and optimizationResults are already
-      // set by replaceAllStudents. Restore them from project if present.
+      // replaceAllStudents reset constraints/assignment/locked to empty;
+      // restore them from the project payload if present.
       if (data.keepApart?.length > 0) setKeepApart(data.keepApart);
       if (data.keepTogether?.length > 0) setKeepTogether(data.keepTogether);
       if (data.keepOutOfClass?.length > 0) setKeepOutOfClass(data.keepOutOfClass);
@@ -195,12 +192,9 @@ function AppContent() {
       )}
 
       <WelcomeModal
-        onClose={() => setShowWelcome(false)}
         onLoadDemo={() => {
-          // Load demo data with default sample students
           const demoStudents = generateSampleStudents(100, numericCriteria, flagCriteria);
           replaceAllStudents(demoStudents);
-          setShowWelcome(false);
         }}
       />
     </div>

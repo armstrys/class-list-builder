@@ -39,14 +39,14 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
     const mathIntervention = p(0.16) && !gt;
 
     flagCriteria.forEach(({ key }) => {
-      if (key === 'extendedLearning') student[key] = gt;
+      if (key === 'extendedlearning') student[key] = gt;
       else if (key === 'sped') student[key] = sped;
       else if (key === 'behavior') student[key] = behavior;
-      else if (key === '504') student[key] = flag504;
-      else if (key === 'readingIntervention') student[key] = readingIntervention;
-      else if (key === 'mathIntervention') student[key] = mathIntervention;
-      else if (key === 'englishLanguageLearning') student[key] = ell;
-      else if (key === 'medicalPlan') student[key] = p(0.06);
+      else if (key === '_504') student[key] = flag504;
+      else if (key === 'readingintervention') student[key] = readingIntervention;
+      else if (key === 'mathintervention') student[key] = mathIntervention;
+      else if (key === 'englishlanguagelearning') student[key] = ell;
+      else if (key === 'medicalplan') student[key] = p(0.06);
       else student[key] = p(0.15);
     });
 

@@ -2,6 +2,10 @@
 
 Create balanced class lists in minutes.
 
+> ### ▶ [**Open Class List Builder in your browser →**](https://armstrys.github.io/class-list-builder/)
+>
+> No download. No accounts. Your data stays on your computer.
+
 ![App Screenshot](docs/images/app-screenshot.png)
 
 This tool distributes students across classrooms while balancing academic scores, intervention needs, gender, and class size. It runs entirely in your browser. **Student data never leaves your computer.**
@@ -20,10 +24,6 @@ Building fair class lists by hand takes too long. You're juggling a dozen factor
 - **Handles any size.** Small schools or large districts. The optimization runs in seconds even with thousands of students.
 
 ---
-
-## Try It Now
-
-**[Use it in your browser](https://armstrys.github.io/class-list-builder/)** — No download needed. Your data stays local.
 
 ## Download & Open
 

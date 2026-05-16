@@ -354,7 +354,7 @@ async function build() {
 
     console.log('\n💡 Next steps:');
     console.log('   • Run tests: npm test');
-    console.log('   • Run lint: npm run lint (after: npm install eslint)');
+    console.log('   • Run lint:  npm run lint');
 
   } catch (err) {
     console.error('\n❌ Build failed:', err.message);
