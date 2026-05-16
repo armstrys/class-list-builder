@@ -213,7 +213,8 @@ function triggerDownload(content, filename, mimeType) {
   a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  // Defer revocation to avoid racing the download dialog in some browsers
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 // Export for Node.js testing (conditional to not break browser)

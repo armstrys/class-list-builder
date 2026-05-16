@@ -8,6 +8,13 @@
       "expires": "2027-05-16",
       "approvedBy": "Ryan Armstrong <ryan.armstrong@example.org>",
       "approvedOn": "2026-05-16"
+    {
+      "id": "CLB-EXC-0002",
+      "summary": "ExcelJS 4.4.0 transitive CVEs in Node-only code paths",
+      "rationale": "ExcelJS 4.4.0 has known transitive vulnerabilities in glob, archiver, brace-expansion, and inflight (e.g., CVE-2025-64756). These vulnerabilities exist in Node.js-only code paths used by workbook.xlsx.write() and similar APIs. This application only calls workbook.xlsx.load(buffer) in the browser UMD bundle (src/components/ImportModal.js), where those Node-only modules are not executed. The risk is effectively zero in the current browser-only configuration. Enterprise scanners pointed at the SBOM may flag these transitive dependencies; this exception documents that the vulnerable code paths are unreachable.",
+      "expires": "2027-05-16",
+      "approvedBy": "Ryan Armstrong <ryan.armstrong@example.org>",
+      "approvedOn": "2026-05-16"
     }
   ]
 }

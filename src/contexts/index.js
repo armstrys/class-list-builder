@@ -336,11 +336,11 @@
     try {
       const savedNumeric = localStorage.getItem(STORAGE_KEY_NUMERIC);
       const savedFlag = localStorage.getItem(STORAGE_KEY_FLAG);
+      const numeric = savedNumeric ? JSON.parse(savedNumeric) : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c }));
+      const flag = savedFlag ? JSON.parse(savedFlag) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c }));
       return {
-        numeric: savedNumeric
-          ? JSON.parse(savedNumeric)
-          : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
-        flag: savedFlag ? JSON.parse(savedFlag) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
+        numeric: validateCriteriaArray(numeric, 'numeric') ? numeric : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
+        flag: validateCriteriaArray(flag, 'flag') ? flag : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
       };
     } catch (e) {
       return {
@@ -348,6 +348,24 @@
         flag: DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
       };
     }
+  }
+
+  /**
+   * Validates that a criteria array has the expected shape.
+   * Each criterion must be an object with key, label, and weight fields.
+   * @param {Array} arr - Array to validate
+   * @param {string} type - 'numeric' or 'flag' (for logging)
+   * @returns {boolean}
+   */
+  function validateCriteriaArray(arr, _type) {
+    if (!Array.isArray(arr)) return false;
+    return arr.every(c => {
+      if (!c || typeof c !== 'object') return false;
+      if (typeof c.key !== 'string' || c.key.length === 0) return false;
+      if (typeof c.label !== 'string' || c.label.length === 0) return false;
+      if (typeof c.weight !== 'number' || !isFinite(c.weight)) return false;
+      return true;
+    });
   }
 
   function CriteriaProvider({ children }) {
