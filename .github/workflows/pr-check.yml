@@ -102,3 +102,20 @@ jobs:
 
       - name: Verify audit document
         run: node .security/scripts/verify-audit.js
+
+      - name: Build standalone file
+        run: node build-standalone.js
+
+      - name: Generate SBOM (dry-run)
+        uses: anchore/sbom-action@9f7302141466aa6482940f15371237e9d9f4c34a # v0.19.0
+        with:
+          format: cyclonedx-json
+          output-file: class-list-builder-v${{ steps.pr-version.outputs.version }}.cdx.json
+
+      - name: Verify SBOM was generated
+        run: |
+          if [ ! -f "class-list-builder-v${{ steps.pr-version.outputs.version }}.cdx.json" ]; then
+            echo "❌ SBOM was not generated"
+            exit 1
+          fi
+          echo "✅ SBOM generated successfully"
