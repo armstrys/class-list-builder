@@ -1,0 +1,26 @@
+{
+  "$schema": "https://example.org/audit-exceptions/v1",
+  "_comment": "Accepted-risk registry for this project. See audit-system skill references/exception-registry.md for the schema and rules. IDs use the project's PREFIX (declared in .security/audits/README.md). All timestamps are ISO 8601 UTC. The CI gate fails on any cited exception whose expires_at has passed.",
+  "exceptions": [
+    {
+      "_example": "Remove this example entry once you add a real one",
+      "id": "<PREFIX>-EXC-0001",
+      "title": "Short human description",
+      "description": "What the risk is and what condition triggered the exception",
+      "affected": ["<path or component or CVE id>"],
+      "risk_level": "medium",
+      "cvss": "<v3.1 vector if applicable>",
+      "business_justification": "Why we are accepting this risk rather than fixing it now",
+      "compensating_controls": [
+        "Mitigation A",
+        "Mitigation B"
+      ],
+      "approver": "<name or role>",
+      "approved_at": "<ISO 8601 UTC>",
+      "expires_at": "<ISO 8601 UTC>",
+      "review_cadence": "P90D",
+      "status": "active",
+      "linked_finding": "<PREFIX>-FND-0007"
+    }
+  ]
+}

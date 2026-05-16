@@ -1,7 +1,19 @@
+---
+audit_tier: 2
+tier_rationale: >
+  This project is a browser-based educational tool that processes
+  FERPA-regulated student data (names, test scores, behavior/medical
+  flags) entirely locally. While data never leaves the device and
+  the app has zero network attack surface, the sensitivity of the
+  data and the educational context warrant Tier 2 rigor.
+tier_set_at: "2026-05-16T00:00:00Z"
+tier_set_by: "Ryan Armstrong"
+---
+
 # Security & Privacy
 
 > The claims in this document are verified per-release by the audit
-> system in [`audits/`](../audits/README.md). Any discrepancy between this
+> system in [`.security/audits/`](../.security/audits/README.md). Any discrepancy between this
 > file and current source code fails the release audit and blocks merge.
 
 ---
@@ -281,7 +293,7 @@ Visit `https://armstrys.github.io/class-list-builder/`:
 
 ### Build Verification
 
-Each release includes a cryptographically signed attestation proving the artifact was built by GitHub Actions from the source code.
+Each release includes a cryptographically signed attestation proving the artifact was built by GitHub Actions from the source code (SLSA Build Level 2).
 
 **Requirements:**
 - GitHub CLI (`gh`) installed
@@ -289,7 +301,7 @@ Each release includes a cryptographically signed attestation proving the artifac
 
 **Verification command:**
 ```bash
-gh attestation verify class-list-builder-v1.6.0.html \
+gh attestation verify class-list-builder-v2.0.0.html \
   --repo armstrys/class-list-builder
 ```
 
@@ -302,6 +314,16 @@ gh attestation verify class-list-builder-v1.6.0.html \
 ```
 
 This confirms the HTML file was built from the repository source and has not been tampered with.
+
+### SBOM (Software Bill of Materials)
+
+Each release includes a CycloneDX SBOM (`class-list-builder-vX.Y.Z.cdx.json`) that lists all dependencies and their versions. This enables:
+
+- **Supply-chain transparency** — Know exactly what components are included
+- **Vulnerability tracking** — Cross-reference against vulnerability databases
+- **Compliance verification** — Verify license compatibility and provenance
+
+The SBOM is generated automatically during the release build and attached as a release asset.
 
 ---
 

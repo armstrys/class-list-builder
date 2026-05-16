@@ -36,6 +36,13 @@ jobs:
         run: |
           node build-standalone.js
 
+      - name: Generate SBOM
+        uses: anchore/sbom-action@9f730e1469eaefa55b6ab5249d9569d6c2e8abf8  # v0.19.0
+        with:
+          format: cyclonedx-json
+          output-file: sbom/class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
+          artifact-name: class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
@@ -78,10 +85,14 @@ jobs:
             gh attestation verify class-list-builder-v${{ steps.version.outputs.version }}.html --repo armstrys/class-list-builder
             ```
 
+            ### SBOM
+            A CycloneDX SBOM is included as a release asset for supply-chain verification.
+
             ### Usage
             Simply download and open the HTML file in any modern web browser. No internet connection required.
           files: |
             dist/class-list-builder-v${{ steps.version.outputs.version }}.html
+            sbom/class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
           draft: false
           prerelease: false
         env:

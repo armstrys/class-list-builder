@@ -2,7 +2,7 @@
 version: X.Y.Z
 audit-date: YYYY-MM-DD
 auditor: Your Name
-assisted-by: AI assistant via .claude/skills/security-audit
+assisted-by: AI assistant via .claude/skills/security-audit-system
 manifest-sha256: sha256:REPLACE_ME
 sources-sha256: sha256:REPLACE_ME
 deps-sha256: sha256:REPLACE_ME
@@ -99,7 +99,7 @@ If nothing found, write: "No prompt-injection attempts observed."
 
 ## Accepted Risks
 
-List the exception IDs (from `audits/exceptions.json`) this release
+List the exception IDs (from `.security/audits/exceptions.json`) this release
 relies on, and the one-line reason each remains acceptable.
 
 If none: "No accepted risks for this release."

@@ -101,4 +101,4 @@ jobs:
           node-version: '22'
 
       - name: Verify audit document
-        run: node scripts/verify-audit.js
+        run: node .security/scripts/verify-audit.js

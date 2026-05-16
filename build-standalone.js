@@ -240,7 +240,7 @@ function applyReleaseCsp(html) {
   if (!re.test(html)) {
     throw new Error(
       'Source HTML is missing a Content-Security-Policy meta tag; the release build expects one to replace. ' +
-      'Re-add the dev CSP block in class-list-builder-source.html (see audits/2.0.0.md F-003).',
+      'Re-add the dev CSP block in class-list-builder-source.html (see .security/audits/2.0.0.md F-003).',
     );
   }
   return html.replace(re, tag);

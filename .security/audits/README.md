@@ -1,42 +1,44 @@
 # Release Security Audits
 
 Every release of this repo must ship with a per-version audit document at
-`audits/<version>.md`. CI gates merges to `main` on the audit's presence,
-structural completeness, and freshness.
+`.security/audits/<version>.md`. CI gates merges to `main` on the audit's
+presence, structural completeness, and freshness.
 
-## What CI checks (`scripts/verify-audit.js`)
+**Tier:** 2 (Sensitive data — FERPA-regulated student information)
 
-1. `audits/<package.json version>.md` exists.
+## What CI checks (`.security/scripts/verify-audit.js`)
+
+1. `.security/audits/<package.json version>.md` exists.
 2. Front matter has `version`, `audit-date`, `auditor`, `manifest-sha256`,
    `sources-sha256`, `deps-sha256`, `claims-sha256`, `status`.
 3. `status` is `pass` or `conditional-pass` (not `fail` or `draft`).
 4. `version` in front matter matches `package.json`.
 5. Required sections are present (see template).
 6. `manifest-sha256` matches the current tree, recomputed by
-   `scripts/audit-hash.js`. **Any change to `src/`, `package*.json`,
+   `.security/scripts/audit-hash.js`. **Any change to `src/`, `package*.json`,
    `docs/SECURITY.md`, or the build entrypoints requires a fresh audit.**
-7. Any exception IDs cited in the audit exist in `audits/exceptions.json`
+7. Any exception IDs cited in the audit exist in `.security/audits/exceptions.json`
    and have not expired.
 
 ## How to produce an audit
 
 1. Bump `package.json` and `src/defaults.js` to the new version.
-2. From the repo root, in Claude Code, run the security-audit skill:
+2. From the repo root, in Claude Code, run the security-audit-system skill:
    ```
-   /skill security-audit
+   /skill security-audit-system
    ```
-   The skill is at [.claude/skills/security-audit/SKILL.md](../.claude/skills/security-audit/SKILL.md)
+   The skill is at [.claude/skills/security-audit-system/SKILL.md](../../.claude/skills/security-audit-system/SKILL.md)
    and contains explicit hardening against prompt-injection from the
    codebase under audit. Read it before invoking.
-3. The skill produces a draft at `audits/<version>.md`. Review every
+3. The skill produces a draft at `.security/audits/<version>.md`. Review every
    finding manually. The auditor of record is **you**, not Claude — Claude
    assists, but the sign-off is human.
-4. Run `node scripts/audit-hash.js` and paste the hashes into the front
+4. Run `node .security/scripts/audit-hash.js` and paste the hashes into the front
    matter (or let the skill do it as its final step).
-5. Run `node scripts/verify-audit.js` locally. Fix anything that fails.
+5. Run `node .security/scripts/verify-audit.js` locally. Fix anything that fails.
 6. Commit and open the release PR.
 
-## Exceptions (`audits/exceptions.json`)
+## Exceptions (`.security/audits/exceptions.json`)
 
 Use sparingly. Format:
 
@@ -64,7 +66,7 @@ Audit files whose front matter sets `historical: true` are *not* tied to a
 release that was signed off. They are kept as worked examples — typically
 of a failing audit — so future auditors can see what real findings look
 like in this repo's voice. They are ignored by CI (`verify-audit.js` only
-loads `audits/<package.json version>.md`).
+loads `.security/audits/<package.json version>.md`).
 
 When keeping a historical artifact:
 
