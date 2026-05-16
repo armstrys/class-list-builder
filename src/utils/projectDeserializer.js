@@ -15,6 +15,23 @@
 // bundle). In test contexts that import this file standalone, fall back to the known value.
 const EXPECTED_FORMAT_VERSION = (typeof PROJECT_FORMAT_VERSION !== 'undefined') ? PROJECT_FORMAT_VERSION : 1;
 
+// Maximum limits to prevent self-DoS from malformed/oversized project files
+const MAX_STUDENTS = 10000;
+const MAX_TEACHERS = 100;
+const MAX_NAME_LENGTH = 50000; // ~50KB
+const MAX_KEEP_TOGETHER_GROUP_SIZE = 50;
+const MAX_CONSTRAINTS = 10000; // keepApart + keepTogether + keepOutOfClass combined
+
+/**
+ * Checks if a string exceeds the maximum allowed length
+ * @param {string} str - String to check
+ * @param {number} maxLength - Maximum allowed length
+ * @returns {boolean}
+ */
+function exceedsMaxLength(str, maxLength) {
+  return typeof str === 'string' && str.length > maxLength;
+}
+
 /**
  * Parses a version string into components
  * @param {string} version - Version string like "1.3.2"
@@ -114,6 +131,9 @@ function validateStudent(student, validTeacherIds) {
   if (!student.name || typeof student.name !== 'string') {
     return { valid: false, error: `Student ${student.id}: Missing or invalid name`, student: null };
   }
+  if (exceedsMaxLength(student.name, MAX_NAME_LENGTH)) {
+    return { valid: false, error: `Student ${student.id}: Name exceeds maximum length`, student: null };
+  }
   if (!student.gender || !['F', 'M', 'U'].includes(student.gender)) {
     return { valid: false, error: `Student ${student.name}: Invalid gender`, student: null };
   }
@@ -145,6 +165,9 @@ function validateTeacher(teacher) {
   }
   if (!teacher.name || typeof teacher.name !== 'string') {
     return { valid: false, error: `Teacher ${teacher.id}: Missing or invalid name`, teacher: null };
+  }
+  if (exceedsMaxLength(teacher.name, MAX_NAME_LENGTH)) {
+    return { valid: false, error: `Teacher ${teacher.id}: Name exceeds maximum length`, teacher: null };
   }
   
   return { valid: true, error: null, teacher };
@@ -260,6 +283,11 @@ function validateKeepTogether(keepTogether, validStudentIds) {
   (keepTogether || []).forEach((group, index) => {
     if (!Array.isArray(group) || group.length < 2) {
       invalidGroups.push({ index, group, reason: 'Invalid format (expected array of at least 2 IDs)' });
+      return;
+    }
+    
+    if (group.length > MAX_KEEP_TOGETHER_GROUP_SIZE) {
+      invalidGroups.push({ index, group, reason: `Group exceeds maximum size of ${MAX_KEEP_TOGETHER_GROUP_SIZE}` });
       return;
     }
     
@@ -406,8 +434,12 @@ function deserializeProject(projectData, options = {}) {
   const { data: projectState } = data;
   
   // Validate teachers first (needed for student validation)
+  const rawTeachers = projectState.teachers || [];
+  if (rawTeachers.length > MAX_TEACHERS) {
+    warnings.push(`Project contains ${rawTeachers.length} teachers; only the first ${MAX_TEACHERS} will be loaded.`);
+  }
   const validatedTeachers = [];
-  (projectState.teachers || []).forEach((teacher, index) => {
+  rawTeachers.slice(0, MAX_TEACHERS).forEach((teacher, index) => {
     const result = validateTeacher(teacher);
     if (result.valid) {
       validatedTeachers.push(result.teacher);
@@ -419,8 +451,12 @@ function deserializeProject(projectData, options = {}) {
   const validTeacherIds = new Set(validatedTeachers.map(t => t.id));
   
   // Validate students
+  const rawStudents = projectState.students || [];
+  if (rawStudents.length > MAX_STUDENTS) {
+    warnings.push(`Project contains ${rawStudents.length} students; only the first ${MAX_STUDENTS} will be loaded.`);
+  }
   const validatedStudents = [];
-  (projectState.students || []).forEach((student, index) => {
+  rawStudents.slice(0, MAX_STUDENTS).forEach((student, index) => {
     const result = validateStudent(student, validTeacherIds);
     if (result.valid) {
       validatedStudents.push(result.student);
@@ -431,7 +467,14 @@ function deserializeProject(projectData, options = {}) {
   
   const validStudentIds = new Set(validatedStudents.map(s => s.id));
   
-  // Validate constraints
+  // Validate constraints with combined limit
+  const totalConstraints = (projectState.keepApart?.length || 0) + 
+                           (projectState.keepTogether?.length || 0) + 
+                           (projectState.keepOutOfClass?.length || 0);
+  if (totalConstraints > MAX_CONSTRAINTS) {
+    warnings.push(`Project contains ${totalConstraints} constraints; only the first ${MAX_CONSTRAINTS} will be processed.`);
+  }
+  
   const keepApartResult = validateKeepApart(projectState.keepApart, validStudentIds);
   invalidItems.keepApart = keepApartResult.invalidPairs;
 

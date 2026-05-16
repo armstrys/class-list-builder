@@ -166,6 +166,8 @@ sudo tcpdump -i any -n 'tcp port 443' -w classlist.pcap
 
 **Important:** Student data (names, scores, flags) is **not automatically persisted**. Export to CSV to save your work.
 
+**If you use Save Project:** The resulting `.json` file contains all student data — it is yours to store and protect.
+
 ### Storage Details
 
 | Aspect | Detail |
@@ -333,7 +335,7 @@ Found a security concern?
 
 1. Open a GitHub issue with "SECURITY" in the title
 2. Describe the concern with reproduction steps
-3. Issues are prioritized with 48-hour response commitment
+3. Issues are reviewed on a best-effort basis
 
 ---
 
