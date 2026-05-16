@@ -40,7 +40,7 @@ jobs:
         uses: anchore/sbom-action@9f7302141466aa6482940f15371237e9d9f4c34a  # v0.19.0
         with:
           format: cyclonedx-json
-          output-file: sbom/class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
+          output-file: class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
           artifact-name: class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
 
       - name: Configure Git
@@ -92,7 +92,7 @@ jobs:
             Simply download and open the HTML file in any modern web browser. No internet connection required.
           files: |
             dist/class-list-builder-v${{ steps.version.outputs.version }}.html
-            sbom/class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
+            class-list-builder-v${{ steps.version.outputs.version }}.cdx.json
           draft: false
           prerelease: false
         env:
