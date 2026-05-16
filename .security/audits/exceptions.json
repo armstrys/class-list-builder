@@ -8,6 +8,7 @@
       "expires": "2027-05-16",
       "approvedBy": "Ryan Armstrong <ryan.armstrong@example.org>",
       "approvedOn": "2026-05-16"
+    },
     {
       "id": "CLB-EXC-0002",
       "summary": "ExcelJS 4.4.0 transitive CVEs in Node-only code paths",
