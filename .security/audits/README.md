@@ -16,7 +16,7 @@ presence, structural completeness, and freshness.
 5. Required sections are present (see template).
 6. `manifest-sha256` matches the current tree, recomputed by
    `.security/scripts/audit-hash.js`. **Any change to `src/`, `package*.json`,
-   `docs/SECURITY.md`, or the build entrypoints requires a fresh audit.**
+    `SECURITY.md`, or the build entrypoints requires a fresh audit.**
 7. Any exception IDs cited in the audit exist in `.security/audits/exceptions.json`
    and have not expired.
 
@@ -82,7 +82,7 @@ Current historical artifacts:
 
 - [`1.7.11.md`](1.7.11.md) — failing audit produced while the audit
   system itself was being added; surfaced F-001 / F-002 / F-003 in
-  `docs/SECURITY.md`, all closed in v2.0.0.
+  `SECURITY.md`, all closed in v2.0.0.
 
 ## Files in this directory
 

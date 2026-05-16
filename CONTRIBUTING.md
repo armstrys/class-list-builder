@@ -54,7 +54,7 @@ Every release ships with a per-version audit document at
 `.security/audits/<version>.md`. CI blocks merge to `main` if the audit is
 missing, malformed, has a status other than `pass`/`conditional-pass`,
 has unfilled sign-off, or has a content-hash that doesn't match the
-current source/deps/`docs/SECURITY.md` (i.e., the tree drifted after
+current source/deps/`SECURITY.md` (i.e., the tree drifted after
 audit).
 
 To produce an audit for a release:

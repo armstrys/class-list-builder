@@ -13,7 +13,7 @@ tier_set_by: "Ryan Armstrong"
 # Security & Privacy
 
 > The claims in this document are verified per-release by the audit
-> system in [`.security/audits/`](../.security/audits/README.md). Any discrepancy between this
+> system in [`.security/audits/`](.security/audits/README.md). Any discrepancy between this
 > file and current source code fails the release audit and blocks merge.
 
 ---

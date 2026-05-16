@@ -16,13 +16,13 @@ exceptions-cited: []
 ## Scope
 
 Single-file React SPA distributed as a standalone HTML bundle, plus its
-build pipeline and the public security claims in `docs/SECURITY.md`.
+build pipeline and the public security claims in `SECURITY.md`.
 
 Paths covered by the manifest hash:
 
 - `src/**`
 - `package.json`, `package-lock.json`
-- `docs/SECURITY.md`
+- `SECURITY.md`
 - `build-standalone.js`, `class-list-builder-source.html`,
   `scripts/validate-build.js`
 
@@ -35,12 +35,12 @@ Briefly describe what was actually done. At minimum:
 
 - `npm audit --json` reviewed; results summarized below.
 - Source tree read end-to-end with prompt-injection-hardened skill.
-- Each claim in `docs/SECURITY.md` verified against current source.
+- Each claim in `SECURITY.md` verified against current source.
 - Dist artifact (if built) spot-checked for inlined assets.
 
 ## SECURITY.md Claims Verification
 
-For each public claim in `docs/SECURITY.md`, mark Verified / Refuted /
+For each public claim in `SECURITY.md`, mark Verified / Refuted /
 N/A and cite the evidence (file:line or shell command + output).
 
 | Claim | Status | Evidence |
@@ -52,7 +52,7 @@ N/A and cite the evidence (file:line or shell command + output).
 | Deterministic seeded RNG | | |
 | FERPA: data never leaves the device | | |
 
-Any **Refuted** row blocks the release. Update `docs/SECURITY.md` to drop
+Any **Refuted** row blocks the release. Update `SECURITY.md` to drop
 the claim, fix the code, then re-audit.
 
 ## Vulnerability Findings
@@ -109,6 +109,6 @@ If none: "No accepted risks for this release."
 I have personally reviewed every finding above. The artifacts at the
 listed hashes are, to my knowledge, free of known vulnerabilities of
 severity high or above outside of declared exceptions, and the public
-claims in `docs/SECURITY.md` are accurate as of this audit date.
+claims in `SECURITY.md` are accurate as of this audit date.
 
 — Your Name, YYYY-MM-DD

@@ -7,5 +7,5 @@ Contact: https://github.com/armstrys/class-list-builder/issues
 Expires: 2027-05-16T00:00:00Z
 Preferred-Languages: en
 Canonical: https://armstrys.github.io/class-list-builder/.well-known/security.txt
-Policy: https://github.com/armstrys/class-list-builder/blob/main/docs/SECURITY.md
+Policy: https://github.com/armstrys/class-list-builder/blob/main/SECURITY.md
 Acknowledgments: https://github.com/armstrys/class-list-builder/blob/main/CONTRIBUTING.md
