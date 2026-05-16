@@ -159,7 +159,7 @@ Bob,M,78,82,false,true`;
       expect(result.students[0].sped).toBe(false);
     });
 
-    test('handles missing optional columns gracefully', () => {
+    test('handles missing optional columns gracefully with warnings', () => {
       // Arrange - CSV without some criteria columns
       const csv = `name,gender
 Alice,F
@@ -169,7 +169,9 @@ Bob,M`;
       const result = parseCSV(csv, numericCriteria, flagCriteria);
 
       // Assert
-      expect(result.errors).toHaveLength(0);
+      expect(result.errors).toHaveLength(2);
+      expect(result.errors.some(e => e.includes('Reading Score'))).toBe(true);
+      expect(result.errors.some(e => e.includes('Math Score'))).toBe(true);
       expect(result.students).toHaveLength(2);
       expect(result.students[0].readingScore).toBe(0);
       expect(result.students[0].behavior).toBe(false);
@@ -340,9 +342,9 @@ Bob,F,`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[0]).toBe('name,gender,Reading Score,Math Score,Behavior,SPED,keep_apart_group,keep_together_group,keep_out_of_class');
-      expect(lines[1]).toBe('Alice,F,85,90,1,0,,,');
-      expect(lines[2]).toBe('Bob,M,78,82,0,1,,,');
+      expect(lines[0]).toBe('name,gender,Reading Score,Math Score,Behavior,SPED');
+      expect(lines[1]).toBe('Alice,F,85,90,1,0');
+      expect(lines[2]).toBe('Bob,M,78,82,0,1');
     });
 
     test('handles students with missing fields', () => {
@@ -356,7 +358,7 @@ Bob,F,`;
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[1]).toBe('Alice,F,0,0,0,0,,,');
+      expect(lines[1]).toBe('Alice,F,0,0,0,0');
     });
 
     test('exports empty student list with headers only', () => {
@@ -369,49 +371,7 @@ Bob,F,`;
       // Assert
       const lines = csv.split('\n');
       expect(lines).toHaveLength(1);
-      expect(lines[0]).toBe('name,gender,Reading Score,Math Score,Behavior,SPED,keep_apart_group,keep_together_group,keep_out_of_class');
-    });
-
-    test('exports keep apart groups to CSV', () => {
-      // Arrange
-      const students = [
-        { id: 's1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: false, sped: false },
-        { id: 's2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: false },
-        { id: 's3', name: 'Charlie', gender: 'M', readingScore: 70, mathScore: 75, behavior: false, sped: false },
-      ];
-      const keepApart = [['s1', 's2'], ['s2', 's3']]; // s1, s2, s3 should all be in same group
-
-      // Act
-      const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart);
-
-      // Assert
-      const lines = csv.split('\n');
-      expect(lines[0]).toBe('name,gender,Reading Score,Math Score,Behavior,SPED,keep_apart_group,keep_together_group,keep_out_of_class');
-      // All three should have group 1
-      expect(lines[1]).toBe('Alice,F,85,90,0,0,1,,');
-      expect(lines[2]).toBe('Bob,M,78,82,0,0,1,,');
-      expect(lines[3]).toBe('Charlie,M,70,75,0,0,1,,');
-    });
-
-    test('exports multiple keep apart groups', () => {
-      // Arrange
-      const students = [
-        { id: 's1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: false, sped: false },
-        { id: 's2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: false },
-        { id: 's3', name: 'Charlie', gender: 'M', readingScore: 70, mathScore: 75, behavior: false, sped: false },
-        { id: 's4', name: 'Diana', gender: 'F', readingScore: 92, mathScore: 88, behavior: false, sped: false },
-      ];
-      const keepApart = [['s1', 's2'], ['s3', 's4']]; // Two separate groups
-
-      // Act
-      const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart);
-
-      // Assert
-      const lines = csv.split('\n');
-      expect(lines[1]).toBe('Alice,F,85,90,0,0,1,,');
-      expect(lines[2]).toBe('Bob,M,78,82,0,0,1,,');
-      expect(lines[3]).toBe('Charlie,M,70,75,0,0,2,,');
-      expect(lines[4]).toBe('Diana,F,92,88,0,0,2,,');
+      expect(lines[0]).toBe('name,gender,Reading Score,Math Score,Behavior,SPED');
     });
   });
 
@@ -530,259 +490,48 @@ Bob,F,`;
       expect(result.students[0].name).toBe('Doe, Alice');
     });
 
-    test('round-trip preserves keep apart groups', () => {
+    test('round-trip preserves student data', () => {
       // Arrange
       const students = [
-        { id: 's1', name: 'Alice', gender: 'F', readingScore: 85 },
-        { id: 's2', name: 'Bob', gender: 'M', readingScore: 78 },
-        { id: 's3', name: 'Charlie', gender: 'M', readingScore: 70 },
+        { id: '1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: true, sped: false },
+        { id: '2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: true },
       ];
-      const keepApart = [['s1', 's2']]; // Alice and Bob should be kept apart
-
-      // Act - export then parse
-      const csv = exportStudentsToCSV(students, [{ key: 'readingScore', label: 'Reading Score' }], [], keepApart);
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert - keepApart pairs are reconstructed from groups
-      expect(result.students).toHaveLength(3);
-      expect(result.keepApart).toHaveLength(1);
-      // The reconstructed pair should contain Alice and Bob's new IDs
-      const studentNames = result.students.reduce((acc, s) => ({ ...acc, [s.id]: s.name }), {});
-      const pairNames = result.keepApart.map(pair => [studentNames[pair[0]], studentNames[pair[1]]].sort());
-      expect(pairNames).toContainEqual(['Alice', 'Bob']);
-    });
-  });
-
-  describe('keep_apart_group parsing', () => {
-    test('parses keep_apart_group column', () => {
-      // Arrange
-      const csv = `name,gender,Reading Score,keep_apart_group
-Alice,F,85,1
-Bob,M,78,1
-Charlie,M,70,2
-Diana,F,92,2`;
 
       // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert
-      expect(result.students).toHaveLength(4);
-      expect(result.keepApart).toHaveLength(2); // C(4,2) pairs: 2 pairs within each group
-      // Should create pairs: (Alice,Bob) and (Charlie,Diana)
-      const studentIds = result.students.map(s => s.id);
-      expect(result.keepApart).toContainEqual([studentIds[0], studentIds[1]]);
-      expect(result.keepApart).toContainEqual([studentIds[2], studentIds[3]]);
-    });
-
-    test('parses keepapartgroup (no underscore) column', () => {
-      // Arrange
-      const csv = `name,gender,Reading Score,keepapartgroup
-Alice,F,85,groupA
-Bob,M,78,groupA`;
-
-      // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
+      const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria);
+      const result = parseCSV(csv, numericCriteria, flagCriteria);
 
       // Assert
       expect(result.students).toHaveLength(2);
-      expect(result.keepApart).toHaveLength(1);
-    });
-
-    test('handles empty keep_apart_group values', () => {
-      // Arrange
-      const csv = `name,gender,Reading Score,keep_apart_group
-Alice,F,85,
-Bob,M,78,1
-Charlie,M,70,`;
-
-      // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert
-      expect(result.students).toHaveLength(3);
-      expect(result.keepApart).toHaveLength(0); // Only one student in group 1
-    });
-
-    test('handles missing keep_apart_group column', () => {
-      // Arrange
-      const csv = `name,gender,Reading Score
-Alice,F,85
-Bob,M,78`;
-
-      // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert
-      expect(result.students).toHaveLength(2);
+      expect(result.students[0].name).toBe('Alice');
+      expect(result.students[0].gender).toBe('F');
+      expect(result.students[0].readingScore).toBe(85);
+      expect(result.students[0].behavior).toBe(true);
+      expect(result.students[1].name).toBe('Bob');
+      expect(result.students[1].sped).toBe(true);
+      // Constraints are no longer exported/imported via CSV
       expect(result.keepApart).toEqual([]);
-    });
-
-    test('creates all pairs within a group of 3', () => {
-      // Arrange - group of 3 should create C(3,2) = 3 pairs
-      const csv = `name,gender,Reading Score,keep_apart_group
-Alice,F,85,1
-Bob,M,78,1
-Charlie,M,70,1`;
-
-      // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert
-      expect(result.keepApart).toHaveLength(3);
-    });
-  });
-
-  describe('keep_together_group parsing', () => {
-    test('parses keep_together_group column', () => {
-      // Arrange
-      const csv = `name,gender,Reading Score,keep_together_group
-Alice,F,85,1
-Bob,M,78,1
-Charlie,M,70,2
-Diana,F,92,2`;
-
-      // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert
-      expect(result.students).toHaveLength(4);
-      expect(result.keepTogether).toHaveLength(2); // Two groups
-      // Should create groups: [Alice, Bob] and [Charlie, Diana]
-      const studentIds = result.students.map(s => s.id);
-      expect(result.keepTogether).toContainEqual([studentIds[0], studentIds[1]]);
-      expect(result.keepTogether).toContainEqual([studentIds[2], studentIds[3]]);
-    });
-
-    test('parses keeptogethergroup (no underscore) column', () => {
-      // Arrange
-      const csv = `name,gender,Reading Score,keeptogethergroup
-Alice,F,85,groupA
-Bob,M,78,groupA`;
-
-      // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert
-      expect(result.students).toHaveLength(2);
-      expect(result.keepTogether).toHaveLength(1);
-    });
-
-    test('handles empty keep_together_group values', () => {
-      // Arrange
-      const csv = `name,gender,Reading Score,keep_together_group
-Alice,F,85,
-Bob,M,78,1
-Charlie,M,70,`;
-
-      // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert
-      expect(result.students).toHaveLength(3);
-      expect(result.keepTogether).toHaveLength(0); // Only one student in group 1
-    });
-
-    test('handles missing keep_together_group column', () => {
-      // Arrange
-      const csv = `name,gender,Reading Score
-Alice,F,85
-Bob,M,78`;
-
-      // Act
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert
-      expect(result.students).toHaveLength(2);
       expect(result.keepTogether).toEqual([]);
+      expect(result.keepOutOfClass).toEqual([]);
     });
+  });
 
-    test('creates groups of size 3 correctly', () => {
-      // Arrange - group of 3
-      const csv = `name,gender,Reading Score,keep_together_group
-Alice,F,85,1
-Bob,M,78,1
-Charlie,M,70,1`;
+  describe('Unrecognized columns', () => {
+    test('warns about unrecognized columns including old constraint columns', () => {
+      // Arrange
+      const csv = `name,gender,Reading Score,keep_apart_group,keep_together_group,notes
+Alice,F,85,1,1,some note
+Bob,M,78,1,1,another note`;
 
       // Act
       const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
 
       // Assert
-      expect(result.keepTogether).toHaveLength(1);
-      expect(result.keepTogether[0]).toHaveLength(3);
-    });
-  });
-
-  describe('keep_together_group export', () => {
-    test('exports keep together groups to CSV', () => {
-      // Arrange
-      const students = [
-        { id: 's1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: false, sped: false },
-        { id: 's2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: false },
-        { id: 's3', name: 'Charlie', gender: 'M', readingScore: 70, mathScore: 75, behavior: false, sped: false },
-      ];
-      const keepTogether = [['s1', 's2']]; // Alice and Bob should be kept together
-
-      // Act
-      const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, [], keepTogether);
-
-      // Assert
-      const lines = csv.split('\n');
-      expect(lines[0]).toBe('name,gender,Reading Score,Math Score,Behavior,SPED,keep_apart_group,keep_together_group,keep_out_of_class');
-      // Alice and Bob should have group 1, Charlie should have no group
-      expect(lines[1]).toBe('Alice,F,85,90,0,0,,1,');
-      expect(lines[2]).toBe('Bob,M,78,82,0,0,,1,');
-      expect(lines[3]).toBe('Charlie,M,70,75,0,0,,,');
-    });
-
-    test('exports multiple keep together groups', () => {
-      // Arrange
-      const students = [
-        { id: 's1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: false, sped: false },
-        { id: 's2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: false },
-        { id: 's3', name: 'Charlie', gender: 'M', readingScore: 70, mathScore: 75, behavior: false, sped: false },
-        { id: 's4', name: 'Diana', gender: 'F', readingScore: 92, mathScore: 88, behavior: false, sped: false },
-      ];
-      const keepTogether = [['s1', 's2'], ['s3', 's4']]; // Two separate groups
-
-      // Act
-      const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, [], keepTogether);
-
-      // Assert
-      const lines = csv.split('\n');
-      expect(lines[1]).toBe('Alice,F,85,90,0,0,,1,');
-      expect(lines[2]).toBe('Bob,M,78,82,0,0,,1,');
-      expect(lines[3]).toBe('Charlie,M,70,75,0,0,,2,');
-      expect(lines[4]).toBe('Diana,F,92,88,0,0,,2,');
-    });
-  });
-
-  describe('Combined constraints round-trip', () => {
-    test('round-trip preserves both constraint types', () => {
-      // Arrange
-      const students = [
-        { id: 's1', name: 'Alice', gender: 'F', readingScore: 85 },
-        { id: 's2', name: 'Bob', gender: 'M', readingScore: 78 },
-        { id: 's3', name: 'Charlie', gender: 'M', readingScore: 70 },
-        { id: 's4', name: 'Diana', gender: 'F', readingScore: 92 },
-      ];
-      const keepApart = [['s1', 's3']]; // Alice and Charlie apart
-      const keepTogether = [['s1', 's2']]; // Alice and Bob together
-
-      // Act - export then parse
-      const csv = exportStudentsToCSV(students, [{ key: 'readingScore', label: 'Reading Score' }], [], keepApart, keepTogether);
-      const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
-
-      // Assert - students reconstructed
-      expect(result.students).toHaveLength(4);
-
-      // Check keepApart - Alice and Charlie should be apart
-      const studentNames = result.students.reduce((acc, s) => ({ ...acc, [s.id]: s.name }), {});
-      const apartNames = result.keepApart.map(pair => [studentNames[pair[0]], studentNames[pair[1]]].sort());
-      expect(apartNames).toContainEqual(['Alice', 'Charlie']);
-
-      // Check keepTogether - Alice and Bob should be together
-      const togetherNames = result.keepTogether.map(group => group.map(id => studentNames[id]).sort());
-      expect(togetherNames).toContainEqual(['Alice', 'Bob']);
+      expect(result.students).toHaveLength(2);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toContain('keep_apart_group');
+      expect(result.errors[0]).toContain('keep_together_group');
+      expect(result.errors[0]).toContain('notes');
     });
   });
 });

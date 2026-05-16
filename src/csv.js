@@ -45,6 +45,54 @@ function parseCSVLine(line) {
   return fields;
 }
 
+function parseStudentRow(cols, i, ctx, errors) {
+  const { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, numericCriteria, flagCriteria } = ctx;
+  const name = nameIdx !== -1 ? (cols[nameIdx] || `Student ${i + 2}`) : `Student ${i + 2}`;
+  const genderVal = genderIdx !== -1 ? (cols[genderIdx] || '').toUpperCase() : '';
+  const gender = genderVal.startsWith('F') ? 'F' : genderVal.startsWith('M') ? 'M' : 'U';
+
+  let studentId;
+  if (idIdx !== -1 && cols[idIdx]?.trim()) {
+    studentId = cols[idIdx].trim();
+  } else {
+    const generateId = typeof uid !== 'undefined' ? uid : _uid;
+    studentId = generateId();
+  }
+  const student = { id: studentId, name, gender };
+
+  numericCriteria.forEach(({ key }) => {
+    const idx = numericKeyMap[key];
+    if (idx !== undefined) {
+      const rawValue = cols[idx];
+      if (rawValue === undefined || rawValue.trim() === '') {
+        student[key] = 0;
+      } else {
+        const parsed = parseFloat(rawValue);
+        if (isNaN(parsed)) {
+          errors.push(`Row ${i + 2}: Invalid ${key} value "${rawValue}" for student "${name}"`);
+          student[key] = 0;
+        } else {
+          student[key] = parsed;
+        }
+      }
+    } else {
+      student[key] = 0;
+    }
+  });
+
+  flagCriteria.forEach(({ key }) => {
+    const idx = flagKeyMap[key];
+    if (idx !== undefined) {
+      const v = (cols[idx] || '').toLowerCase();
+      student[key] = ['1','true','yes','y','x'].includes(v);
+    } else {
+      student[key] = false;
+    }
+  });
+
+  return student;
+}
+
 function parseCSV(text, numericCriteria, flagCriteria) {
   // Normalize CRLF and bare CR to LF
   const normalized = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -52,16 +100,13 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   if (lines.length < 2) return { students: [], errors: ['No data rows found'], keepApart: [], keepTogether: [], keepOutOfClass: [] };
 
   // Normalize headers: lowercase, strip spaces
-  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, ''));
+  const rawHeaders = parseCSVLine(lines[0]);
+  const headers = rawHeaders.map(h => h.toLowerCase().replace(/\s+/g, ''));
 
   const students = [];
   const errors = [];
-  const keepApartGroups = {}; // groupId -> array of student indices
-  const keepTogetherGroups = {}; // groupId -> array of student indices
-  const keepOutOfClassConstraints = []; // Array<{studentId, classIndex}>
 
   // Build mapping from criteria keys to CSV column indices
-  // Match by normalized label (lowercase, no spaces) since CSV headers use labels
   const numericKeyMap = {};
   const flagKeyMap = {};
 
@@ -77,186 +122,57 @@ function parseCSV(text, numericCriteria, flagCriteria) {
     if (idx !== -1) flagKeyMap[key] = idx;
   });
 
-  // Find name, gender, id, and keep constraint columns
+  // Find name, gender, id columns
   const nameIdx = headers.findIndex(h => ['name','student','lastnamefirstname'].includes(h));
   const genderIdx = headers.findIndex(h => ['gender','sex'].includes(h));
   const idIdx = headers.findIndex(h => h === 'id' || h === 'studentid' || h === 'student_id');
-  const keepApartIdx = headers.findIndex(h => h === 'keepapartgroup' || h === 'keep_apart_group');
-  const keepTogetherIdx = headers.findIndex(h => h === 'keeptogethergroup' || h === 'keep_together_group');
-  const keepOutOfClassIdx = headers.findIndex(h => h === 'keepoutofclass' || h === 'keep_out_of_class');
 
   if (nameIdx === -1) errors.push('Could not find a name column (expected: name, student)');
   if (genderIdx === -1) errors.push('Could not find a gender column (expected: gender, sex)');
 
+  // Warn about missing expected columns
+  const missingNumeric = numericCriteria.filter(({ key }) => numericKeyMap[key] === undefined);
+  const missingFlags = flagCriteria.filter(({ key }) => flagKeyMap[key] === undefined);
+  if (missingNumeric.length > 0) {
+    errors.push(`Missing columns (will use 0): ${missingNumeric.map(c => c.label).join(', ')}`);
+  }
+  if (missingFlags.length > 0) {
+    errors.push(`Missing columns (will use false): ${missingFlags.map(c => c.label).join(', ')}`);
+  }
+
+  // Warn about unrecognized columns
+  const expectedHeaders = new Set([
+    'name', 'student', 'lastnamefirstname',
+    'gender', 'sex',
+    'id', 'studentid', 'student_id',
+    ...numericCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, '')),
+    ...flagCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, ''))
+  ]);
+  const unrecognized = headers
+    .map((h, i) => ({ normalized: h, raw: rawHeaders[i] }))
+    .filter(({ normalized }) => normalized && !expectedHeaders.has(normalized));
+  if (unrecognized.length > 0) {
+    errors.push(`Unrecognized columns (ignored): ${unrecognized.map(({ raw }) => raw).join(', ')}`);
+  }
+
   lines.slice(1).forEach((line, i) => {
     if (!line.trim()) return;
     const cols = parseCSVLine(line);
-
-    const name = nameIdx !== -1 ? (cols[nameIdx] || `Student ${i + 2}`) : `Student ${i + 2}`;
-    const genderVal = genderIdx !== -1 ? (cols[genderIdx] || '').toUpperCase() : '';
-    const gender = genderVal.startsWith('F') ? 'F' : genderVal.startsWith('M') ? 'M' : 'U';
-
-    // Use provided ID if available, otherwise generate one
-    let studentId;
-    if (idIdx !== -1 && cols[idIdx]?.trim()) {
-      studentId = cols[idIdx].trim();
-    } else {
-      // Use global uid if available (browser), otherwise use local _uid (Node.js tests)
-      const generateId = typeof uid !== 'undefined' ? uid : _uid;
-      studentId = generateId();
-    }
-    const student = { id: studentId, name, gender };
-
-    numericCriteria.forEach(({ key }) => {
-      const idx = numericKeyMap[key];
-      if (idx !== undefined) {
-        const rawValue = cols[idx];
-        if (rawValue === undefined || rawValue.trim() === '') {
-          // Blank value - treat as missing (skip)
-          student[key] = 0;
-        } else {
-          const parsed = parseFloat(rawValue);
-          if (isNaN(parsed)) {
-            // Invalid numeric value - flag as error
-            errors.push(`Row ${i + 2}: Invalid ${key} value "${rawValue}" for student "${name}"`);
-            student[key] = 0;
-          } else {
-            student[key] = parsed;
-          }
-        }
-      } else {
-        student[key] = 0;
-      }
-    });
-
-    flagCriteria.forEach(({ key }) => {
-      const idx = flagKeyMap[key];
-      if (idx !== undefined) {
-        const v = (cols[idx] || '').toLowerCase();
-        student[key] = ['1','true','yes','y','x'].includes(v);
-      } else {
-        student[key] = false;
-      }
-    });
-
-    // Track keep apart groups
-    if (keepApartIdx !== -1) {
-      const groupId = cols[keepApartIdx]?.trim();
-      if (groupId) {
-        if (!keepApartGroups[groupId]) keepApartGroups[groupId] = [];
-        keepApartGroups[groupId].push(student.id);
-      }
-    }
-
-    // Track keep together groups
-    if (keepTogetherIdx !== -1) {
-      const groupId = cols[keepTogetherIdx]?.trim();
-      if (groupId) {
-        if (!keepTogetherGroups[groupId]) keepTogetherGroups[groupId] = [];
-        keepTogetherGroups[groupId].push(student.id);
-      }
-    }
-
-    // Track keep out of class constraints
-    if (keepOutOfClassIdx !== -1) {
-      const classIndicesStr = cols[keepOutOfClassIdx]?.trim();
-      if (classIndicesStr) {
-        // Parse comma-separated class indices (e.g., "0,2" or "1")
-        const classIndices = classIndicesStr
-          .split(',')
-          .map(s => parseInt(s.trim(), 10))
-          .filter(n => !isNaN(n) && n >= 0);
-        classIndices.forEach(classIndex => {
-          keepOutOfClassConstraints.push({ studentId: student.id, classIndex });
-        });
-      }
-    }
-
-    students.push(student);
+    const ctx = { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, numericCriteria, flagCriteria };
+    students.push(parseStudentRow(cols, i, ctx, errors));
   });
 
-  // Build keepApart pairs from groups
-  const keepApart = [];
-  Object.values(keepApartGroups).forEach(group => {
-    // Create all pairs within the group
-    for (let i = 0; i < group.length; i++) {
-      for (let j = i + 1; j < group.length; j++) {
-        keepApart.push([group[i], group[j]]);
-      }
-    }
-  });
-
-  // Build keepTogether groups array
-  const keepTogether = Object.values(keepTogetherGroups).filter(group => group.length >= 2);
-
-  // Keep out of class constraints are already in the correct format
-  const keepOutOfClass = keepOutOfClassConstraints;
-
-  return { students, errors, keepApart, keepTogether, keepOutOfClass };
+  return { students, errors, keepApart: [], keepTogether: [], keepOutOfClass: [] };
 }
 
-function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
-  const headers = ['name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label), 'keep_apart_group', 'keep_together_group', 'keep_out_of_class'];
+function exportStudentsToCSV(students, numericCriteria, flagCriteria) {
+  const headers = ['name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label)];
   const lines = [headers.join(',')];
 
-  // Build a map of student ID to keep-apart group number
-  const studentApartMap = new Map();
-  const apartMap = new Map();
-  let nextApartNum = 1;
-  keepApart.forEach(([id1, id2]) => {
-    const group1 = studentApartMap.get(id1);
-    const group2 = studentApartMap.get(id2);
-    if (group1 && group2 && group1 !== group2) {
-      // Merge groups - use the lower number
-      const targetGroup = Math.min(group1, group2);
-      const sourceGroup = Math.max(group1, group2);
-      // Update all students in source group to target group
-      apartMap.get(sourceGroup).forEach(id => studentApartMap.set(id, targetGroup));
-      apartMap.get(targetGroup).push(...apartMap.get(sourceGroup));
-      apartMap.delete(sourceGroup);
-    } else if (group1) {
-      studentApartMap.set(id2, group1);
-      apartMap.get(group1).push(id2);
-    } else if (group2) {
-      studentApartMap.set(id1, group2);
-      apartMap.get(group2).push(id1);
-    } else {
-      // New group
-      studentApartMap.set(id1, nextApartNum);
-      studentApartMap.set(id2, nextApartNum);
-      apartMap.set(nextApartNum, [id1, id2]);
-      nextApartNum++;
-    }
-  });
-
-  // Build a map of student ID to keep-together group number
-  const studentTogetherMap = new Map();
-  let nextTogetherNum = 1;
-  keepTogether.forEach(group => {
-    group.forEach(id => studentTogetherMap.set(id, nextTogetherNum));
-    nextTogetherNum++;
-  });
-
-  // Build a map of student ID to comma-separated class indices for keep out of class
-  const studentOutOfClassMap = new Map();
-  keepOutOfClass.forEach(({ studentId, classIndex }) => {
-    if (!studentOutOfClassMap.has(studentId)) {
-      studentOutOfClassMap.set(studentId, []);
-    }
-    studentOutOfClassMap.get(studentId).push(classIndex);
-  });
-
   students.forEach(s => {
-    const apartNum = studentApartMap.get(s.id);
-    const togetherNum = studentTogetherMap.get(s.id);
-    const outOfClassList = studentOutOfClassMap.get(s.id);
-    const outOfClassStr = outOfClassList ? outOfClassList.sort((a, b) => a - b).join(',') : '';
     const values = [s.name, s.gender];
     numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
     flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
-    values.push(apartNum || '');
-    values.push(togetherNum || '');
-    values.push(outOfClassStr);
     lines.push(values.map(escapeCSVValue).join(','));
   });
 
