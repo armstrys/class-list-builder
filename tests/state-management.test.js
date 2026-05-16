@@ -9,10 +9,6 @@ describe('State Management - replaceAllStudents', () => {
   /**
    * Simulates the replaceAllStudents function from StudentsContext
    */
-
-  /**
-   * Simulates the replaceAllStudents function from StudentsContext
-   */
   function replaceAllStudents(newStudents) {
     return {
       students: newStudents,

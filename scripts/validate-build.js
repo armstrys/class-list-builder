@@ -8,12 +8,18 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const acorn = require('acorn');
 const acornJsx = require('acorn-jsx');
 
 const Parser = acorn.Parser.extend(acornJsx());
 
-const file = process.argv[2] || 'dist/class-list-builder-v1.5.0.html';
+function defaultBuildPath() {
+  const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
+  return `dist/class-list-builder-v${pkg.version}.html`;
+}
+
+const file = process.argv[2] || defaultBuildPath();
 
 if (!fs.existsSync(file)) {
   console.error(`File not found: ${file}`);

@@ -1,6 +1,6 @@
 # Security & Privacy
 
-**Version:** 1.6.0 | **Last Updated:** April 30, 2026
+**Version:** 1.7.10 | **Last Updated:** May 16, 2026
 
 ---
 
