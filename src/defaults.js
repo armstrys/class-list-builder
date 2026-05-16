@@ -1,7 +1,7 @@
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 // App version for save/load compatibility checking
-const APP_VERSION = "1.7.6";
+const APP_VERSION = "1.7.7";
 
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'englishlanguageartsscore', label: 'English Language Arts Score', short: 'ELA', weight: 1.0 },
