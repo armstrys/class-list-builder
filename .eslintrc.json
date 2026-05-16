@@ -26,6 +26,8 @@
     "useRef": "readonly",
     "useMemo": "readonly",
     "useCallback": "readonly",
+    "useId": "readonly",
+    "ExcelJS": "readonly",
     "optimize": "readonly",
     "computeCost": "readonly",
     "exportStudentsToCSV": "readonly",

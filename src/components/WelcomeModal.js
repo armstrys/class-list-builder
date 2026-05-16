@@ -140,7 +140,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
           <ol className="quickstart-list">
             <li>Configure your criteria in <strong>Settings</strong> (top right)</li>
             <li>Set up your classes in the <strong>Teachers / Classes</strong> panel</li>
-            <li>Import your students via <strong>Import CSV</strong> or add them manually</li>
+            <li>Import your students via <strong>Import Students</strong> or add them manually</li>
             <li>Click <strong>Optimize Classes</strong> to generate balanced lists</li>
           </ol>
         </div>

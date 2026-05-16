@@ -1,0 +1,4 @@
+{
+  "$schema-comment": "Each exception must have id, summary, rationale, expires (YYYY-MM-DD), approvedBy, approvedOn. Audits cite IDs in 'Accepted Risks'. Expired entries fail CI.",
+  "exceptions": []
+}

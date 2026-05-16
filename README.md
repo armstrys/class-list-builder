@@ -196,6 +196,10 @@ Project files are JSON format and contain all student data. Store them securely.
 **For IT Administrators & Security Teams:**  
 See [docs/SECURITY.md](docs/SECURITY.md) for pre-deployment verification, security audit procedures, deployment recommendations, and compliance information.
 
+Every release ships with a per-version audit at [`audits/<version>.md`](audits/) that verifies the claims in `docs/SECURITY.md` against the actual source. CI blocks merge if the audit is missing, stale, or unresolved.
+
+The agent skill at `.claude/skills/security-audit/SKILL.md` provides auditable instructions that you can use with an LLM to do your own quick verification prior to a full human audit.
+
 ---
 
 ## System Requirements

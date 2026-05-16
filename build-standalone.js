@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const zlib = require('zlib');
+const crypto = require('crypto');
 
 const SOURCE_FILE = 'class-list-builder-source.html';
 const OUTPUT_DIR = 'dist';
@@ -152,12 +153,54 @@ function analyzeSourceFiles() {
   return files;
 }
 
-// CDN resources to inline
+// Extract Subresource Integrity hashes pinned in the source HTML.
+// Returns Map<url, "sha384-BASE64..."> for every <script>/<link> that
+// carries an integrity= attribute. Used to verify fetched bytes match
+// what the source-version users would get under browser SRI.
+function extractIntegrityMap(html) {
+  const map = new Map();
+  const tagRe = /<(?:script|link)\b[^>]*>/gi;
+  for (const m of html.matchAll(tagRe)) {
+    const tag = m[0];
+    const urlMatch = tag.match(/(?:src|href)="([^"]+)"/i);
+    const integrityMatch = tag.match(/integrity="([^"]+)"/i);
+    if (urlMatch && integrityMatch) {
+      map.set(urlMatch[1], integrityMatch[1]);
+    }
+  }
+  return map;
+}
+
+// Verify a fetched buffer against a pinned SRI value of the form
+// "sha384-<base64>" (optionally space-separated alternatives, per the
+// SRI spec). Throws on mismatch so the build fails closed.
+function verifyIntegrity(buffer, integrity, url) {
+  const algos = integrity.trim().split(/\s+/);
+  const tried = [];
+  for (const entry of algos) {
+    const m = entry.match(/^(sha256|sha384|sha512)-(.+)$/);
+    if (!m) continue;
+    const [, alg, expected] = m;
+    const actual = crypto.createHash(alg).update(buffer).digest('base64');
+    tried.push(`${alg}-${actual}`);
+    if (actual === expected) return alg;
+  }
+  throw new Error(
+    `Subresource Integrity check failed for ${url}.\n` +
+    `  Expected: ${integrity}\n` +
+    `  Actual:   ${tried.join(' ') || '(no recognized algorithm in pinned value)'}`,
+  );
+}
+
+// CDN resources to inline. Every external <script>/<link> in
+// class-list-builder-source.html must appear here so the release artifact
+// is fully self-contained and the release CSP can keep script-src to 'self'.
 const RESOURCES = {
   'https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap': { type: 'css' },
   'https://unpkg.com/react@18.3.1/umd/react.production.min.js': { type: 'js' },
   'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js': { type: 'js' },
   'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js': { type: 'js' },
+  'https://unpkg.com/exceljs@4.4.0/dist/exceljs.min.js': { type: 'js' },
 };
 
 // Inline local <link rel="stylesheet" href="src/..."> tags
@@ -174,6 +217,33 @@ function inlineLocalStyles(html) {
     console.log(`  Inlined local CSS: ${href}`);
     return `<style>/* Inlined from ${href} */\n${content}</style>`;
   });
+}
+
+// Replace the development CSP meta with the release CSP. The release artifact
+// is consumed in two channels (downloaded file and GitHub Pages); both ship
+// the same CSP so SECURITY.md's claims hold for either. Every external
+// dependency is inlined by this build, so script-src is locked to 'self'.
+// 'unsafe-eval' is required for Babel-standalone's JSX transpilation.
+const RELEASE_CSP =
+  "default-src 'self' data: 'unsafe-inline'; " +
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+  "style-src 'self' 'unsafe-inline' data:; " +
+  "font-src 'self' data:; " +
+  "img-src 'self' data:; " +
+  "connect-src 'none'; " +
+  "base-uri 'none'; " +
+  "form-action 'none';";
+
+function applyReleaseCsp(html) {
+  const re = /<meta\b[^>]*http-equiv="Content-Security-Policy"[^>]*>/i;
+  const tag = `<meta http-equiv="Content-Security-Policy" content="${RELEASE_CSP}">`;
+  if (!re.test(html)) {
+    throw new Error(
+      'Source HTML is missing a Content-Security-Policy meta tag; the release build expects one to replace. ' +
+      'Re-add the dev CSP block in class-list-builder-source.html (see audits/2.0.0.md F-003).',
+    );
+  }
+  return html.replace(re, tag);
 }
 
 // Concatenate local <script type="text/babel" src="src/..."> tags into one inline block
@@ -284,6 +354,18 @@ async function build() {
     console.log(`\n📄 Reading source file: ${SOURCE_FILE}`);
     let html = fs.readFileSync(SOURCE_FILE, 'utf8');
 
+    // Capture the SRI hashes pinned in the source HTML *before* we
+    // strip the external tags. These are what we verify each fetched
+    // dependency against below.
+    const integrityMap = extractIntegrityMap(html);
+
+    // Swap the dev CSP for the release CSP. The dev CSP must permit
+    // unpkg.com (React/ReactDOM/Babel/ExcelJS) and Google Fonts; the
+    // release CSP locks script-src to 'self' (every dependency is
+    // inlined below) and connect-src to 'none'.
+    console.log('\n🔒 Applying release Content-Security-Policy…');
+    html = applyReleaseCsp(html);
+
     // Inline local sources (CSS + JS) before fetching CDN resources
     console.log('\n📝 Inlining local source files…');
     html = inlineLocalStyles(html);
@@ -293,7 +375,25 @@ async function build() {
     console.log('\n🌐 Fetching CDN resources…');
     for (const [url, info] of Object.entries(RESOURCES)) {
       try {
-        let contentBuffer = await fetchUrl(url);
+        const contentBuffer = await fetchUrl(url);
+
+        // Verify fetched bytes against the SRI hash pinned in the
+        // source HTML. The Google Fonts stylesheet has no SRI (CSS
+        // imports font files via further URLs we inline separately),
+        // so we require SRI only for the JS dependencies, which match
+        // the source-version <script integrity=...> tags exactly.
+        const pinned = integrityMap.get(url);
+        if (info.type === 'js') {
+          if (!pinned) {
+            throw new Error(
+              `No Subresource Integrity hash pinned in ${SOURCE_FILE} for ${url}. ` +
+              `Add an integrity="sha384-…" attribute to the matching <script> tag, ` +
+              `or remove the URL from RESOURCES if it should not be inlined.`,
+            );
+          }
+          const alg = verifyIntegrity(contentBuffer, pinned, url);
+          console.log(`  🔐 SRI ${alg} verified: ${url.split('/').pop()}`);
+        }
 
         // For Google Fonts, also inline the font files
         let textContent;
@@ -311,7 +411,7 @@ async function build() {
         if (info.type === 'css') {
           inlineTag = `<style>/* Inlined from ${url} */\n${textContent}</style>`;
         } else {
-          inlineTag = `<script>/* Inlined from ${url} */\n${textContent}<\/script>`;
+          inlineTag = `<script>/* Inlined from ${url} */\n${textContent}</script>`;
         }
 
         // Replace the external reference with inline content.

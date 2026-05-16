@@ -1,3 +1,50 @@
+// Convert the first worksheet of an xlsx/xls ArrayBuffer to CSV text using
+// ExcelJS (bundled). ExcelJS exposes itself as the global `ExcelJS`.
+//
+// For merged cells, only the master cell's value is emitted; slaves emit
+// empty so the CSV stays aligned to the underlying grid. This matches
+// SheetJS's sheet_to_csv behavior and prevents a merged title row from
+// becoming N identical header columns.
+function _formatCellValue(v) {
+  if (v === null || v === undefined) return '';
+  if (v instanceof Date) return v.toISOString();
+  if (typeof v === 'object') {
+    if ('text' in v) return String(v.text);
+    if ('result' in v) return String(v.result);
+    if ('richText' in v) return v.richText.map((rt) => rt.text).join('');
+    if ('hyperlink' in v) return String(v.text || v.hyperlink);
+    return String(v);
+  }
+  return String(v);
+}
+
+async function xlsxBufferToCsv(buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return '';
+
+  const lines = [];
+  sheet.eachRow({ includeEmpty: false }, (row) => {
+    const cells = [];
+    let maxCol = 0;
+    row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+      if (colNumber > maxCol) maxCol = colNumber;
+      // Only emit the master cell's value for merged ranges; slaves are blank.
+      if (cell.isMerged && cell.master && cell.master !== cell) {
+        cells[colNumber - 1] = '';
+      } else {
+        cells[colNumber - 1] = _formatCellValue(cell.value);
+      }
+    });
+    for (let i = 0; i < maxCol; i++) {
+      if (cells[i] === undefined) cells[i] = '';
+    }
+    lines.push(cells.map(escapeCSVValue).join(','));
+  });
+  return lines.join('\n');
+}
+
 function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, students, onClearAll }) {
   const [text, setText] = useState('');
   const [error, setError] = useState('');
@@ -21,22 +68,17 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
     setFileName(file.name);
     
     const reader = new FileReader();
-    
-    reader.onload = (e) => {
+
+    reader.onload = async (e) => {
       try {
         let csvText = '';
-        
+
         if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-          // Parse Excel file
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          csvText = XLSX.utils.sheet_to_csv(firstSheet);
+          csvText = await xlsxBufferToCsv(e.target.result);
         } else {
-          // CSV file
           csvText = e.target.result;
         }
-        
+
         setText(csvText);
         generatePreview(csvText);
       } catch (err) {

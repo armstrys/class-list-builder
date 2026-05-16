@@ -42,27 +42,6 @@ function createMixedRangeStudents(count, options = {}) {
 }
 
 /**
- * Creates students with uniform score ranges for comparison
- */
-function createUniformRangeStudents(count, options = {}) {
-  const students = [];
-  for (let i = 0; i < count; i++) {
-    students.push({
-      id: uid(),
-      name: `Student ${i + 1}`,
-      gender: options.gender || (i % 2 === 0 ? 'F' : 'M'),
-      readingScore: options.readingScore ?? 50 + (i * 5) % 50,
-      mathScore: options.mathScore ?? 40 + (i * 7) % 50,
-      languageScore: options.languageScore ?? 60 + (i * 3) % 40,
-      behavior: options.behavior ?? false,
-      extendedLearning: options.extendedLearning ?? false,
-      sped: options.sped ?? false,
-    });
-  }
-  return students;
-}
-
-/**
  * Creates students with decimal score values
  */
 function createDecimalScoreStudents(count) {
@@ -514,7 +493,6 @@ Bob,M,200,2800,2750,true,false`;
   describe('Balance Quality with Mixed Ranges', () => {
     test('balance improves across multiple runs', () => {
       // Arrange
-      const students = createMixedRangeStudents(24);
       const numClasses = 3;
 
       // Create multiple assignments and compare costs

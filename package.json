@@ -1,6 +1,6 @@
 {
   "name": "class-list-builder",
-  "version": "1.7.11",
+  "version": "2.0.0",
   "description": "A tool for optimizing class list distributions",
   "scripts": {
     "build": "node build-standalone.js",
@@ -11,7 +11,9 @@
     "lint": "eslint src/ tests/ --ext .js",
     "lint:fix": "eslint src/ tests/ --ext .js --fix",
     "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\" \"*.js\" \"*.json\"",
-    "format:check": "prettier --check \"src/**/*.js\" \"tests/**/*.js\" \"*.js\" \"*.json\""
+    "format:check": "prettier --check \"src/**/*.js\" \"tests/**/*.js\" \"*.js\" \"*.json\"",
+    "audit:hash": "node scripts/audit-hash.js",
+    "audit:verify": "node scripts/verify-audit.js"
   },
   "devDependencies": {
     "@rolldown/binding-linux-x64-gnu": "^1.0.0-rc.18",

@@ -33,7 +33,7 @@ function Modal({
   const overlayRef = useRef(null);
   const modalRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
-  const titleId = useMemo(() => `modal-title-${Math.random().toString(36).slice(2, 11)}`, []);
+  const titleId = `modal-title-${useId()}`;
 
   // Size-based max widths
   const sizeStyles = {

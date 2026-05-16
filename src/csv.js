@@ -3,12 +3,15 @@ function _uid() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-// Escape CSV field value per RFC 4180
-// Fields containing commas, quotes, or newlines must be quoted
-// Quotes inside quoted fields are escaped by doubling them
+// Escape CSV field value per RFC 4180 and defuse spreadsheet formula injection.
+// Cells whose first character is =, +, -, @, tab, or CR are prefixed with a
+// single quote so that Excel/LibreOffice treat them as text on import. See
+// audits/2.0.0.md F-005.
 function escapeCSVValue(value) {
-  const str = String(value ?? '');
-  // Check if escaping is needed: comma, double quote, carriage return, or newline
+  let str = String(value ?? '');
+  if (str.length > 0 && /^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
   if (/[",\r\n]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }

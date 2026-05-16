@@ -48,6 +48,23 @@ describe('CSV', () => {
     test('handles complex combinations', () => {
       expect(escapeCSVValue('O\'Brien, Jr. "Nick"')).toBe('"O\'Brien, Jr. ""Nick"""');
     });
+
+    test('defuses spreadsheet formula injection by prefixing a single quote', () => {
+      // Plain formula chars get prefixed; RFC 4180 quoting only fires if
+      // the result contains comma / double-quote / CR / LF.
+      expect(escapeCSVValue('=cmd|/c calc')).toBe(`'=cmd|/c calc`);
+      expect(escapeCSVValue('=SUM(A1:A10)')).toBe(`'=SUM(A1:A10)`);
+      expect(escapeCSVValue('+1234')).toBe(`'+1234`);
+      expect(escapeCSVValue('-1234')).toBe(`'-1234`);
+      expect(escapeCSVValue('\tleading-tab')).toBe(`'\tleading-tab`);
+      // Prefix + then content has a CR -> RFC quoting also fires
+      expect(escapeCSVValue('\rleading-cr')).toBe(`"'\rleading-cr"`);
+      // Prefix + content with embedded double-quote -> doubled and wrapped
+      expect(escapeCSVValue('@import("evil")')).toBe(`"'@import(""evil"")"`);
+      // Mid-string formula chars are untouched
+      expect(escapeCSVValue('Smith-Jones')).toBe('Smith-Jones');
+      expect(escapeCSVValue('Year 7+8')).toBe('Year 7+8');
+    });
   });
 
   describe('generateCSVHeaders', () => {
