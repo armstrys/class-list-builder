@@ -145,7 +145,7 @@ function SetupPage({ onOptimize }) {
               <span className="tag">{students.length}</span>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
-                  ⬆ Import CSV
+                  ⬆ Import Students
                 </button>
                 {students.length > 0 && (
                   <button className="btn btn-secondary btn-sm" onClick={saveStudentsCSV}>

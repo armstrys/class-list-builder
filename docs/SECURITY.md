@@ -1,6 +1,8 @@
 # Security & Privacy
 
-**Version:** 1.7.10 | **Last Updated:** May 16, 2026
+> The claims in this document are verified per-release by the audit
+> system in [`audits/`](../audits/README.md). Any discrepancy between this
+> file and current source code fails the release audit and blocks merge.
 
 ---
 
@@ -76,13 +78,37 @@ This tool functions as a **local educational tool** under FERPA. It processes st
 
 | Phase | Release Version | Source Version |
 |-------|-----------------|----------------|
-| Initial Load | **None** — all resources inlined | Loads React, Babel from unpkg CDN |
-| Runtime | **Zero** network activity | **Zero** network activity |
-| Data Import | Local file processing only | Local file processing only |
+| Initial Load | **None** — all resources inlined | Loads React, ReactDOM, Babel, and ExcelJS from unpkg; fonts from Google. All with Subresource Integrity. |
+| Runtime | **Zero** network activity. CSP `connect-src 'none'` enforces this. | **Zero** network activity. |
+| Data Import | Local file processing only (CSV and XLSX) | Local file processing only (CSV and XLSX) |
 | Optimization | Browser-local computation | Browser-local computation |
 | Export | Local download | Local download |
 
 **Release version recommended** for production use with real student data.
+
+### Content Security Policy
+
+Both the downloadable release artifact and the GitHub Pages deployment ship the
+same CSP, applied by `build-standalone.js`:
+
+```
+default-src 'self' data: 'unsafe-inline';
+script-src  'self' 'unsafe-inline' 'unsafe-eval';
+style-src   'self' 'unsafe-inline' data:;
+font-src    'self' data:;
+img-src     'self' data:;
+connect-src 'none';
+base-uri    'none';
+form-action 'none';
+```
+
+- `'unsafe-eval'` is required because Babel-standalone transpiles JSX in the
+  browser via `eval`. This is a deliberate tradeoff of the single-file build.
+- `connect-src 'none'` prevents `fetch` / `XMLHttpRequest` / `WebSocket` /
+  `EventSource` from running at any point after page load.
+- `script-src 'self'` — no external script origins are permitted. Every
+  dependency (React, ReactDOM, Babel, ExcelJS, fonts) is bundled into the
+  release artifact at build time.
 
 ---
 
@@ -149,16 +175,33 @@ sudo tcpdump -i any -n 'tcp port 443' -w classlist.pcap
 ## Dependencies
 
 ### Release Version (Production)
-**All dependencies are inlined** — zero external network dependencies:
-- ✅ Works on air-gapped networks
-- ✅ No CDN reliance
+
+| Dependency | Source | Status in Release |
+|------------|--------|-------------------|
+| React 18.3.1 | unpkg | **Inlined** |
+| ReactDOM 18.3.1 | unpkg | **Inlined** |
+| Babel Standalone 7.29.0 | unpkg | **Inlined** |
+| ExcelJS 4.4.0 | unpkg | **Inlined** |
+| DM Sans / DM Mono fonts | Google Fonts | **Inlined** (CSS + font files as data: URIs) |
+
+- ✅ Works on air-gapped networks (every dependency is bundled)
+- ✅ No CDN reliance at runtime
 - ✅ File hash verifiable
+- ✅ Subresource Integrity is pinned in the source HTML; the release build
+  verifies the same hashes as it fetches and inlines each dependency
 
 ### Source Version (Development)
-Loads from unpkg CDN with Subresource Integrity (SRI) hashes:
-- React 18.3.1
-- ReactDOM 18.3.1  
-- Babel Standalone 7.29.0
+
+Loads from public CDNs with Subresource Integrity (SRI) on every script:
+- React 18.3.1 (unpkg)
+- ReactDOM 18.3.1 (unpkg)
+- Babel Standalone 7.29.0 (unpkg)
+- ExcelJS 4.4.0 (unpkg)
+- DM Sans / DM Mono (Google Fonts CSS → `fonts.gstatic.com` font files)
+
+The development CSP additionally permits `unpkg.com`, `fonts.googleapis.com`,
+and `fonts.gstatic.com` in their respective directives. The release build
+replaces it with the tighter policy shown above.
 
 ---
 
@@ -187,15 +230,16 @@ Loads from unpkg CDN with Subresource Integrity (SRI) hashes:
 
 ### Local File (Recommended)
 Download `class-list-builder-vX.Y.Z.html` from Releases:
-- Zero network traffic
-- Works offline/air-gapped
+- Zero network traffic at runtime — every dependency is bundled
+- Works offline / air-gapped (CSV and XLSX import included)
+- Same release CSP as on GitHub Pages
 - Fully under your control
 
 ### GitHub Pages (Convenient)
 Visit `https://armstrys.github.io/class-list-builder/`:
-- Same client-side-only functionality
-- IP visible to GitHub on first load only
-- CSP blocks all subsequent connections
+- Same client-side-only functionality and same release CSP
+- IP visible to GitHub on the initial document load only
+- `connect-src 'none'` and `script-src 'self'` block all subsequent connections
 
 **Both versions keep student data under your control.**
 
@@ -207,16 +251,16 @@ Visit `https://armstrys.github.io/class-list-builder/`:
 
 #### Option 1: Web (GitHub Pages)
 1. **Source review:** `github.com/armstrys/class-list-builder` — MIT licensed
-2. **CSP verification:** Confirm `connect-src 'none'` in deployed page source
-3. **Behavioral test:** DevTools Network tab → verify zero requests after initial load
-4. **Offline test:** Disconnect network, exercise all features
+2. **CSP verification:** Confirm `connect-src 'none'` and `script-src 'self'` in deployed page source
+3. **Behavioral test:** DevTools Network tab → import a CSV or XLSX, optimize, export. Verify zero requests after the initial document load.
+4. **Offline test:** Disconnect network, exercise all features including XLSX import
 
 #### Option 2: Download (Recommended for PII)
 1. **Pin a release:** Download from Releases page
 2. **Verify SHA-256:** Compare against release notes
 3. **Verify build provenance:** `gh attestation verify <file> --repo armstrys/class-list-builder`
-4. **Inspect artifact:** Open in editor, confirm no remote scripts or network calls
-5. **Behavioral test:** Run on air-gapped machine, verify all features work
+4. **Inspect artifact:** Open in editor; confirm zero remote `<script src="…">` or `<link href="https://…">` references
+5. **Behavioral test:** Run on air-gapped machine, verify all features (including XLSX import) work
 6. **Reproducibility:** Build locally, diff against release
 
 ### Deployment Assurance Levels

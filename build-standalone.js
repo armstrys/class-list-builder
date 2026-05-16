@@ -152,12 +152,15 @@ function analyzeSourceFiles() {
   return files;
 }
 
-// CDN resources to inline
+// CDN resources to inline. Every external <script>/<link> in
+// class-list-builder-source.html must appear here so the release artifact
+// is fully self-contained and the release CSP can keep script-src to 'self'.
 const RESOURCES = {
   'https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap': { type: 'css' },
   'https://unpkg.com/react@18.3.1/umd/react.production.min.js': { type: 'js' },
   'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js': { type: 'js' },
   'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js': { type: 'js' },
+  'https://unpkg.com/exceljs@4.4.0/dist/exceljs.min.js': { type: 'js' },
 };
 
 // Inline local <link rel="stylesheet" href="src/..."> tags
@@ -174,6 +177,33 @@ function inlineLocalStyles(html) {
     console.log(`  Inlined local CSS: ${href}`);
     return `<style>/* Inlined from ${href} */\n${content}</style>`;
   });
+}
+
+// Replace the development CSP meta with the release CSP. The release artifact
+// is consumed in two channels (downloaded file and GitHub Pages); both ship
+// the same CSP so SECURITY.md's claims hold for either. Every external
+// dependency is inlined by this build, so script-src is locked to 'self'.
+// 'unsafe-eval' is required for Babel-standalone's JSX transpilation.
+const RELEASE_CSP =
+  "default-src 'self' data: 'unsafe-inline'; " +
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+  "style-src 'self' 'unsafe-inline' data:; " +
+  "font-src 'self' data:; " +
+  "img-src 'self' data:; " +
+  "connect-src 'none'; " +
+  "base-uri 'none'; " +
+  "form-action 'none';";
+
+function applyReleaseCsp(html) {
+  const re = /<meta\b[^>]*http-equiv="Content-Security-Policy"[^>]*>/i;
+  const tag = `<meta http-equiv="Content-Security-Policy" content="${RELEASE_CSP}">`;
+  if (!re.test(html)) {
+    throw new Error(
+      'Source HTML is missing a Content-Security-Policy meta tag; the release build expects one to replace. ' +
+      'Re-add the dev CSP block in class-list-builder-source.html (see audits/2.0.0.md F-003).',
+    );
+  }
+  return html.replace(re, tag);
 }
 
 // Concatenate local <script type="text/babel" src="src/..."> tags into one inline block
@@ -283,6 +313,14 @@ async function build() {
 
     console.log(`\n📄 Reading source file: ${SOURCE_FILE}`);
     let html = fs.readFileSync(SOURCE_FILE, 'utf8');
+
+    // Swap the dev CSP for the release CSP. The dev CSP must permit unpkg
+    // and cdnjs for source-mode loading; the release CSP allows only the
+    // remaining un-inlined external (XLSX/cdnjs) plus inline scripts/styles
+    // and data: URIs for inlined fonts. When XLSX is fully inlined, drop
+    // https://cdnjs.cloudflare.com from script-src.
+    console.log('\n🔒 Applying release Content-Security-Policy…');
+    html = applyReleaseCsp(html);
 
     // Inline local sources (CSS + JS) before fetching CDN resources
     console.log('\n📝 Inlining local source files…');

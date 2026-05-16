@@ -39,14 +39,10 @@ jobs:
           cp dist/class-list-builder-*.html dist/index.html
           echo "Created index.html from built artifact"
 
-      - name: Inject CSP and GitHub Pages flag
+      - name: Inject GitHub Pages welcome flag
         run: |
-          # Add Content Security Policy to prevent any network calls
-          CSP_META='<meta http-equiv="Content-Security-Policy" content="default-src '\''self'\'' '\''unsafe-inline'\'' data:; connect-src '\''none'\''; img-src '\''self'\'' data:; font-src '\''self'\'' data:;">'
-          sed -i "s|<head>|<head>\n  $CSP_META|" dist/index.html
-          echo "Injected CSP header for security"
-          
-          # Inject flag to show welcome modal (GitHub Pages only)
+          # The release artifact already ships the production CSP (set by
+          # build-standalone.js). Pages only needs to inject the welcome flag.
           WELCOME_FLAG='<script>window.SHOW_WELCOME_MODAL=true;</script>'
           sed -i "s|<head>|<head>\n  $WELCOME_FLAG|" dist/index.html
           echo "Injected GitHub Pages welcome flag"
