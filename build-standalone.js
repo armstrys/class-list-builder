@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const zlib = require('zlib');
+const crypto = require('crypto');
 
 const SOURCE_FILE = 'class-list-builder-source.html';
 const OUTPUT_DIR = 'dist';
@@ -150,6 +151,45 @@ function analyzeSourceFiles() {
   }
 
   return files;
+}
+
+// Extract Subresource Integrity hashes pinned in the source HTML.
+// Returns Map<url, "sha384-BASE64..."> for every <script>/<link> that
+// carries an integrity= attribute. Used to verify fetched bytes match
+// what the source-version users would get under browser SRI.
+function extractIntegrityMap(html) {
+  const map = new Map();
+  const tagRe = /<(?:script|link)\b[^>]*>/gi;
+  for (const m of html.matchAll(tagRe)) {
+    const tag = m[0];
+    const urlMatch = tag.match(/(?:src|href)="([^"]+)"/i);
+    const integrityMatch = tag.match(/integrity="([^"]+)"/i);
+    if (urlMatch && integrityMatch) {
+      map.set(urlMatch[1], integrityMatch[1]);
+    }
+  }
+  return map;
+}
+
+// Verify a fetched buffer against a pinned SRI value of the form
+// "sha384-<base64>" (optionally space-separated alternatives, per the
+// SRI spec). Throws on mismatch so the build fails closed.
+function verifyIntegrity(buffer, integrity, url) {
+  const algos = integrity.trim().split(/\s+/);
+  const tried = [];
+  for (const entry of algos) {
+    const m = entry.match(/^(sha256|sha384|sha512)-(.+)$/);
+    if (!m) continue;
+    const [, alg, expected] = m;
+    const actual = crypto.createHash(alg).update(buffer).digest('base64');
+    tried.push(`${alg}-${actual}`);
+    if (actual === expected) return alg;
+  }
+  throw new Error(
+    `Subresource Integrity check failed for ${url}.\n` +
+    `  Expected: ${integrity}\n` +
+    `  Actual:   ${tried.join(' ') || '(no recognized algorithm in pinned value)'}`,
+  );
 }
 
 // CDN resources to inline. Every external <script>/<link> in
@@ -314,11 +354,15 @@ async function build() {
     console.log(`\n📄 Reading source file: ${SOURCE_FILE}`);
     let html = fs.readFileSync(SOURCE_FILE, 'utf8');
 
-    // Swap the dev CSP for the release CSP. The dev CSP must permit unpkg
-    // and cdnjs for source-mode loading; the release CSP allows only the
-    // remaining un-inlined external (XLSX/cdnjs) plus inline scripts/styles
-    // and data: URIs for inlined fonts. When XLSX is fully inlined, drop
-    // https://cdnjs.cloudflare.com from script-src.
+    // Capture the SRI hashes pinned in the source HTML *before* we
+    // strip the external tags. These are what we verify each fetched
+    // dependency against below.
+    const integrityMap = extractIntegrityMap(html);
+
+    // Swap the dev CSP for the release CSP. The dev CSP must permit
+    // unpkg.com (React/ReactDOM/Babel/ExcelJS) and Google Fonts; the
+    // release CSP locks script-src to 'self' (every dependency is
+    // inlined below) and connect-src to 'none'.
     console.log('\n🔒 Applying release Content-Security-Policy…');
     html = applyReleaseCsp(html);
 
@@ -331,7 +375,25 @@ async function build() {
     console.log('\n🌐 Fetching CDN resources…');
     for (const [url, info] of Object.entries(RESOURCES)) {
       try {
-        let contentBuffer = await fetchUrl(url);
+        const contentBuffer = await fetchUrl(url);
+
+        // Verify fetched bytes against the SRI hash pinned in the
+        // source HTML. The Google Fonts stylesheet has no SRI (CSS
+        // imports font files via further URLs we inline separately),
+        // so we require SRI only for the JS dependencies, which match
+        // the source-version <script integrity=...> tags exactly.
+        const pinned = integrityMap.get(url);
+        if (info.type === 'js') {
+          if (!pinned) {
+            throw new Error(
+              `No Subresource Integrity hash pinned in ${SOURCE_FILE} for ${url}. ` +
+              `Add an integrity="sha384-…" attribute to the matching <script> tag, ` +
+              `or remove the URL from RESOURCES if it should not be inlined.`,
+            );
+          }
+          const alg = verifyIntegrity(contentBuffer, pinned, url);
+          console.log(`  🔐 SRI ${alg} verified: ${url.split('/').pop()}`);
+        }
 
         // For Google Fonts, also inline the font files
         let textContent;
@@ -349,7 +411,7 @@ async function build() {
         if (info.type === 'css') {
           inlineTag = `<style>/* Inlined from ${url} */\n${textContent}</style>`;
         } else {
-          inlineTag = `<script>/* Inlined from ${url} */\n${textContent}<\/script>`;
+          inlineTag = `<script>/* Inlined from ${url} */\n${textContent}</script>`;
         }
 
         // Replace the external reference with inline content.

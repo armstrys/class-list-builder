@@ -8,9 +8,6 @@ function uid() {
   return `test-student-${idCounter}`;
 }
 
-function resetIdCounter() {
-  idCounter = 0;
-}
 
 function createMockStudents(count, options = {}) {
   const students = [];
