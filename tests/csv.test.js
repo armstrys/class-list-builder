@@ -509,10 +509,11 @@ Bob,F,`;
       expect(result.students[0].behavior).toBe(true);
       expect(result.students[1].name).toBe('Bob');
       expect(result.students[1].sped).toBe(true);
-      // Constraints are no longer exported/imported via CSV
-      expect(result.keepApart).toEqual([]);
-      expect(result.keepTogether).toEqual([]);
-      expect(result.keepOutOfClass).toEqual([]);
+      // Constraints are no longer exported/imported via CSV; parseCSV does
+      // not return constraint fields at all.
+      expect(result.keepApart).toBeUndefined();
+      expect(result.keepTogether).toBeUndefined();
+      expect(result.keepOutOfClass).toBeUndefined();
     });
   });
 

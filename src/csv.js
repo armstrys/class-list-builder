@@ -97,7 +97,7 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   // Normalize CRLF and bare CR to LF
   const normalized = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = normalized.split('\n');
-  if (lines.length < 2) return { students: [], errors: ['No data rows found'], keepApart: [], keepTogether: [], keepOutOfClass: [] };
+  if (lines.length < 2) return { students: [], errors: ['No data rows found'] };
 
   // Normalize headers: lowercase, strip spaces
   const rawHeaders = parseCSVLine(lines[0]);
@@ -162,7 +162,7 @@ function parseCSV(text, numericCriteria, flagCriteria) {
     students.push(parseStudentRow(cols, i, ctx, errors));
   });
 
-  return { students, errors, keepApart: [], keepTogether: [], keepOutOfClass: [] };
+  return { students, errors };
 }
 
 function exportStudentsToCSV(students, numericCriteria, flagCriteria) {

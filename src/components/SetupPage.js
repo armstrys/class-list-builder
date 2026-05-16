@@ -356,20 +356,14 @@ function ConstraintButton({ onClick }) {
  * ImportModalWrapper - Provides context data to ImportModal
  */
 function ImportModalWrapper({ onClose, onClearAll }) {
-  const { students, setStudents, addKeepApart, addKeepTogether } = useStudentsExport();
+  const { students, setStudents } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
 
   const handleImport = useCallback(
-    (ss, importedKeepApart, importedKeepTogether) => {
+    ss => {
       setStudents(prev => [...prev, ...ss]);
-      if (importedKeepApart?.length > 0) {
-        importedKeepApart.forEach(pair => addKeepApart(pair[0], pair[1]));
-      }
-      if (importedKeepTogether?.length > 0) {
-        importedKeepTogether.forEach(group => addKeepTogether(group));
-      }
     },
-    [setStudents, addKeepApart, addKeepTogether]
+    [setStudents]
   );
 
   return (
