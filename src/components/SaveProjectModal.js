@@ -15,6 +15,7 @@ function SaveProjectModal({ onClose }) {
     students,
     keepApart,
     keepTogether,
+    keepOutOfClass,
     assignment,
     locked,
     optimizationResults,
@@ -36,6 +37,7 @@ function SaveProjectModal({ onClose }) {
         flagCriteria,
         keepApart,
         keepTogether,
+        keepOutOfClass,
         assignment,
         locked: [...locked], // Convert Set to Array for JSON serialization
         optimizationResults
@@ -121,6 +123,10 @@ function SaveProjectModal({ onClose }) {
           <div className="save-stat-row">
             <span className="save-stat-label">Keep-together groups:</span>
             <span className="save-stat-value">{(keepTogether || []).length}</span>
+          </div>
+          <div className="save-stat-row">
+            <span className="save-stat-label">Keep-out-of-class constraints:</span>
+            <span className="save-stat-value">{(keepOutOfClass || []).length}</span>
           </div>
           {hasAssignment && (
             <div className="save-stat-row">
