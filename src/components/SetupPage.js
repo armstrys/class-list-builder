@@ -18,8 +18,6 @@ function SetupPage({ onOptimize }) {
     clearAllStudents: clearAllStudentsContext,
     replaceAllStudents,
     clearAssignmentsForClassCountChange,
-    keepApart,
-    keepTogether,
   } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
   const { openSettings, teachers, setTeachers } = useAppStateExport();
@@ -85,9 +83,7 @@ function SetupPage({ onOptimize }) {
     const csv = exportStudentsToCSV(
       students,
       numericCriteria,
-      flagCriteria,
-      keepApart,
-      keepTogether
+      flagCriteria
     );
     triggerDownload(csv, 'students.csv', 'text/csv');
   }

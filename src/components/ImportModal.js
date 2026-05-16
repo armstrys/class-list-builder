@@ -9,9 +9,9 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
   const [showPaste, setShowPaste] = useState(false);
   const fileInputRef = useRef(null);
 
-  const csvTemplate = 'id,' + generateCSVHeaders(numericCriteria, flagCriteria).join(',') + ',keep_apart_group,keep_together_group\n' +
-    'stu001,Emma Smith,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') + ',,\n' +
-    'stu002,Liam Johnson,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',') + ',,';
+  const csvTemplate = 'id,' + generateCSVHeaders(numericCriteria, flagCriteria).join(',') + '\n' +
+    'stu001,Emma Smith,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') + '\n' +
+    'stu002,Liam Johnson,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',');
 
   function processFile(file) {
     if (!file) return;
@@ -120,14 +120,16 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
       return;
     }
     
-    const { students, errors, keepApart, keepTogether } = parseCSV(text, numericCriteria, flagCriteria);
-    if (!students.length) {
+    const { students: importedStudents, errors, keepApart, keepTogether } = parseCSV(text, numericCriteria, flagCriteria);
+    if (!importedStudents.length) {
       setError(errors.length ? errors.join('; ') : 'No valid students found. Check your CSV format.');
       return;
     }
-    if (errors.length) setError(`Imported ${students.length} students with warnings: ${errors.join('; ')}`);
-    onImport(students, keepApart, keepTogether);
-    if (!errors.length) onClose();
+    onImport(importedStudents, keepApart, keepTogether);
+    if (errors.length) {
+      window.alert(`⚠️ Imported ${importedStudents.length} students with warnings:\n\n${errors.join('\n')}`);
+    }
+    onClose();
   }
 
   function handleTextPaste(e) {
@@ -242,7 +244,7 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
               />
               <p className="csv-hint">
                 <strong>Required:</strong> name, gender | 
-                <strong> Optional:</strong> id, {generateCSVHeaders(numericCriteria, flagCriteria).slice(2).join(', ')}, keep_apart_group, keep_together_group, keep_out_of_class
+                <strong> Optional:</strong> id, {generateCSVHeaders(numericCriteria, flagCriteria).slice(2).join(', ')}
               </p>
               <p className="csv-hint" style={{ marginTop: 6, fontSize: 11 }}>
                 <strong>Tip:</strong> Include an <code>id</code> column to use your own student IDs. Otherwise, IDs are auto-generated.

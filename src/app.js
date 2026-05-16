@@ -43,9 +43,6 @@ function AppContent() {
     setStudents,
     clearAllStudents,
     replaceAllStudents,
-    keepApart,
-    keepTogether,
-    keepOutOfClass,
     setKeepApart,
     setKeepTogether,
     setKeepOutOfClass,
@@ -148,10 +145,7 @@ function AppContent() {
     const csv = exportStudentsToCSV(
       students,
       numericCriteria,
-      flagCriteria,
-      keepApart,
-      keepTogether,
-      keepOutOfClass
+      flagCriteria
     );
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -162,7 +156,7 @@ function AppContent() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [students, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass]);
+  }, [students, numericCriteria, flagCriteria]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
