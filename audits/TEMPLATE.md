@@ -1,8 +1,8 @@
 ---
 version: X.Y.Z
 audit-date: YYYY-MM-DD
-auditor: Your Name <your@email>
-assisted-by: claude-opus-4-7 via .claude/skills/security-audit
+auditor: Your Name
+assisted-by: AI assistant via .claude/skills/security-audit
 manifest-sha256: sha256:REPLACE_ME
 sources-sha256: sha256:REPLACE_ME
 deps-sha256: sha256:REPLACE_ME

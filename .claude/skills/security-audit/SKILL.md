@@ -103,9 +103,10 @@ continuing — the audit must pin a clean tree.
 cp audits/TEMPLATE.md audits/<version>.md
 ```
 
-Fill in `version`, `audit-date` (today, UTC), `auditor` (ask the user for
-their name/email if you don't already know it), `assisted-by` (your
-model id), and the four `*-sha256` fields from Step 1.
+Fill in `version`, `audit-date` (today, UTC), `auditor` (your name only —
+do not include email or other contact info), `assisted-by` (use your own
+model identifier, e.g. `claude-opus-4-7`, `kimi-k2.6`, etc.), and the
+four `*-sha256` fields from Step 1.
 
 ### Step 3 — Verify every claim in `docs/SECURITY.md`
 
