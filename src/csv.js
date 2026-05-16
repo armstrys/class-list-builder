@@ -16,8 +16,8 @@ function escapeCSVValue(value) {
 }
 
 function generateCSVHeaders(numericCriteria, flagCriteria) {
-  const numHeaders = numericCriteria.map(c => c.key);
-  const boolHeaders = flagCriteria.map(c => c.key);
+  const numHeaders = numericCriteria.map(c => c.label);
+  const boolHeaders = flagCriteria.map(c => c.label);
   return ['name', 'gender', ...numHeaders, ...boolHeaders];
 }
 
@@ -61,16 +61,19 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   const keepOutOfClassConstraints = []; // Array<{studentId, classIndex}>
 
   // Build mapping from criteria keys to CSV column indices
+  // Match by normalized label (lowercase, no spaces) since CSV headers use labels
   const numericKeyMap = {};
   const flagKeyMap = {};
 
-  numericCriteria.forEach(({ key }) => {
-    const idx = headers.findIndex(h => h === key.toLowerCase());
+  numericCriteria.forEach(({ key, label }) => {
+    const normalizedLabel = label.toLowerCase().replace(/\s+/g, '');
+    const idx = headers.findIndex(h => h === normalizedLabel);
     if (idx !== -1) numericKeyMap[key] = idx;
   });
 
-  flagCriteria.forEach(({ key }) => {
-    const idx = headers.findIndex(h => h === key.toLowerCase());
+  flagCriteria.forEach(({ key, label }) => {
+    const normalizedLabel = label.toLowerCase().replace(/\s+/g, '');
+    const idx = headers.findIndex(h => h === normalizedLabel);
     if (idx !== -1) flagKeyMap[key] = idx;
   });
 
@@ -193,7 +196,7 @@ function parseCSV(text, numericCriteria, flagCriteria) {
 }
 
 function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
-  const headers = ['name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key), 'keep_apart_group', 'keep_together_group', 'keep_out_of_class'];
+  const headers = ['name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label), 'keep_apart_group', 'keep_together_group', 'keep_out_of_class'];
   const lines = [headers.join(',')];
 
   // Build a map of student ID to keep-apart group number
@@ -261,7 +264,7 @@ function exportStudentsToCSV(students, numericCriteria, flagCriteria, keepApart 
 }
 
 function exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria) {
-  const headers = ['class', 'id', 'name', 'gender', ...numericCriteria.map(c => c.key), ...flagCriteria.map(c => c.key)];
+  const headers = ['class', 'id', 'name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label)];
   const lines = [headers.join(',')];
 
   const sorted = [...students]

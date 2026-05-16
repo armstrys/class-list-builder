@@ -30,7 +30,7 @@ function calculateClassColumnStats(students, allStudents, numericCriteria) {
     const range = mx - mn || 1;
     const classAvg = avg(m.key);
     return {
-      label: m.short,
+      label: m.label,
       val: Math.round(classAvg),
       pct: Math.min(100, Math.max(4, (classAvg - mn) / range * 100)),
       raw: classAvg,
@@ -69,9 +69,9 @@ function calculateStatsStripNormalization(students, assignment, numClasses, nume
 
 // Mixed range criteria matching the application defaults
 const mixedRangeCriteria = [
-  { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
-  { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
-  { key: 'languageScore', label: 'Language Score', short: 'Lang', weight: 1.0 },
+  { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
+  { key: 'mathScore', label: 'Math Score', weight: 1.0 },
+  { key: 'languageScore', label: 'Language Score', weight: 1.0 },
 ];
 
 describe('Display Normalization with Mixed Score Ranges', () => {
@@ -90,7 +90,7 @@ describe('Display Normalization with Mixed Score Ranges', () => {
 
       // Act - simulate ClassColumn stats calculation
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
-      const readingStat = stats.find(s => s.label === 'Read');
+      const readingStat = stats.find(s => s.label === 'Reading Score');
 
       // Assert
       expect(readingStat.min).toBe(0);
@@ -110,7 +110,7 @@ describe('Display Normalization with Mixed Score Ranges', () => {
 
       // Act
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
-      const mathStat = stats.find(s => s.label === 'Math');
+      const mathStat = stats.find(s => s.label === 'Math Score');
 
       // Assert
       expect(mathStat.min).toBe(2000);
@@ -130,7 +130,7 @@ describe('Display Normalization with Mixed Score Ranges', () => {
 
       // Act
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
-      const readingStat = stats.find(s => s.label === 'Read');
+      const readingStat = stats.find(s => s.label === 'Reading Score');
 
       // Assert - when min = max, range is set to 1 to avoid division by zero
       expect(readingStat.min).toBe(100);
@@ -151,7 +151,7 @@ describe('Display Normalization with Mixed Score Ranges', () => {
 
       // Act
       const stats = calculateClassColumnStats(classStudents, allStudents, mixedRangeCriteria);
-      const readingStat = stats.find(s => s.label === 'Read');
+      const readingStat = stats.find(s => s.label === 'Reading Score');
 
       // Assert - minimum percentage should be 4%
       expect(readingStat.pct).toBeGreaterThanOrEqual(4);
@@ -169,7 +169,7 @@ describe('Display Normalization with Mixed Score Ranges', () => {
 
       // Act
       const stats = calculateClassColumnStats(classStudents, allStudents, mixedRangeCriteria);
-      const readingStat = stats.find(s => s.label === 'Read');
+      const readingStat = stats.find(s => s.label === 'Reading Score');
 
       // Assert - percentage should not exceed 100%
       expect(readingStat.pct).toBeLessThanOrEqual(100);
@@ -205,8 +205,8 @@ describe('Display Normalization with Mixed Score Ranges', () => {
       });
 
       // Class 1 should have lower average reading scores
-      expect(stats1.find(s => s.label === 'Read').raw).toBeLessThan(
-        stats2.find(s => s.label === 'Read').raw
+      expect(stats1.find(s => s.label === 'Reading Score').raw).toBeLessThan(
+        stats2.find(s => s.label === 'Reading Score').raw
       );
     });
   });
@@ -403,7 +403,7 @@ describe('Display Normalization with Mixed Score Ranges', () => {
       ];
 
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
-      const readingStat = stats.find(s => s.label === 'Read');
+      const readingStat = stats.find(s => s.label === 'Reading Score');
 
       expect(readingStat.range).toBe(1);
       expect(readingStat.pct).toBeGreaterThanOrEqual(4);
@@ -417,13 +417,13 @@ describe('Display Normalization with Mixed Score Ranges', () => {
       ];
 
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
-      const readingStat = stats.find(s => s.label === 'Read');
+      const readingStat = stats.find(s => s.label === 'Reading Score');
 
       expect(readingStat.min).toBe(0);
       expect(readingStat.max).toBe(100);
       // Class with 0 reading score should have 4% (minimum) percentage
       const zeroScoreStats = calculateClassColumnStats([students[0]], students, mixedRangeCriteria);
-      const zeroReadingStat = zeroScoreStats.find(s => s.label === 'Read');
+      const zeroReadingStat = zeroScoreStats.find(s => s.label === 'Reading Score');
       expect(zeroReadingStat.pct).toBe(4);
     });
 
@@ -434,7 +434,7 @@ describe('Display Normalization with Mixed Score Ranges', () => {
       ];
 
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
-      const readingStat = stats.find(s => s.label === 'Read');
+      const readingStat = stats.find(s => s.label === 'Reading Score');
 
       expect(readingStat.min).toBe(-100);
       expect(readingStat.max).toBe(100);

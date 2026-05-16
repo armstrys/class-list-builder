@@ -85,15 +85,15 @@ function createDecimalScoreStudents(count) {
 
 // Criteria definitions
 const mixedRangeCriteria = [
-  { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
-  { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
-  { key: 'languageScore', label: 'Language Score', short: 'Lang', weight: 1.0 },
+  { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
+  { key: 'mathScore', label: 'Math Score', weight: 1.0 },
+  { key: 'languageScore', label: 'Language Score', weight: 1.0 },
 ];
 
 const flagCriteria = [
-  { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
-  { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.5 },
-  { key: 'sped', label: 'SPED', short: 'SPED', weight: 2.0 },
+  { key: 'behavior', label: 'Behavior', weight: 2.0 },
+  { key: 'extendedLearning', label: 'Extended Learning', weight: 1.5 },
+  { key: 'sped', label: 'SPED', weight: 2.0 },
 ];
 
 describe('Numeric Score Range Handling', () => {
@@ -440,9 +440,9 @@ describe('Numeric Score Range Handling', () => {
 
       // Assert
       const lines = csv.split('\n');
-      expect(lines[0]).toContain('readingScore');
-      expect(lines[0]).toContain('mathScore');
-      expect(lines[0]).toContain('languageScore');
+      expect(lines[0]).toContain('Reading Score');
+      expect(lines[0]).toContain('Math Score');
+      expect(lines[0]).toContain('Language Score');
       expect(lines[1]).toContain('150');
       expect(lines[1]).toContain('2500');
       expect(lines[1]).toContain('2200');
@@ -450,7 +450,7 @@ describe('Numeric Score Range Handling', () => {
 
     test('imports students with mixed score ranges', () => {
       // Arrange
-      const csv = `name,gender,readingScore,mathScore,languageScore,behavior,sped
+      const csv = `name,gender,Reading Score,Math Score,Language Score,Behavior,SPED
 Alice,F,150,2500,2200,false,false
 Bob,M,200,2800,2750,true,false`;
 
@@ -568,7 +568,7 @@ Bob,M,200,2800,2750,true,false`;
 
   describe('Numeric Criteria Edge Cases', () => {
     test('handles single numeric criterion', () => {
-      const singleCriterion = [{ key: 'readingScore', label: 'Reading', short: 'Read', weight: 1.0 }];
+      const singleCriterion = [{ key: 'readingScore', label: 'Reading', weight: 1.0 }];
       const students = [];
       for (let i = 0; i < 10; i++) {
         students.push({
@@ -590,11 +590,11 @@ Bob,M,200,2800,2750,true,false`;
 
     test('handles many numeric criteria', () => {
       const manyCriteria = [
-        { key: 'score1', label: 'Score 1', short: 'S1', weight: 1.0 },
-        { key: 'score2', label: 'Score 2', short: 'S2', weight: 1.0 },
-        { key: 'score3', label: 'Score 3', short: 'S3', weight: 1.0 },
-        { key: 'score4', label: 'Score 4', short: 'S4', weight: 1.0 },
-        { key: 'score5', label: 'Score 5', short: 'S5', weight: 1.0 },
+        { key: 'score1', label: 'Score 1', weight: 1.0 },
+        { key: 'score2', label: 'Score 2', weight: 1.0 },
+        { key: 'score3', label: 'Score 3', weight: 1.0 },
+        { key: 'score4', label: 'Score 4', weight: 1.0 },
+        { key: 'score5', label: 'Score 5', weight: 1.0 },
       ];
 
       const students = [];

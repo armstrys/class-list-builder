@@ -75,12 +75,6 @@ function SettingsModal({
     return !isNaN(num) && num > 0;
   }
 
-  function validateShort(val) {
-    if (!val || !val.trim()) return false;
-    if (val.includes(',')) return false;
-    return true;
-  }
-
   function updateNumCriteria(index, field, value) {
     setNumCriteria(prev => {
       const next = [...prev];
@@ -101,7 +95,6 @@ function SettingsModal({
     setNumCriteria(prev => [...prev, {
       key: '',
       label: '',
-      short: '',
       weight: 1.0
     }]);
   }
@@ -110,7 +103,6 @@ function SettingsModal({
     setFlagCriteriaState(prev => [...prev, {
       key: '',
       label: '',
-      short: '',
       weight: 1.5
     }]);
   }
@@ -150,10 +142,6 @@ function SettingsModal({
         setError('All criteria must have a label');
         return;
       }
-      if (!validateShort(c.short)) {
-        setError(`Invalid short name for "${c.label}". Short name is required and cannot contain commas.`);
-        return;
-      }
       if (!validateWeight(c.weight)) {
         setError(`Invalid weight for "${c.label}". Weight must be a positive number.`);
         return;
@@ -164,10 +152,6 @@ function SettingsModal({
     for (const c of flagCriteriaState) {
       if (!c.label.trim()) {
         setError('All criteria must have a label');
-        return;
-      }
-      if (!validateShort(c.short)) {
-        setError(`Invalid short name for "${c.label}". Short name is required and cannot contain commas.`);
         return;
       }
       if (!validateWeight(c.weight)) {
@@ -350,7 +334,6 @@ function SettingsModal({
             <div className="settings-section">
               <div className="criteria-header">
                 <div>Display Name</div>
-                <div>Short Name</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   Weight
                   <HelpTooltip content={WEIGHTS_HELP_TEXT} />
@@ -365,12 +348,6 @@ function SettingsModal({
                       placeholder="Label (e.g., Reading Score)"
                       value={c.label}
                       onChange={e => updateNumCriteria(i, 'label', e.target.value)}
-                    />
-                    <input
-                      className="form-input"
-                      placeholder="Short (e.g., Read)"
-                      value={c.short}
-                      onChange={e => updateNumCriteria(i, 'short', e.target.value)}
                     />
                     <input
                       className="form-input"
@@ -399,7 +376,6 @@ function SettingsModal({
             <div className="settings-section">
               <div className="criteria-header">
                 <div>Display Name</div>
-                <div>Short Name</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   Weight
                   <HelpTooltip content={WEIGHTS_HELP_TEXT} />
@@ -414,12 +390,6 @@ function SettingsModal({
                       placeholder="Label (e.g., Behavior)"
                       value={c.label}
                       onChange={e => updateFlagCriteria(i, 'label', e.target.value)}
-                    />
-                    <input
-                      className="form-input"
-                      placeholder="Short (e.g., BEH)"
-                      value={c.short}
-                      onChange={e => updateFlagCriteria(i, 'short', e.target.value)}
                     />
                     <input
                       className="form-input"

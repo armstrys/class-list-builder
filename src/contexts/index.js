@@ -385,14 +385,14 @@
     }, []);
 
     const addNumericCriterion = useCallback(
-      (criterion = { key: '', label: '', short: '', weight: 1.0 }) => {
+      (criterion = { key: '', label: '', weight: 1.0 }) => {
         setCriteria(prev => ({ ...prev, numeric: [...prev.numeric, criterion] }));
       },
       []
     );
 
     const addFlagCriterion = useCallback(
-      (criterion = { key: '', label: '', short: '', weight: 1.0 }) => {
+      (criterion = { key: '', label: '', weight: 1.0 }) => {
         setCriteria(prev => ({ ...prev, flag: [...prev.flag, criterion] }));
       },
       []

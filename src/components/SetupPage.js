@@ -218,12 +218,12 @@ function SetupPage({ onOptimize }) {
                       <th>G</th>
                       {numericCriteria.map(c => (
                         <th key={c.key} className="col-num" title={c.label}>
-                          {c.short}
+                          {c.label}
                         </th>
                       ))}
                       {flagCriteria.map(c => (
                         <th key={c.key} className="col-check" title={c.label}>
-                          {c.short}
+                          {c.label}
                         </th>
                       ))}
                       <th></th>

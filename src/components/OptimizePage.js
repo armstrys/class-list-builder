@@ -248,7 +248,7 @@ function OptimizePage({ onBack }) {
             {flagCriteria.map(c => (
               <span key={c.key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, color: 'var(--text3)' }} title={c.label}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: generateColor(c.key).dot, flexShrink: 0 }} />
-                {c.short}
+                {c.label}
               </span>
             ))}
           </div>

@@ -3,13 +3,13 @@ import { serializeProject } from '../src/utils/projectSerializer.js';
 import { deserializeProject } from '../src/utils/projectDeserializer.js';
 
 const numericCriteria = [
-  { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
-  { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
+  { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
+  { key: 'mathScore', label: 'Math Score', weight: 1.0 },
 ];
 
 const flagCriteria = [
-  { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
-  { key: 'sped', label: 'SPED', short: 'SPED', weight: 2.0 },
+  { key: 'behavior', label: 'Behavior', weight: 2.0 },
+  { key: 'sped', label: 'SPED', weight: 2.0 },
 ];
 
 const teachers = [
