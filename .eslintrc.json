@@ -4,9 +4,7 @@
     "es2021": true,
     "node": true
   },
-  "extends": [
-    "eslint:recommended"
-  ],
+  "extends": ["eslint:recommended"],
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module",
@@ -14,10 +12,7 @@
       "jsx": true
     }
   },
-  "plugins": [
-    "react",
-    "react-hooks"
-  ],
+  "plugins": ["react", "react-hooks"],
   "globals": {
     "React": "readonly",
     "ReactDOM": "readonly",
@@ -40,6 +35,7 @@
     "uid": "readonly",
     "generateColor": "readonly",
     "generateKeyFromLabel": "readonly",
+    "buildPrintReportData": "readonly",
     "useStudentsExport": "readonly",
     "useCriteriaExport": "readonly",
     "useAppStateExport": "readonly",
@@ -56,7 +52,8 @@
     "escapeCSVValue": "readonly",
     "Modal": "readonly",
     "ViolationsModal": "readonly",
-    "ClassFilterDropdown": "readonly"
+    "ClassFilterDropdown": "readonly",
+    "PrintReportView": "readonly"
   },
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],

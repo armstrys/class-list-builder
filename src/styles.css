@@ -610,3 +610,117 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
     text-align: center;
   }
 }
+
+/* ============================================================
+   PRINT REPORT STYLES
+   ============================================================ */
+
+/* Hide print report on screen */
+.print-report { display: none; }
+
+@media print {
+  /* Hide everything except the root container */
+  body > *:not(#root) { display: none !important; }
+  /* Inside the root, hide everything except the print report */
+  #root > *:not(#print-report) { display: none !important; }
+  /* Ensure root and report are visible */
+  #root { display: block !important; }
+
+  /* Show and style the print report */
+  #print-report {
+    display: block !important;
+    position: static;
+    width: 100%;
+    background: white;
+    color: black;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  .print-page {
+    page-break-after: always;
+    padding: 20px 30px;
+    min-height: 100vh;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+
+  .print-page-header {
+    border-bottom: 2px solid #1a7a5e;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+  }
+
+  .print-page-header h2 {
+    margin: 0 0 4px 0;
+    font-size: 18pt;
+    color: #1a7a5e;
+  }
+
+  .print-page-meta span {
+    font-size: 10pt;
+    color: #555;
+    margin-right: 16px;
+  }
+
+  .print-page-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .print-stat-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 9pt;
+    font-weight: 500;
+    border: 1px solid #ddd;
+    background: #f5f5f0;
+  }
+
+  .print-student-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    table-layout: auto;
+  }
+
+  .print-student-table th {
+    background: #f5f5f0;
+    border-bottom: 2px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  .print-student-table td {
+    border-bottom: 1px solid #eee;
+    padding: 5px 8px;
+  }
+
+  .print-student-table tr:nth-child(even) {
+    background: #fafaf8;
+  }
+
+  .print-summary-page h1 {
+    font-size: 24pt;
+    color: #1a7a5e;
+    margin-bottom: 8px;
+  }
+
+  .print-summary-date {
+    font-size: 11pt;
+    color: #555;
+    margin-bottom: 16px;
+  }
+
+  .print-summary-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}

@@ -13,7 +13,8 @@
 
 // PROJECT_FORMAT_VERSION is declared in projectSerializer.js (loaded first in the browser
 // bundle). In test contexts that import this file standalone, fall back to the known value.
-const EXPECTED_FORMAT_VERSION = (typeof PROJECT_FORMAT_VERSION !== 'undefined') ? PROJECT_FORMAT_VERSION : 1;
+const EXPECTED_FORMAT_VERSION =
+  typeof PROJECT_FORMAT_VERSION !== 'undefined' ? PROJECT_FORMAT_VERSION : 1;
 
 // Maximum limits to prevent self-DoS from malformed/oversized project files
 const MAX_STUDENTS = 10000;
@@ -53,46 +54,46 @@ function parseVersion(version) {
 function checkVersionCompatibility(savedVersion, currentVersion) {
   const warnings = [];
   const errors = [];
-  
+
   const saved = parseVersion(savedVersion);
   const current = parseVersion(currentVersion);
-  
+
   if (!saved || !current) {
     warnings.push('Unable to determine version compatibility');
     return { compatible: true, warnings, errors };
   }
-  
+
   // Major version mismatch - block
   if (saved.major !== current.major) {
     errors.push(
       `Major version mismatch: Project was saved with v${savedVersion}, ` +
-      `but this app is v${currentVersion}. Major version changes may break compatibility. ` +
-      `Please use the same major version to load this project.`
+        `but this app is v${currentVersion}. Major version changes may break compatibility. ` +
+        `Please use the same major version to load this project.`
     );
     return { compatible: false, warnings, errors };
   }
-  
+
   // Minor version - backward compatible but warn
   if (saved.minor < current.minor) {
     warnings.push(
       `Project was saved with an older version (v${savedVersion}). ` +
-      `It will load, but some newer features may not be available.`
+        `It will load, but some newer features may not be available.`
     );
   } else if (saved.minor > current.minor) {
     warnings.push(
       `Project was saved with a newer version (v${savedVersion}). ` +
-      `It may contain features not available in this version (v${currentVersion}).`
+        `It may contain features not available in this version (v${currentVersion}).`
     );
   }
-  
+
   // Patch version - just info
   if (saved.patch !== current.patch) {
     warnings.push(
       `Patch version differs: Project v${savedVersion}, App v${currentVersion}. ` +
-      `This is usually fine, but bug fixes may affect behavior.`
+        `This is usually fine, but bug fixes may affect behavior.`
     );
   }
-  
+
   return { compatible: true, warnings, errors };
 }
 
@@ -105,9 +106,10 @@ function checkFormatCompatibility(savedFormatVersion) {
   if (savedFormatVersion !== EXPECTED_FORMAT_VERSION) {
     return {
       compatible: false,
-      error: `Format version mismatch: Project uses format v${savedFormatVersion}, ` +
-             `but this app expects format v${EXPECTED_FORMAT_VERSION}. ` +
-             `The project file format may have changed significantly.`
+      error:
+        `Format version mismatch: Project uses format v${savedFormatVersion}, ` +
+        `but this app expects format v${EXPECTED_FORMAT_VERSION}. ` +
+        `The project file format may have changed significantly.`,
     };
   }
   return { compatible: true, error: null };
@@ -123,7 +125,7 @@ function validateStudent(student, validTeacherIds) {
   if (!student || typeof student !== 'object') {
     return { valid: false, error: 'Invalid student data', student: null };
   }
-  
+
   // Check required fields
   if (!student.id) {
     return { valid: false, error: 'Missing student ID', student: null };
@@ -132,21 +134,25 @@ function validateStudent(student, validTeacherIds) {
     return { valid: false, error: `Student ${student.id}: Missing or invalid name`, student: null };
   }
   if (exceedsMaxLength(student.name, MAX_NAME_LENGTH)) {
-    return { valid: false, error: `Student ${student.id}: Name exceeds maximum length`, student: null };
+    return {
+      valid: false,
+      error: `Student ${student.id}: Name exceeds maximum length`,
+      student: null,
+    };
   }
   if (!student.gender || !['F', 'M', 'U'].includes(student.gender)) {
     return { valid: false, error: `Student ${student.name}: Invalid gender`, student: null };
   }
-  
+
   // teacherId is required - check if it references a valid teacher
   if (student.teacherId && !validTeacherIds.has(student.teacherId)) {
-    return { 
-      valid: false, 
-      error: `Student ${student.name}: References unknown teacher`, 
-      student: null 
+    return {
+      valid: false,
+      error: `Student ${student.name}: References unknown teacher`,
+      student: null,
     };
   }
-  
+
   return { valid: true, error: null, student };
 }
 
@@ -159,7 +165,7 @@ function validateTeacher(teacher) {
   if (!teacher || typeof teacher !== 'object') {
     return { valid: false, error: 'Invalid teacher data', teacher: null };
   }
-  
+
   if (!teacher.id) {
     return { valid: false, error: 'Missing teacher ID', teacher: null };
   }
@@ -167,9 +173,13 @@ function validateTeacher(teacher) {
     return { valid: false, error: `Teacher ${teacher.id}: Missing or invalid name`, teacher: null };
   }
   if (exceedsMaxLength(teacher.name, MAX_NAME_LENGTH)) {
-    return { valid: false, error: `Teacher ${teacher.id}: Name exceeds maximum length`, teacher: null };
+    return {
+      valid: false,
+      error: `Teacher ${teacher.id}: Name exceeds maximum length`,
+      teacher: null,
+    };
   }
-  
+
   return { valid: true, error: null, teacher };
 }
 
@@ -181,60 +191,66 @@ function validateTeacher(teacher) {
  * @param {Array} currentFlagCriteria - Current flag criteria
  * @returns {Object} { canProceed: boolean, warnings: string[], mergedNumCriteria: Array, mergedFlagCriteria: Array }
  */
-function validateCriteriaCompatibility(savedNumCriteria, savedFlagCriteria, currentNumCriteria, currentFlagCriteria) {
+function validateCriteriaCompatibility(
+  savedNumCriteria,
+  savedFlagCriteria,
+  currentNumCriteria,
+  currentFlagCriteria
+) {
   const warnings = [];
-  
+
   // Build sets of keys
   const savedNumKeys = new Set((savedNumCriteria || []).map(c => c.key));
   const savedFlagKeys = new Set((savedFlagCriteria || []).map(c => c.key));
   const currentNumKeys = new Set((currentNumCriteria || []).map(c => c.key));
   const currentFlagKeys = new Set((currentFlagCriteria || []).map(c => c.key));
-  
+
   // Check for criteria in saved file that don't exist now
   const extraNumCriteria = [...savedNumKeys].filter(k => !currentNumKeys.has(k));
   const extraFlagCriteria = [...savedFlagKeys].filter(k => !currentFlagKeys.has(k));
-  
+
   if (extraNumCriteria.length > 0) {
     warnings.push(
       `Project contains numeric criteria not in current configuration: ${extraNumCriteria.join(', ')}. ` +
-      `These will be ignored.`
+        `These will be ignored.`
     );
   }
-  
+
   if (extraFlagCriteria.length > 0) {
     warnings.push(
       `Project contains flag criteria not in current configuration: ${extraFlagCriteria.join(', ')}. ` +
-      `These will be ignored.`
+        `These will be ignored.`
     );
   }
-  
+
   // Check for criteria in current config that don't exist in saved file
   const missingNumCriteria = [...currentNumKeys].filter(k => !savedNumKeys.has(k));
   const missingFlagCriteria = [...currentFlagKeys].filter(k => !savedFlagKeys.has(k));
-  
+
   if (missingNumCriteria.length > 0) {
     warnings.push(
       `Current configuration has numeric criteria not in project: ${missingNumCriteria.join(', ')}. ` +
-      `Students will have default values for these.`
+        `Students will have default values for these.`
     );
   }
-  
+
   if (missingFlagCriteria.length > 0) {
     warnings.push(
       `Current configuration has flag criteria not in project: ${missingFlagCriteria.join(', ')}. ` +
-      `Students will have default values (false) for these.`
+        `Students will have default values (false) for these.`
     );
   }
-  
+
   // Use saved criteria configuration if available, otherwise current
   const mergedNumCriteria = savedNumCriteria?.length > 0 ? savedNumCriteria : currentNumCriteria;
-  const mergedFlagCriteria = savedFlagCriteria?.length > 0 ? savedFlagCriteria : currentFlagCriteria;
-  
+  const mergedFlagCriteria =
+    savedFlagCriteria?.length > 0 ? savedFlagCriteria : currentFlagCriteria;
+
   return {
     canProceed: true,
     warnings,
     mergedNumCriteria,
-    mergedFlagCriteria
+    mergedFlagCriteria,
   };
 }
 
@@ -247,13 +263,13 @@ function validateCriteriaCompatibility(savedNumCriteria, savedFlagCriteria, curr
 function validateKeepApart(keepApart, validStudentIds) {
   const validPairs = [];
   const invalidPairs = [];
-  
+
   (keepApart || []).forEach((pair, index) => {
     if (!Array.isArray(pair) || pair.length !== 2) {
       invalidPairs.push({ index, pair, reason: 'Invalid format (expected [id1, id2])' });
       return;
     }
-    
+
     const [id1, id2] = pair;
     if (!validStudentIds.has(id1)) {
       invalidPairs.push({ index, pair, reason: `Unknown student ID: ${id1}` });
@@ -263,10 +279,10 @@ function validateKeepApart(keepApart, validStudentIds) {
       invalidPairs.push({ index, pair, reason: `Unknown student ID: ${id2}` });
       return;
     }
-    
+
     validPairs.push(pair);
   });
-  
+
   return { validPairs, invalidPairs };
 }
 
@@ -279,27 +295,35 @@ function validateKeepApart(keepApart, validStudentIds) {
 function validateKeepTogether(keepTogether, validStudentIds) {
   const validGroups = [];
   const invalidGroups = [];
-  
+
   (keepTogether || []).forEach((group, index) => {
     if (!Array.isArray(group) || group.length < 2) {
-      invalidGroups.push({ index, group, reason: 'Invalid format (expected array of at least 2 IDs)' });
+      invalidGroups.push({
+        index,
+        group,
+        reason: 'Invalid format (expected array of at least 2 IDs)',
+      });
       return;
     }
-    
+
     if (group.length > MAX_KEEP_TOGETHER_GROUP_SIZE) {
-      invalidGroups.push({ index, group, reason: `Group exceeds maximum size of ${MAX_KEEP_TOGETHER_GROUP_SIZE}` });
+      invalidGroups.push({
+        index,
+        group,
+        reason: `Group exceeds maximum size of ${MAX_KEEP_TOGETHER_GROUP_SIZE}`,
+      });
       return;
     }
-    
+
     const invalidIds = group.filter(id => !validStudentIds.has(id));
     if (invalidIds.length > 0) {
       invalidGroups.push({ index, group, reason: `Unknown student IDs: ${invalidIds.join(', ')}` });
       return;
     }
-    
+
     validGroups.push(group);
   });
-  
+
   return { validGroups, invalidGroups };
 }
 
@@ -316,7 +340,11 @@ function validateKeepOutOfClass(keepOutOfClass, validStudentIds, numTeachers) {
 
   (keepOutOfClass || []).forEach((constraint, index) => {
     if (!constraint || typeof constraint !== 'object') {
-      invalidConstraints.push({ index, constraint, reason: 'Invalid format (expected object with studentId and classIndex)' });
+      invalidConstraints.push({
+        index,
+        constraint,
+        reason: 'Invalid format (expected object with studentId and classIndex)',
+      });
       return;
     }
 
@@ -338,7 +366,11 @@ function validateKeepOutOfClass(keepOutOfClass, validStudentIds, numTeachers) {
     }
 
     if (classIndex < 0 || classIndex >= numTeachers) {
-      invalidConstraints.push({ index, constraint, reason: `Invalid classIndex: ${classIndex} (must be 0-${numTeachers - 1})` });
+      invalidConstraints.push({
+        index,
+        constraint,
+        reason: `Invalid classIndex: ${classIndex} (must be 0-${numTeachers - 1})`,
+      });
       return;
     }
 
@@ -365,11 +397,12 @@ function deserializeProject(projectData, options = {}) {
     teachers: [],
     keepApart: [],
     keepTogether: [],
-    keepOutOfClass: []
+    keepOutOfClass: [],
   };
-  
-  const currentVersion = options.currentVersion || (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown');
-  
+
+  const currentVersion =
+    options.currentVersion || (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown');
+
   // Parse JSON if string
   let data;
   try {
@@ -380,10 +413,10 @@ function deserializeProject(projectData, options = {}) {
       errors: ['Invalid JSON format: ' + e.message],
       warnings: [],
       data: null,
-      invalidItems
+      invalidItems,
     };
   }
-  
+
   // Check metadata
   if (!data.metadata) {
     return {
@@ -391,10 +424,10 @@ function deserializeProject(projectData, options = {}) {
       errors: ['Missing metadata section'],
       warnings: [],
       data: null,
-      invalidItems
+      invalidItems,
     };
   }
-  
+
   // Check format version
   const formatCheck = checkFormatCompatibility(data.metadata.formatVersion);
   if (!formatCheck.compatible) {
@@ -403,10 +436,10 @@ function deserializeProject(projectData, options = {}) {
       errors: [formatCheck.error],
       warnings: [],
       data: null,
-      invalidItems
+      invalidItems,
     };
   }
-  
+
   // Check app version compatibility
   const versionCheck = checkVersionCompatibility(data.metadata.appVersion, currentVersion);
   warnings.push(...versionCheck.warnings);
@@ -416,10 +449,10 @@ function deserializeProject(projectData, options = {}) {
       errors: versionCheck.errors,
       warnings,
       data: null,
-      invalidItems
+      invalidItems,
     };
   }
-  
+
   // Check data section
   if (!data.data) {
     return {
@@ -427,16 +460,18 @@ function deserializeProject(projectData, options = {}) {
       errors: ['Missing data section'],
       warnings,
       data: null,
-      invalidItems
+      invalidItems,
     };
   }
-  
+
   const { data: projectState } = data;
-  
+
   // Validate teachers first (needed for student validation)
   const rawTeachers = projectState.teachers || [];
   if (rawTeachers.length > MAX_TEACHERS) {
-    warnings.push(`Project contains ${rawTeachers.length} teachers; only the first ${MAX_TEACHERS} will be loaded.`);
+    warnings.push(
+      `Project contains ${rawTeachers.length} teachers; only the first ${MAX_TEACHERS} will be loaded.`
+    );
   }
   const validatedTeachers = [];
   rawTeachers.slice(0, MAX_TEACHERS).forEach((teacher, index) => {
@@ -447,13 +482,15 @@ function deserializeProject(projectData, options = {}) {
       invalidItems.teachers.push({ index, teacher, reason: result.error });
     }
   });
-  
+
   const validTeacherIds = new Set(validatedTeachers.map(t => t.id));
-  
+
   // Validate students
   const rawStudents = projectState.students || [];
   if (rawStudents.length > MAX_STUDENTS) {
-    warnings.push(`Project contains ${rawStudents.length} students; only the first ${MAX_STUDENTS} will be loaded.`);
+    warnings.push(
+      `Project contains ${rawStudents.length} students; only the first ${MAX_STUDENTS} will be loaded.`
+    );
   }
   const validatedStudents = [];
   rawStudents.slice(0, MAX_STUDENTS).forEach((student, index) => {
@@ -464,26 +501,33 @@ function deserializeProject(projectData, options = {}) {
       invalidItems.students.push({ index, student, reason: result.error });
     }
   });
-  
+
   const validStudentIds = new Set(validatedStudents.map(s => s.id));
-  
+
   // Validate constraints with combined limit
-  const totalConstraints = (projectState.keepApart?.length || 0) + 
-                           (projectState.keepTogether?.length || 0) + 
-                           (projectState.keepOutOfClass?.length || 0);
+  const totalConstraints =
+    (projectState.keepApart?.length || 0) +
+    (projectState.keepTogether?.length || 0) +
+    (projectState.keepOutOfClass?.length || 0);
   if (totalConstraints > MAX_CONSTRAINTS) {
-    warnings.push(`Project contains ${totalConstraints} constraints; only the first ${MAX_CONSTRAINTS} will be processed.`);
+    warnings.push(
+      `Project contains ${totalConstraints} constraints; only the first ${MAX_CONSTRAINTS} will be processed.`
+    );
   }
-  
+
   const keepApartResult = validateKeepApart(projectState.keepApart, validStudentIds);
   invalidItems.keepApart = keepApartResult.invalidPairs;
 
   const keepTogetherResult = validateKeepTogether(projectState.keepTogether, validStudentIds);
   invalidItems.keepTogether = keepTogetherResult.invalidGroups;
 
-  const keepOutOfClassResult = validateKeepOutOfClass(projectState.keepOutOfClass, validStudentIds, validatedTeachers.length);
+  const keepOutOfClassResult = validateKeepOutOfClass(
+    projectState.keepOutOfClass,
+    validStudentIds,
+    validatedTeachers.length
+  );
   invalidItems.keepOutOfClass = keepOutOfClassResult.invalidConstraints;
-  
+
   // Check criteria compatibility
   const criteriaCheck = validateCriteriaCompatibility(
     projectState.numericCriteria,
@@ -492,79 +536,99 @@ function deserializeProject(projectData, options = {}) {
     options.currentFlagCriteria || []
   );
   warnings.push(...criteriaCheck.warnings);
-  
+
   // Process assignment if present (now a standard field)
   const assignment = {};
   if (projectState.assignment) {
     // Validate assignment - only include valid student/teacher pairs
     Object.entries(projectState.assignment).forEach(([studentId, teacherIndex]) => {
-      if (validStudentIds.has(studentId) && teacherIndex >= 0 && teacherIndex < validatedTeachers.length) {
+      if (
+        validStudentIds.has(studentId) &&
+        teacherIndex >= 0 &&
+        teacherIndex < validatedTeachers.length
+      ) {
         assignment[studentId] = teacherIndex;
       }
     });
   }
-  
+
   // Process locked students if present
   let locked = [];
   if (projectState.locked && Array.isArray(projectState.locked)) {
     // Only include locked students that exist in the valid students
     locked = projectState.locked.filter(id => validStudentIds.has(id));
   }
-  
+
   // Process optimization results if present (deprecated but still supported)
   let optimizationResults = null;
   if (projectState.optimizationResults) {
     // Convert plain object back to Map
     const assignments = new Map();
     const savedAssignments = projectState.optimizationResults.assignments || {};
-    
+
     // Only include assignments for valid students
     Object.entries(savedAssignments).forEach(([studentId, teacherIndex]) => {
-      if (validStudentIds.has(studentId) && teacherIndex >= 0 && teacherIndex < validatedTeachers.length) {
+      if (
+        validStudentIds.has(studentId) &&
+        teacherIndex >= 0 &&
+        teacherIndex < validatedTeachers.length
+      ) {
         assignments.set(studentId, teacherIndex);
       }
     });
-    
+
     optimizationResults = {
       score: projectState.optimizationResults.score,
       iterations: projectState.optimizationResults.iterations,
-      assignments
+      assignments,
     };
   }
-  
+
   // Determine if we can load
   const canLoad = errors.length === 0;
-  
+
   // Build result data
-  const resultData = canLoad ? {
-    metadata: data.metadata,
-    students: validatedStudents,
-    teachers: validatedTeachers,
-    numericCriteria: criteriaCheck.mergedNumCriteria,
-    flagCriteria: criteriaCheck.mergedFlagCriteria,
-    keepApart: keepApartResult.validPairs,
-    keepTogether: keepTogetherResult.validGroups,
-    keepOutOfClass: keepOutOfClassResult.validConstraints,
-    assignment,
-    locked,
-    optimizationResults
-  } : null;
-  
+  const resultData = canLoad
+    ? {
+        metadata: data.metadata,
+        students: validatedStudents,
+        teachers: validatedTeachers,
+        numericCriteria: criteriaCheck.mergedNumCriteria,
+        flagCriteria: criteriaCheck.mergedFlagCriteria,
+        keepApart: keepApartResult.validPairs,
+        keepTogether: keepTogetherResult.validGroups,
+        keepOutOfClass: keepOutOfClassResult.validConstraints,
+        assignment,
+        locked,
+        optimizationResults,
+      }
+    : null;
+
   // Add warnings about invalid items
   if (invalidItems.students.length > 0) {
-    warnings.push(`${invalidItems.students.length} student(s) could not be loaded due to invalid data.`);
+    warnings.push(
+      `${invalidItems.students.length} student(s) could not be loaded due to invalid data.`
+    );
   }
   if (invalidItems.teachers.length > 0) {
-    warnings.push(`${invalidItems.teachers.length} teacher(s) could not be loaded due to invalid data.`);
+    warnings.push(
+      `${invalidItems.teachers.length} teacher(s) could not be loaded due to invalid data.`
+    );
   }
   if (invalidItems.keepApart.length > 0) {
-    warnings.push(`${invalidItems.keepApart.length} keep-apart constraint(s) skipped due to invalid references.`);
+    warnings.push(
+      `${invalidItems.keepApart.length} keep-apart constraint(s) skipped due to invalid references.`
+    );
   }
   if (invalidItems.keepTogether.length > 0) {
-    warnings.push(`${invalidItems.keepTogether.length} keep-together group(s) skipped due to invalid references.`);
+    warnings.push(
+      `${invalidItems.keepTogether.length} keep-together group(s) skipped due to invalid references.`
+    );
   }
   if (invalidItems.keepOutOfClass.length > 0) {
-    warnings.push(`${invalidItems.keepOutOfClass.length} keep-out-of-class constraint(s) skipped due to invalid references.`);
+    warnings.push(
+      `${invalidItems.keepOutOfClass.length} keep-out-of-class constraint(s) skipped due to invalid references.`
+    );
   }
 
   return {
@@ -572,7 +636,7 @@ function deserializeProject(projectData, options = {}) {
     errors,
     warnings,
     data: resultData,
-    invalidItems
+    invalidItems,
   };
 }
 
@@ -584,8 +648,8 @@ function deserializeProject(projectData, options = {}) {
 function readProjectFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
-    reader.onload = (e) => {
+
+    reader.onload = e => {
       try {
         const data = JSON.parse(e.target.result);
         resolve(data);
@@ -593,11 +657,11 @@ function readProjectFile(file) {
         reject(new Error('Invalid JSON format: ' + err.message));
       }
     };
-    
+
     reader.onerror = () => {
       reject(new Error('Error reading file'));
     };
-    
+
     reader.readAsText(file);
   });
 }

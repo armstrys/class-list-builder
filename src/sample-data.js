@@ -1,12 +1,113 @@
 let _sid = 1;
-function uid() { return 'S' + (_sid++).toString().padStart(3, '0'); }
+function uid() {
+  return 'S' + (_sid++).toString().padStart(3, '0');
+}
 
-const FN_F = ['Emma','Olivia','Ava','Sophia','Isabella','Mia','Luna','Harper','Nora','Riley','Zoey','Lily','Hannah','Elena','Maya','Chloe','Leah','Zoe','Aria','Camila','Grace','Ellie','Violet','Aurora','Scarlett','Emily','Madison','Penelope','Layla','Stella'];
-const FN_M = ['Liam','Noah','Oliver','Elijah','James','William','Lucas','Henry','Mason','Ethan','Daniel','Logan','Owen','Leo','Dylan','Nathan','Carter','Julian','Jayden','Aiden','Sebastian','Benjamin','Alexander','Michael','Matthew','Samuel','David','Joseph','Jack','Wyatt'];
-const LN = ['Smith','Johnson','Williams','Brown','Davis','Miller','Wilson','Moore','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Garcia','Martinez','Lewis','Walker','Hall','Allen','Young','King','Wright','Clark','Rodriguez','Lopez','Hill','Adams','Nelson','Baker'];
+const FN_F = [
+  'Emma',
+  'Olivia',
+  'Ava',
+  'Sophia',
+  'Isabella',
+  'Mia',
+  'Luna',
+  'Harper',
+  'Nora',
+  'Riley',
+  'Zoey',
+  'Lily',
+  'Hannah',
+  'Elena',
+  'Maya',
+  'Chloe',
+  'Leah',
+  'Zoe',
+  'Aria',
+  'Camila',
+  'Grace',
+  'Ellie',
+  'Violet',
+  'Aurora',
+  'Scarlett',
+  'Emily',
+  'Madison',
+  'Penelope',
+  'Layla',
+  'Stella',
+];
+const FN_M = [
+  'Liam',
+  'Noah',
+  'Oliver',
+  'Elijah',
+  'James',
+  'William',
+  'Lucas',
+  'Henry',
+  'Mason',
+  'Ethan',
+  'Daniel',
+  'Logan',
+  'Owen',
+  'Leo',
+  'Dylan',
+  'Nathan',
+  'Carter',
+  'Julian',
+  'Jayden',
+  'Aiden',
+  'Sebastian',
+  'Benjamin',
+  'Alexander',
+  'Michael',
+  'Matthew',
+  'Samuel',
+  'David',
+  'Joseph',
+  'Jack',
+  'Wyatt',
+];
+const LN = [
+  'Smith',
+  'Johnson',
+  'Williams',
+  'Brown',
+  'Davis',
+  'Miller',
+  'Wilson',
+  'Moore',
+  'Taylor',
+  'Anderson',
+  'Thomas',
+  'Jackson',
+  'White',
+  'Harris',
+  'Martin',
+  'Thompson',
+  'Garcia',
+  'Martinez',
+  'Lewis',
+  'Walker',
+  'Hall',
+  'Allen',
+  'Young',
+  'King',
+  'Wright',
+  'Clark',
+  'Rodriguez',
+  'Lopez',
+  'Hill',
+  'Adams',
+  'Nelson',
+  'Baker',
+];
 
-function rnd(a, b) { return Math.round(a + Math.random() * (b - a)); }
-function p(prob) { return Math.random() < prob; }
+function rnd(a, b) {
+  return Math.round(a + Math.random() * (b - a));
+}
+function p(prob) {
+  return Math.random() < prob;
+}
 
 function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
   const students = [];
@@ -18,7 +119,7 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
     const gt = p(0.13);
     const sped = p(0.11);
     const ell = p(0.14);
-    const behavior = p(0.10);
+    const behavior = p(0.1);
 
     // Generate scores based on criteria
     const student = {

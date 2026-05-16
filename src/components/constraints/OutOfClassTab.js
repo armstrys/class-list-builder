@@ -8,7 +8,13 @@
  * @param {Function} props.onAddKeepOutOfClass - Add constraint callback
  * @param {Function} props.onRemoveKeepOutOfClass - Remove constraint callback
  */
-function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass, onRemoveKeepOutOfClass }) {
+function OutOfClassTab({
+  students,
+  teachers,
+  keepOutOfClass,
+  onAddKeepOutOfClass,
+  onRemoveKeepOutOfClass,
+}) {
   const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
   const [selectedClassIndex, setSelectedClassIndex] = useState('');
   const [filter, setFilter] = useState('');
@@ -20,9 +26,7 @@ function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass
   );
 
   // Build a set of existing constraints for quick lookup
-  const existingConstraints = new Set(
-    keepOutOfClass.map(c => `${c.studentId}:${c.classIndex}`)
-  );
+  const existingConstraints = new Set(keepOutOfClass.map(c => `${c.studentId}:${c.classIndex}`));
 
   const constraints = keepOutOfClass.map((c, idx) => {
     const classIndex = Number(c.classIndex);
@@ -76,14 +80,22 @@ function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass
   }
 
   // Build disabled IDs set based on selected class
-  const disabledIds = selectedClassIndex !== ''
-    ? new Set(filteredStudents.filter(s => existingConstraints.has(`${s.id}:${selectedClassIndex}`)).map(s => s.id))
-    : new Set();
+  const disabledIds =
+    selectedClassIndex !== ''
+      ? new Set(
+          filteredStudents
+            .filter(s => existingConstraints.has(`${s.id}:${selectedClassIndex}`))
+            .map(s => s.id)
+        )
+      : new Set();
 
   // Count how many selected students would get new constraints
-  const newConstraintsCount = selectedClassIndex !== '' && selectedStudentIds.size > 0
-    ? [...selectedStudentIds].filter(id => !existingConstraints.has(`${id}:${selectedClassIndex}`)).length
-    : 0;
+  const newConstraintsCount =
+    selectedClassIndex !== '' && selectedStudentIds.size > 0
+      ? [...selectedStudentIds].filter(
+          id => !existingConstraints.has(`${id}:${selectedClassIndex}`)
+        ).length
+      : 0;
 
   return (
     <>
@@ -94,17 +106,22 @@ function OutOfClassTab({ students, teachers, keepOutOfClass, onAddKeepOutOfClass
         </h4>
         {constraints.length === 0 ? (
           <div style={{ color: 'var(--text3)', fontSize: 13, padding: '12px 0' }}>
-            No keep-out-of-class constraints set yet. These students will be blocked from specific classes.
+            No keep-out-of-class constraints set yet. These students will be blocked from specific
+            classes.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {constraints.map((c) => (
-              <div key={c.idx} className="constraint-item" style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '8px 12px',
-              }}>
+            {constraints.map(c => (
+              <div
+                key={c.idx}
+                className="constraint-item"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '8px 12px',
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
                     {c.studentName}

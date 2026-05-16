@@ -33,15 +33,23 @@ function parseCSVLine(line) {
     const ch = line[i];
     if (inQuotes) {
       if (ch === '"') {
-        if (line[i + 1] === '"') { field += '"'; i++; }  // escaped quote
+        if (line[i + 1] === '"') {
+          field += '"';
+          i++;
+        } // escaped quote
         else inQuotes = false;
       } else {
         field += ch;
       }
     } else {
-      if (ch === '"') { inQuotes = true; }
-      else if (ch === ',') { fields.push(field.trim()); field = ''; }
-      else { field += ch; }
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        fields.push(field.trim());
+        field = '';
+      } else {
+        field += ch;
+      }
     }
   }
   fields.push(field.trim());
@@ -49,8 +57,9 @@ function parseCSVLine(line) {
 }
 
 function parseStudentRow(cols, i, ctx, errors) {
-  const { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, numericCriteria, flagCriteria } = ctx;
-  const name = nameIdx !== -1 ? (cols[nameIdx] || `Student ${i + 2}`) : `Student ${i + 2}`;
+  const { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, numericCriteria, flagCriteria } =
+    ctx;
+  const name = nameIdx !== -1 ? cols[nameIdx] || `Student ${i + 2}` : `Student ${i + 2}`;
   const genderVal = genderIdx !== -1 ? (cols[genderIdx] || '').toUpperCase() : '';
   const gender = genderVal.startsWith('F') ? 'F' : genderVal.startsWith('M') ? 'M' : 'U';
 
@@ -87,7 +96,7 @@ function parseStudentRow(cols, i, ctx, errors) {
     const idx = flagKeyMap[key];
     if (idx !== undefined) {
       const v = (cols[idx] || '').toLowerCase();
-      student[key] = ['1','true','yes','y','x'].includes(v);
+      student[key] = ['1', 'true', 'yes', 'y', 'x'].includes(v);
     } else {
       student[key] = false;
     }
@@ -126,8 +135,8 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   });
 
   // Find name, gender, id columns
-  const nameIdx = headers.findIndex(h => ['name','student','lastnamefirstname'].includes(h));
-  const genderIdx = headers.findIndex(h => ['gender','sex'].includes(h));
+  const nameIdx = headers.findIndex(h => ['name', 'student', 'lastnamefirstname'].includes(h));
+  const genderIdx = headers.findIndex(h => ['gender', 'sex'].includes(h));
   const idIdx = headers.findIndex(h => h === 'id' || h === 'studentid' || h === 'student_id');
 
   if (nameIdx === -1) errors.push('Could not find a name column (expected: name, student)');
@@ -145,11 +154,16 @@ function parseCSV(text, numericCriteria, flagCriteria) {
 
   // Warn about unrecognized columns
   const expectedHeaders = new Set([
-    'name', 'student', 'lastnamefirstname',
-    'gender', 'sex',
-    'id', 'studentid', 'student_id',
+    'name',
+    'student',
+    'lastnamefirstname',
+    'gender',
+    'sex',
+    'id',
+    'studentid',
+    'student_id',
     ...numericCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, '')),
-    ...flagCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, ''))
+    ...flagCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, '')),
   ]);
   const unrecognized = headers
     .map((h, i) => ({ normalized: h, raw: rawHeaders[i] }))
@@ -161,7 +175,15 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   lines.slice(1).forEach((line, i) => {
     if (!line.trim()) return;
     const cols = parseCSVLine(line);
-    const ctx = { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, numericCriteria, flagCriteria };
+    const ctx = {
+      nameIdx,
+      genderIdx,
+      idIdx,
+      numericKeyMap,
+      flagKeyMap,
+      numericCriteria,
+      flagCriteria,
+    };
     students.push(parseStudentRow(cols, i, ctx, errors));
   });
 
@@ -169,7 +191,12 @@ function parseCSV(text, numericCriteria, flagCriteria) {
 }
 
 function exportStudentsToCSV(students, numericCriteria, flagCriteria) {
-  const headers = ['name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label)];
+  const headers = [
+    'name',
+    'gender',
+    ...numericCriteria.map(c => c.label),
+    ...flagCriteria.map(c => c.label),
+  ];
   const lines = [headers.join(',')];
 
   students.forEach(s => {
@@ -183,13 +210,21 @@ function exportStudentsToCSV(students, numericCriteria, flagCriteria) {
 }
 
 function exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria) {
-  const headers = ['class', 'id', 'name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label)];
+  const headers = [
+    'class',
+    'id',
+    'name',
+    'gender',
+    ...numericCriteria.map(c => c.label),
+    ...flagCriteria.map(c => c.label),
+  ];
   const lines = [headers.join(',')];
 
   const sorted = [...students]
     .filter(s => assignment[s.id] !== undefined)
     .sort((a, b) => {
-      const ca = assignment[a.id], cb = assignment[b.id];
+      const ca = assignment[a.id],
+        cb = assignment[b.id];
       if (ca !== cb) return ca - cb;
       return a.name.localeCompare(b.name);
     });
@@ -226,6 +261,6 @@ if (typeof module !== 'undefined' && module.exports) {
     exportStudentsToCSV,
     exportClassListsToCSV,
     triggerDownload,
-    escapeCSVValue
+    escapeCSVValue,
   };
 }

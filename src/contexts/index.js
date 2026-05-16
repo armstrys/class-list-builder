@@ -336,11 +336,17 @@
     try {
       const savedNumeric = localStorage.getItem(STORAGE_KEY_NUMERIC);
       const savedFlag = localStorage.getItem(STORAGE_KEY_FLAG);
-      const numeric = savedNumeric ? JSON.parse(savedNumeric) : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c }));
+      const numeric = savedNumeric
+        ? JSON.parse(savedNumeric)
+        : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c }));
       const flag = savedFlag ? JSON.parse(savedFlag) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c }));
       return {
-        numeric: validateCriteriaArray(numeric, 'numeric') ? numeric : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
-        flag: validateCriteriaArray(flag, 'flag') ? flag : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
+        numeric: validateCriteriaArray(numeric, 'numeric')
+          ? numeric
+          : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
+        flag: validateCriteriaArray(flag, 'flag')
+          ? flag
+          : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
       };
     } catch (e) {
       return {
@@ -402,19 +408,13 @@
       }));
     }, []);
 
-    const addNumericCriterion = useCallback(
-      (criterion = { key: '', label: '', weight: 1.0 }) => {
-        setCriteria(prev => ({ ...prev, numeric: [...prev.numeric, criterion] }));
-      },
-      []
-    );
+    const addNumericCriterion = useCallback((criterion = { key: '', label: '', weight: 1.0 }) => {
+      setCriteria(prev => ({ ...prev, numeric: [...prev.numeric, criterion] }));
+    }, []);
 
-    const addFlagCriterion = useCallback(
-      (criterion = { key: '', label: '', weight: 1.0 }) => {
-        setCriteria(prev => ({ ...prev, flag: [...prev.flag, criterion] }));
-      },
-      []
-    );
+    const addFlagCriterion = useCallback((criterion = { key: '', label: '', weight: 1.0 }) => {
+      setCriteria(prev => ({ ...prev, flag: [...prev.flag, criterion] }));
+    }, []);
 
     const removeNumericCriterion = useCallback(index => {
       setCriteria(prev => ({ ...prev, numeric: prev.numeric.filter((_, i) => i !== index) }));
@@ -505,10 +505,7 @@
     // reads dataset.theme directly. If this were a useEffect, children would
     // render once with the stale attribute, producing inline styles that
     // don't match the freshly-applied CSS until the next remount.
-    if (
-      typeof document !== 'undefined' &&
-      document.documentElement.dataset.theme !== theme
-    ) {
+    if (typeof document !== 'undefined' && document.documentElement.dataset.theme !== theme) {
       document.documentElement.dataset.theme = theme;
     }
 
@@ -520,10 +517,7 @@
       }
     }, [theme]);
 
-    const toggleTheme = useCallback(
-      () => setTheme(t => (t === 'dark' ? 'light' : 'dark')),
-      []
-    );
+    const toggleTheme = useCallback(() => setTheme(t => (t === 'dark' ? 'light' : 'dark')), []);
 
     const navigateToOptimize = useCallback(() => setView('optimize'), []);
     const navigateToSetup = useCallback(() => setView('setup'), []);

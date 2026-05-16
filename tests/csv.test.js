@@ -350,8 +350,24 @@ Bob,F,`;
     test('exports students to CSV correctly', () => {
       // Arrange
       const students = [
-        { id: '1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: true, sped: false },
-        { id: '2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: true },
+        {
+          id: '1',
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 85,
+          mathScore: 90,
+          behavior: true,
+          sped: false,
+        },
+        {
+          id: '2',
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 78,
+          mathScore: 82,
+          behavior: false,
+          sped: true,
+        },
       ];
 
       // Act
@@ -396,14 +412,36 @@ Bob,F,`;
     test('exports class assignments to CSV', () => {
       // Arrange
       const students = [
-        { id: '1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: false, sped: false },
-        { id: '2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: false },
+        {
+          id: '1',
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 85,
+          mathScore: 90,
+          behavior: false,
+          sped: false,
+        },
+        {
+          id: '2',
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 78,
+          mathScore: 82,
+          behavior: false,
+          sped: false,
+        },
       ];
-      const assignment = { '1': 0, '2': 1 };
+      const assignment = { 1: 0, 2: 1 };
       const teachers = [{ name: 'Mrs. Smith' }, { name: 'Mr. Jones' }];
 
       // Act
-      const csv = exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria);
+      const csv = exportClassListsToCSV(
+        students,
+        assignment,
+        teachers,
+        numericCriteria,
+        flagCriteria
+      );
 
       // Assert
       const lines = csv.split('\n');
@@ -423,11 +461,17 @@ Bob,F,`;
         { id: '2', name: 'Alice', gender: 'F', readingScore: 85 },
         { id: '3', name: 'Bob', gender: 'M', readingScore: 82 },
       ];
-      const assignment = { '1': 0, '2': 0, '3': 0 }; // All in same class
+      const assignment = { 1: 0, 2: 0, 3: 0 }; // All in same class
       const teachers = [{ name: 'Teacher' }];
 
       // Act
-      const csv = exportClassListsToCSV(students, assignment, teachers, [{ key: 'readingScore', label: 'Reading Score' }], []);
+      const csv = exportClassListsToCSV(
+        students,
+        assignment,
+        teachers,
+        [{ key: 'readingScore', label: 'Reading Score' }],
+        []
+      );
 
       // Assert
       const lines = csv.split('\n');
@@ -439,14 +483,18 @@ Bob,F,`;
 
     test('uses class index when teacher name missing', () => {
       // Arrange
-      const students = [
-        { id: '1', name: 'Alice', gender: 'F', readingScore: 85 },
-      ];
-      const assignment = { '1': 1 }; // Class index 1
+      const students = [{ id: '1', name: 'Alice', gender: 'F', readingScore: 85 }];
+      const assignment = { 1: 1 }; // Class index 1
       const teachers = [{ name: 'Class 0' }]; // Only one teacher defined
 
       // Act
-      const csv = exportClassListsToCSV(students, assignment, teachers, [{ key: 'readingScore', label: 'Reading Score' }], []);
+      const csv = exportClassListsToCSV(
+        students,
+        assignment,
+        teachers,
+        [{ key: 'readingScore', label: 'Reading Score' }],
+        []
+      );
 
       // Assert
       const lines = csv.split('\n');
@@ -459,11 +507,17 @@ Bob,F,`;
         { id: '1', name: 'Alice', gender: 'F', readingScore: 85 },
         { id: '2', name: 'Bob', gender: 'M', readingScore: 82 },
       ];
-      const assignment = { '1': 0 }; // Bob not assigned
+      const assignment = { 1: 0 }; // Bob not assigned
       const teachers = [{ name: 'Teacher' }];
 
       // Act
-      const csv = exportClassListsToCSV(students, assignment, teachers, [{ key: 'readingScore', label: 'Reading Score' }], []);
+      const csv = exportClassListsToCSV(
+        students,
+        assignment,
+        teachers,
+        [{ key: 'readingScore', label: 'Reading Score' }],
+        []
+      );
 
       // Assert
       expect(csv).toContain('Alice');
@@ -475,8 +529,24 @@ Bob,F,`;
     test('export then import preserves data', () => {
       // Arrange
       const students = [
-        { id: '1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: true, sped: false },
-        { id: '2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: true },
+        {
+          id: '1',
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 85,
+          mathScore: 90,
+          behavior: true,
+          sped: false,
+        },
+        {
+          id: '2',
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 78,
+          mathScore: 82,
+          behavior: false,
+          sped: true,
+        },
       ];
 
       // Act
@@ -495,12 +565,14 @@ Bob,F,`;
 
     test('handles names with commas in round-trip', () => {
       // Arrange - names with commas should be properly quoted
-      const students = [
-        { id: '1', name: 'Doe, Alice', gender: 'F', readingScore: 85 },
-      ];
+      const students = [{ id: '1', name: 'Doe, Alice', gender: 'F', readingScore: 85 }];
 
       // Act
-      const csv = exportStudentsToCSV(students, [{ key: 'readingScore', label: 'Reading Score' }], []);
+      const csv = exportStudentsToCSV(
+        students,
+        [{ key: 'readingScore', label: 'Reading Score' }],
+        []
+      );
       const result = parseCSV(csv, [{ key: 'readingScore', label: 'Reading Score' }], []);
 
       // Assert - the name is properly escaped and parsed
@@ -510,8 +582,24 @@ Bob,F,`;
     test('round-trip preserves student data', () => {
       // Arrange
       const students = [
-        { id: '1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: true, sped: false },
-        { id: '2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: true },
+        {
+          id: '1',
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 85,
+          mathScore: 90,
+          behavior: true,
+          sped: false,
+        },
+        {
+          id: '2',
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 78,
+          mathScore: 82,
+          behavior: false,
+          sped: true,
+        },
       ];
 
       // Act

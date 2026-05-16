@@ -38,7 +38,9 @@ function ViolationsModal({
 
   const footer = (
     <>
-      <button className="btn btn-secondary" onClick={onClose}>Close</button>
+      <button className="btn btn-secondary" onClick={onClose}>
+        Close
+      </button>
       <button className="btn btn-primary" onClick={onOpenConstraints}>
         Edit Constraints
       </button>
@@ -46,43 +48,41 @@ function ViolationsModal({
   );
 
   return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      title="Constraint Violations"
-      size="lg"
-      footer={footer}
-    >
+    <Modal isOpen={true} onClose={onClose} title="Constraint Violations" size="lg" footer={footer}>
       {/* Explanation */}
-      <div style={{
-        padding: 12,
-        background: 'var(--surface)',
-        borderRadius: 'var(--radius-sm)',
-        marginBottom: 20,
-        fontSize: 13,
-        color: 'var(--text2)',
-        border: '1px solid var(--border)',
-      }}>
+      <div
+        style={{
+          padding: 12,
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-sm)',
+          marginBottom: 20,
+          fontSize: 13,
+          color: 'var(--text2)',
+          border: '1px solid var(--border)',
+        }}
+      >
         <strong>Why are constraints violated?</strong>
         <p style={{ margin: '8px 0 0 0' }}>
-          The optimizer tries to balance all criteria while respecting your constraints. 
-          Sometimes constraints conflict with each other or make class balance impossible. 
-          Consider removing some constraints or manually adjusting the results.
+          The optimizer tries to balance all criteria while respecting your constraints. Sometimes
+          constraints conflict with each other or make class balance impossible. Consider removing
+          some constraints or manually adjusting the results.
         </p>
       </div>
 
       {/* Keep Apart Violations */}
       {hasApart && (
         <div style={{ marginBottom: 24 }}>
-          <h4 style={{
-            margin: '0 0 12px 0',
-            fontSize: 14,
-            fontWeight: 500,
-            color: 'var(--danger)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}>
+          <h4
+            style={{
+              margin: '0 0 12px 0',
+              fontSize: 14,
+              fontWeight: 500,
+              color: 'var(--danger)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
             <span>🚫</span>
             Keep-Apart Violations ({apartViolations.length})
           </h4>
@@ -91,31 +91,42 @@ function ViolationsModal({
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {apartViolations.map(([id1, id2], idx) => (
-              <div key={idx} style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '10px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                flexWrap: 'wrap',
-              }}>
+              <div
+                key={idx}
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="badge" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+                  <span
+                    className="badge"
+                    style={{ background: 'var(--surface)', color: 'var(--text)' }}
+                  >
                     {studentById[id1]?.name || id1}
                   </span>
                   <span style={{ color: 'var(--text3)' }}>↔</span>
-                  <span className="badge" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+                  <span
+                    className="badge"
+                    style={{ background: 'var(--surface)', color: 'var(--text)' }}
+                  >
                     {studentById[id2]?.name || id2}
                   </span>
                 </div>
-                <span style={{
-                  marginLeft: 'auto',
-                  fontSize: 11,
-                  color: 'var(--danger)',
-                  fontWeight: 500,
-                }}>
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: 11,
+                    color: 'var(--danger)',
+                    fontWeight: 500,
+                  }}
+                >
                   Both in: {getClassName(id1)}
                 </span>
               </div>
@@ -127,15 +138,17 @@ function ViolationsModal({
       {/* Keep Together Violations */}
       {hasTogether && (
         <div style={{ marginBottom: 24 }}>
-          <h4 style={{
-            margin: '0 0 12px 0',
-            fontSize: 14,
-            fontWeight: 500,
-            color: 'var(--danger)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}>
+          <h4
+            style={{
+              margin: '0 0 12px 0',
+              fontSize: 14,
+              fontWeight: 500,
+              color: 'var(--danger)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
             <span>🔗</span>
             Keep-Together Violations ({togetherViolations.length})
           </h4>
@@ -152,34 +165,40 @@ function ViolationsModal({
               });
 
               return (
-                <div key={idx} style={{
-                  background: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '10px 12px',
-                }}>
+                <div
+                  key={idx}
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '10px 12px',
+                  }}
+                >
                   <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>
                     Group {idx + 1}:
                   </div>
                   {Object.entries(classDistribution).map(([className, names]) => (
-                    <div key={className} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginBottom: 4,
-                      flexWrap: 'wrap',
-                    }}>
-                      <span style={{
-                        fontSize: 11,
-                        color: 'var(--danger)',
-                        fontWeight: 500,
-                        minWidth: 80,
-                      }}>
+                    <div
+                      key={className}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        marginBottom: 4,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--danger)',
+                          fontWeight: 500,
+                          minWidth: 80,
+                        }}
+                      >
                         {className}:
                       </span>
-                      <span style={{ fontSize: 13 }}>
-                        {names.join(', ')}
-                      </span>
+                      <span style={{ fontSize: 13 }}>{names.join(', ')}</span>
                     </div>
                   ))}
                 </div>
@@ -192,15 +211,17 @@ function ViolationsModal({
       {/* Keep Out of Class Violations */}
       {hasOutOfClass && (
         <div style={{ marginBottom: 24 }}>
-          <h4 style={{
-            margin: '0 0 12px 0',
-            fontSize: 14,
-            fontWeight: 500,
-            color: 'var(--danger)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}>
+          <h4
+            style={{
+              margin: '0 0 12px 0',
+              fontSize: 14,
+              fontWeight: 500,
+              color: 'var(--danger)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
             <span>🚫</span>
             Keep-Out-of-Class Violations ({outOfClassViolations.length})
           </h4>
@@ -209,18 +230,24 @@ function ViolationsModal({
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {outOfClassViolations.map(({ studentId, classIndex }, idx) => (
-              <div key={idx} style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '10px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                flexWrap: 'wrap',
-              }}>
+              <div
+                key={idx}
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="badge" style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+                  <span
+                    className="badge"
+                    style={{ background: 'var(--surface)', color: 'var(--text)' }}
+                  >
                     {studentById[studentId]?.name || studentId}
                   </span>
                   <span style={{ color: 'var(--text3)' }}>→</span>
@@ -228,12 +255,14 @@ function ViolationsModal({
                     {teachers[classIndex]?.name || `Class ${classIndex + 1}`}
                   </span>
                 </div>
-                <span style={{
-                  marginLeft: 'auto',
-                  fontSize: 11,
-                  color: 'var(--danger)',
-                  fontWeight: 500,
-                }}>
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: 11,
+                    color: 'var(--danger)',
+                    fontWeight: 500,
+                  }}
+                >
                   Should be excluded
                 </span>
               </div>
@@ -243,15 +272,15 @@ function ViolationsModal({
       )}
 
       {/* Suggestions */}
-      <div style={{
-        padding: 12,
-        background: 'var(--surface)',
-        borderRadius: 'var(--radius-sm)',
-        border: '1px solid var(--border)',
-      }}>
-        <h5 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 500 }}>
-          What can you do?
-        </h5>
+      <div
+        style={{
+          padding: 12,
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        <h5 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 500 }}>What can you do?</h5>
         <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--text2)' }}>
           <li>Click "Edit Constraints" below to remove conflicting constraints</li>
           <li>Try re-optimizing with fewer constraints</li>

@@ -1,13 +1,13 @@
 /**
  * Modal - Reusable accessible modal component with focus trap
- * 
+ *
  * Features:
  * - Focus trap on open (cycles through focusable elements)
  * - Restores focus on close
  * - Closes on Escape key and outside click
  * - ARIA attributes for screen readers
  * - Hides background content from screen readers
- * 
+ *
  * @param {Object} props
  * @param {boolean} props.isOpen - Whether modal is visible
  * @param {Function} props.onClose - Close callback
@@ -28,7 +28,7 @@ function Modal({
   closeOnOverlayClick = true,
   showCloseButton = true,
   footer,
-  style = {}
+  style = {},
 }) {
   const overlayRef = useRef(null);
   const modalRef = useRef(null);
@@ -40,7 +40,7 @@ function Modal({
     sm: { maxWidth: 400 },
     md: { maxWidth: 480 },
     lg: { maxWidth: 560 },
-    xl: { maxWidth: 700 }
+    xl: { maxWidth: 700 },
   };
 
   // Store previously focused element and trap focus
@@ -48,7 +48,7 @@ function Modal({
     if (isOpen) {
       // Store the element that had focus before opening
       previouslyFocusedRef.current = document.activeElement;
-      
+
       // Focus the modal container
       if (modalRef.current) {
         modalRef.current.focus();
@@ -96,7 +96,7 @@ function Modal({
         const focusableElements = modalRef.current?.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
-        
+
         if (!focusableElements || focusableElements.length === 0) return;
 
         const firstElement = focusableElements[0];
@@ -148,27 +148,19 @@ function Modal({
         onClick={e => e.stopPropagation()}
       >
         <div className="modal-header">
-          <div className="modal-title" id={titleId}>{title}</div>
+          <div className="modal-title" id={titleId}>
+            {title}
+          </div>
           {showCloseButton && (
-            <button 
-              className="btn btn-ghost btn-sm" 
-              onClick={onClose}
-              aria-label="Close modal"
-            >
+            <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close modal">
               ✕
             </button>
           )}
         </div>
-        
-        <div className="modal-body">
-          {children}
-        </div>
 
-        {footer && (
-          <div className="modal-footer">
-            {footer}
-          </div>
-        )}
+        <div className="modal-body">{children}</div>
+
+        {footer && <div className="modal-footer">{footer}</div>}
       </div>
     </div>
   );

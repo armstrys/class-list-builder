@@ -17,12 +17,11 @@ function resetIdCounter() {
 
 function calculateClassColumnStats(students, allStudents, numericCriteria) {
   // From ClassColumn.js lines 4-19
-  const avg = key => students.length
-    ? students.reduce((s, st) => s + (st[key] || 0), 0) / students.length
-    : 0;
+  const avg = key =>
+    students.length ? students.reduce((s, st) => s + (st[key] || 0), 0) / students.length : 0;
 
-  const popMin = key => allStudents.length ? Math.min(...allStudents.map(s => s[key] || 0)) : 0;
-  const popMax = key => allStudents.length ? Math.max(...allStudents.map(s => s[key] || 0)) : 1;
+  const popMin = key => (allStudents.length ? Math.min(...allStudents.map(s => s[key] || 0)) : 0);
+  const popMax = key => (allStudents.length ? Math.max(...allStudents.map(s => s[key] || 0)) : 1);
 
   return numericCriteria.map(m => {
     const mn = popMin(m.key);
@@ -32,7 +31,7 @@ function calculateClassColumnStats(students, allStudents, numericCriteria) {
     return {
       label: m.label,
       val: Math.round(classAvg),
-      pct: Math.min(100, Math.max(4, (classAvg - mn) / range * 100)),
+      pct: Math.min(100, Math.max(4, ((classAvg - mn) / range) * 100)),
       raw: classAvg,
       min: mn,
       max: mx,
@@ -83,9 +82,30 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('correctly normalizes reading scores (0-215) to percentage bars', () => {
       // Arrange - students with reading scores 0-215
       const students = [
-        { id: uid(), name: 'Alice', gender: 'F', readingScore: 0, mathScore: 2000, languageScore: 2000 },
-        { id: uid(), name: 'Bob', gender: 'M', readingScore: 107, mathScore: 2500, languageScore: 2200 },
-        { id: uid(), name: 'Charlie', gender: 'M', readingScore: 215, mathScore: 2900, languageScore: 2900 },
+        {
+          id: uid(),
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 0,
+          mathScore: 2000,
+          languageScore: 2000,
+        },
+        {
+          id: uid(),
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 107,
+          mathScore: 2500,
+          languageScore: 2200,
+        },
+        {
+          id: uid(),
+          name: 'Charlie',
+          gender: 'M',
+          readingScore: 215,
+          mathScore: 2900,
+          languageScore: 2900,
+        },
       ];
 
       // Act - simulate ClassColumn stats calculation
@@ -103,9 +123,30 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('correctly normalizes math scores (2000-2900) to percentage bars', () => {
       // Arrange - students with math scores 2000-2900
       const students = [
-        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2000, languageScore: 2000 },
-        { id: uid(), name: 'Bob', gender: 'M', readingScore: 150, mathScore: 2450, languageScore: 2450 },
-        { id: uid(), name: 'Charlie', gender: 'M', readingScore: 200, mathScore: 2900, languageScore: 2900 },
+        {
+          id: uid(),
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 100,
+          mathScore: 2000,
+          languageScore: 2000,
+        },
+        {
+          id: uid(),
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 150,
+          mathScore: 2450,
+          languageScore: 2450,
+        },
+        {
+          id: uid(),
+          name: 'Charlie',
+          gender: 'M',
+          readingScore: 200,
+          mathScore: 2900,
+          languageScore: 2900,
+        },
       ];
 
       // Act
@@ -123,9 +164,30 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('handles single-value population (min = max)', () => {
       // Arrange - all students have same score
       const students = [
-        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2500, languageScore: 2200 },
-        { id: uid(), name: 'Bob', gender: 'M', readingScore: 100, mathScore: 2500, languageScore: 2200 },
-        { id: uid(), name: 'Charlie', gender: 'M', readingScore: 100, mathScore: 2500, languageScore: 2200 },
+        {
+          id: uid(),
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 100,
+          mathScore: 2500,
+          languageScore: 2200,
+        },
+        {
+          id: uid(),
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 100,
+          mathScore: 2500,
+          languageScore: 2200,
+        },
+        {
+          id: uid(),
+          name: 'Charlie',
+          gender: 'M',
+          readingScore: 100,
+          mathScore: 2500,
+          languageScore: 2200,
+        },
       ];
 
       // Act
@@ -142,11 +204,32 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('percentage is clamped between 4% and 100%', () => {
       // Arrange - extreme values that would result in very low percentages
       const allStudents = [
-        { id: uid(), name: 'Low', gender: 'F', readingScore: 0, mathScore: 2000, languageScore: 2000 },
-        { id: uid(), name: 'High', gender: 'M', readingScore: 215, mathScore: 2900, languageScore: 2900 },
+        {
+          id: uid(),
+          name: 'Low',
+          gender: 'F',
+          readingScore: 0,
+          mathScore: 2000,
+          languageScore: 2000,
+        },
+        {
+          id: uid(),
+          name: 'High',
+          gender: 'M',
+          readingScore: 215,
+          mathScore: 2900,
+          languageScore: 2900,
+        },
       ];
       const classStudents = [
-        { id: uid(), name: 'VeryLow', gender: 'F', readingScore: 0, mathScore: 2000, languageScore: 2000 },
+        {
+          id: uid(),
+          name: 'VeryLow',
+          gender: 'F',
+          readingScore: 0,
+          mathScore: 2000,
+          languageScore: 2000,
+        },
       ];
 
       // Act
@@ -161,10 +244,24 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('percentage is capped at 100%', () => {
       // Arrange - student with score higher than calculated max (shouldn't happen but test robustness)
       const allStudents = [
-        { id: uid(), name: 'Std', gender: 'F', readingScore: 100, mathScore: 2500, languageScore: 2200 },
+        {
+          id: uid(),
+          name: 'Std',
+          gender: 'F',
+          readingScore: 100,
+          mathScore: 2500,
+          languageScore: 2200,
+        },
       ];
       const classStudents = [
-        { id: uid(), name: 'High', gender: 'M', readingScore: 150, mathScore: 2800, languageScore: 2500 },
+        {
+          id: uid(),
+          name: 'High',
+          gender: 'M',
+          readingScore: 150,
+          mathScore: 2800,
+          languageScore: 2500,
+        },
       ];
 
       // Act
@@ -260,7 +357,12 @@ describe('Display Normalization with Mixed Score Ranges', () => {
       }
 
       // Act
-      const normalized = calculateStatsStripNormalization(students, assignment, 3, mixedRangeCriteria);
+      const normalized = calculateStatsStripNormalization(
+        students,
+        assignment,
+        3,
+        mixedRangeCriteria
+      );
       const mathNorm = normalized.find(n => n.label === 'Math Score');
 
       // Assert
@@ -278,8 +380,22 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('handles empty classes gracefully', () => {
       // Arrange - one class is empty
       const students = [
-        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2500, languageScore: 2200 },
-        { id: uid(), name: 'Bob', gender: 'M', readingScore: 150, mathScore: 2600, languageScore: 2300 },
+        {
+          id: uid(),
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 100,
+          mathScore: 2500,
+          languageScore: 2200,
+        },
+        {
+          id: uid(),
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 150,
+          mathScore: 2600,
+          languageScore: 2300,
+        },
       ];
       const assignment = {
         [students[0].id]: 0,
@@ -288,7 +404,12 @@ describe('Display Normalization with Mixed Score Ranges', () => {
       };
 
       // Act
-      const normalized = calculateStatsStripNormalization(students, assignment, 3, mixedRangeCriteria);
+      const normalized = calculateStatsStripNormalization(
+        students,
+        assignment,
+        3,
+        mixedRangeCriteria
+      );
 
       // Assert - should not throw
       normalized.forEach(n => {
@@ -317,7 +438,12 @@ describe('Display Normalization with Mixed Score Ranges', () => {
       });
 
       // Act
-      const normalized = calculateStatsStripNormalization(students, assignment, 3, mixedRangeCriteria);
+      const normalized = calculateStatsStripNormalization(
+        students,
+        assignment,
+        3,
+        mixedRangeCriteria
+      );
 
       // Assert - each criterion should be normalized independently
       normalized.forEach(n => {
@@ -343,10 +469,28 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('accurately displays averages in CSV export', () => {
       // Arrange
       const students = [
-        { id: 's1', name: 'Alice', gender: 'F', readingScore: 150, mathScore: 2500, languageScore: 2200, behavior: false, sped: false },
-        { id: 's2', name: 'Bob', gender: 'M', readingScore: 200, mathScore: 2800, languageScore: 2750, behavior: true, sped: false },
+        {
+          id: 's1',
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 150,
+          mathScore: 2500,
+          languageScore: 2200,
+          behavior: false,
+          sped: false,
+        },
+        {
+          id: 's2',
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 200,
+          mathScore: 2800,
+          languageScore: 2750,
+          behavior: true,
+          sped: false,
+        },
       ];
-      const assignment = { 's1': 0, 's2': 0 };
+      const assignment = { s1: 0, s2: 0 };
       const teachers = [{ name: 'Mrs. Smith' }];
 
       // Act
@@ -364,9 +508,18 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('displays decimal scores accurately', () => {
       // Arrange
       const students = [
-        { id: 's1', name: 'Alice', gender: 'F', readingScore: 150.75, mathScore: 2500.33, languageScore: 2200.99, behavior: false, sped: false },
+        {
+          id: 's1',
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 150.75,
+          mathScore: 2500.33,
+          languageScore: 2200.99,
+          behavior: false,
+          sped: false,
+        },
       ];
-      const assignment = { 's1': 0 };
+      const assignment = { s1: 0 };
       const teachers = [{ name: 'Teacher' }];
 
       // Act
@@ -381,8 +534,22 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('ClassColumn averages are rounded for display', () => {
       // Arrange - students with non-round averages
       const students = [
-        { id: uid(), name: 'Alice', gender: 'F', readingScore: 150, mathScore: 2500, languageScore: 2200 },
-        { id: uid(), name: 'Bob', gender: 'M', readingScore: 151, mathScore: 2501, languageScore: 2201 },
+        {
+          id: uid(),
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 150,
+          mathScore: 2500,
+          languageScore: 2200,
+        },
+        {
+          id: uid(),
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 151,
+          mathScore: 2501,
+          languageScore: 2201,
+        },
       ];
 
       // Act - simulate ClassColumn calculation
@@ -398,8 +565,22 @@ describe('Display Normalization with Mixed Score Ranges', () => {
   describe('Edge Cases', () => {
     test('handles very small ranges (min and max differ by 1)', () => {
       const students = [
-        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2000, languageScore: 2200 },
-        { id: uid(), name: 'Bob', gender: 'M', readingScore: 101, mathScore: 2001, languageScore: 2201 },
+        {
+          id: uid(),
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 100,
+          mathScore: 2000,
+          languageScore: 2200,
+        },
+        {
+          id: uid(),
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 101,
+          mathScore: 2001,
+          languageScore: 2201,
+        },
       ];
 
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
@@ -412,8 +593,22 @@ describe('Display Normalization with Mixed Score Ranges', () => {
 
     test('handles zero values correctly', () => {
       const students = [
-        { id: uid(), name: 'Alice', gender: 'F', readingScore: 0, mathScore: 2000, languageScore: 2000 },
-        { id: uid(), name: 'Bob', gender: 'M', readingScore: 100, mathScore: 2500, languageScore: 2500 },
+        {
+          id: uid(),
+          name: 'Alice',
+          gender: 'F',
+          readingScore: 0,
+          mathScore: 2000,
+          languageScore: 2000,
+        },
+        {
+          id: uid(),
+          name: 'Bob',
+          gender: 'M',
+          readingScore: 100,
+          mathScore: 2500,
+          languageScore: 2500,
+        },
       ];
 
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
@@ -429,8 +624,22 @@ describe('Display Normalization with Mixed Score Ranges', () => {
 
     test('handles negative scores in normalization', () => {
       const students = [
-        { id: uid(), name: 'Low', gender: 'F', readingScore: -100, mathScore: 2000, languageScore: 2000 },
-        { id: uid(), name: 'High', gender: 'M', readingScore: 100, mathScore: 2900, languageScore: 2900 },
+        {
+          id: uid(),
+          name: 'Low',
+          gender: 'F',
+          readingScore: -100,
+          mathScore: 2000,
+          languageScore: 2000,
+        },
+        {
+          id: uid(),
+          name: 'High',
+          gender: 'M',
+          readingScore: 100,
+          mathScore: 2900,
+          languageScore: 2900,
+        },
       ];
 
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);
@@ -444,7 +653,14 @@ describe('Display Normalization with Mixed Score Ranges', () => {
     test('handles extremely large ranges', () => {
       const students = [
         { id: uid(), name: 'Low', gender: 'F', readingScore: 0, mathScore: 0, languageScore: 0 },
-        { id: uid(), name: 'High', gender: 'M', readingScore: 1000000, mathScore: 1000000, languageScore: 1000000 },
+        {
+          id: uid(),
+          name: 'High',
+          gender: 'M',
+          readingScore: 1000000,
+          mathScore: 1000000,
+          languageScore: 1000000,
+        },
       ];
 
       const stats = calculateClassColumnStats(students, students, mixedRangeCriteria);

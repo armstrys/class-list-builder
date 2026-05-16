@@ -3,10 +3,10 @@ import { optimize, computeCost, computeSeed } from '../src/optimizer.js';
 
 /**
  * Test suite for settings changes affecting optimization
- * 
+ *
  * This test verifies that changing criteria weights (in SettingsModal)
  * properly triggers re-optimization with the new weights.
- * 
+ *
  * Bug: When users changed flag/numeric weights after optimizing,
  * the optimization results would not update because:
  * 1. The RNG seed didn't include weights (now fixed)
@@ -26,8 +26,8 @@ describe('Settings Changes - Optimization Updates', () => {
         id: `s${i}`,
         name: `Student ${i}`,
         gender: i % 2 === 0 ? 'F' : 'M',
-        readingScore: 50 + (i * 3) % 50,
-        mathScore: 40 + (i * 7) % 50,
+        readingScore: 50 + ((i * 3) % 50),
+        mathScore: 40 + ((i * 7) % 50),
         behavior: i % 3 === 0,
       });
     }
@@ -37,9 +37,7 @@ describe('Settings Changes - Optimization Updates', () => {
       { key: 'mathScore', label: 'Math', weight: 1.0 },
     ];
 
-    baseFlagCriteria = [
-      { key: 'behavior', label: 'Behavior', weight: 1.0 },
-    ];
+    baseFlagCriteria = [{ key: 'behavior', label: 'Behavior', weight: 1.0 }];
   });
 
   test('changing numeric criteria weights produces different optimization results', () => {
@@ -79,7 +77,7 @@ describe('Settings Changes - Optimization Updates', () => {
     // The results should be different because weights changed
     const assignments1 = Object.entries(result1).sort((a, b) => a[0].localeCompare(b[0]));
     const assignments2 = Object.entries(result2).sort((a, b) => a[0].localeCompare(b[0]));
-    
+
     // At least some assignments should differ
     let differences = 0;
     for (let i = 0; i < assignments1.length; i++) {
@@ -87,7 +85,7 @@ describe('Settings Changes - Optimization Updates', () => {
         differences++;
       }
     }
-    
+
     expect(differences).toBeGreaterThan(0);
   });
 
@@ -108,9 +106,7 @@ describe('Settings Changes - Optimization Updates', () => {
     );
 
     // Change flag weights - emphasize behavior flag more
-    const modifiedFlagCriteria = [
-      { key: 'behavior', label: 'Behavior', weight: 5.0 },
-    ];
+    const modifiedFlagCriteria = [{ key: 'behavior', label: 'Behavior', weight: 5.0 }];
 
     // Second optimization with modified weights
     const result2 = optimize(
@@ -127,14 +123,14 @@ describe('Settings Changes - Optimization Updates', () => {
     // The results should be different because weights changed
     const assignments1 = Object.entries(result1).sort((a, b) => a[0].localeCompare(b[0]));
     const assignments2 = Object.entries(result2).sort((a, b) => a[0].localeCompare(b[0]));
-    
+
     let differences = 0;
     for (let i = 0; i < assignments1.length; i++) {
       if (assignments1[i][1] !== assignments2[i][1]) {
         differences++;
       }
     }
-    
+
     expect(differences).toBeGreaterThan(0);
   });
 
@@ -257,7 +253,7 @@ describe('Settings Changes - Optimization Updates', () => {
 
   test('locked students remain in place when criteria change', () => {
     const numClasses = 3;
-    
+
     // Lock student 1 in class 0
     const lockedAssignments = { s0: 0 };
 
