@@ -108,26 +108,27 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .panel-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 14px; }
 
 /* ── Setup Page ── */
-.setup-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
+.setup-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; padding: 20px 24px; }
 .setup-bottom { padding: 12px 24px; border-top: 1px solid var(--border); background: var(--surface); display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
 .setup-bottom-left { margin-right: auto; display: flex; gap: 8px; }
 
 /* ── Teachers Panel ── */
 .teacher-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-.teacher-item { display: flex; gap: 8px; align-items: center; }
+.teacher-item { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.teacher-item input { min-width: 0; }
 .teacher-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-light); color: var(--accent); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 /* ── Students Table ── */
 .students-card { display: flex; flex-direction: column; min-height: 0; }
-.students-table-wrap { overflow: auto; flex: 1; }
-.students-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.students-table th { padding: 8px 10px; background: var(--surface2); color: var(--text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; text-align: left; position: sticky; top: 0; z-index: 1; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.students-table-wrap { overflow: auto; flex: 1; min-width: 0; }
+.students-table { min-width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.students-table th { padding: 8px 10px; background: var(--surface2); color: var(--text2); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; text-align: left; position: sticky; top: 0; z-index: 1; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 .students-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .students-table tr:last-child td { border-bottom: none; }
 .students-table tr:hover td { background: var(--surface2); }
 .students-table .col-name { min-width: 130px; font-weight: 500; }
-.students-table .col-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); text-align: right; }
-.students-table .col-check { text-align: center; }
+.students-table .col-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); text-align: right; min-width: 60px; }
+.students-table .col-check { text-align: center; min-width: 60px; }
 
 /* ── Badges ── */
 .badge {
