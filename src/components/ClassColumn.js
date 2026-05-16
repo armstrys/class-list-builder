@@ -37,14 +37,14 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
     const range = mx - mn || 1;
     const classAvg = avg(m.key);
     return {
-      label: m.short,
+      label: m.label,
       val: Math.round(classAvg),
       pct: Math.min(100, Math.max(4, (classAvg - mn) / range * 100)),
     };
   });
 
   const boolCounts = flagCriteria.map(m => ({
-    label: m.short,
+    label: m.label,
     val: students.filter(s => s[m.key]).length,
     colors: generateColor(m.key),
   })).filter(b => b.val > 0);

@@ -39,15 +39,15 @@ function createMockStudents(count, options = {}) {
 }
 
 const numericCriteria = [
-  { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
-  { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
-  { key: 'languageScore', label: 'Language Score', short: 'Lang', weight: 1.0 },
+  { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
+  { key: 'mathScore', label: 'Math Score', weight: 1.0 },
+  { key: 'languageScore', label: 'Language Score', weight: 1.0 },
 ];
 
 const flagCriteria = [
-  { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
-  { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.5 },
-  { key: 'sped', label: 'SPED', short: 'SPED', weight: 2.0 },
+  { key: 'behavior', label: 'Behavior', weight: 2.0 },
+  { key: 'extendedLearning', label: 'Extended Learning', weight: 1.5 },
+  { key: 'sped', label: 'SPED', weight: 2.0 },
 ];
 
 describe('Optimizer', () => {
@@ -1084,16 +1084,16 @@ describe('Optimizer', () => {
       
       // High-weighted flag criteria (behavior=3.0, extendedLearning=0.5)
       const weightedFlagCriteria = [
-        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 3.0 },
-        { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 0.5 },
-        { key: 'sped', label: 'SPED', short: 'SPED', weight: 1.0 },
+        { key: 'behavior', label: 'Behavior', weight: 3.0 },
+        { key: 'extendedLearning', label: 'Extended Learning', weight: 0.5 },
+        { key: 'sped', label: 'SPED', weight: 1.0 },
       ];
       
       // Equal-weighted flag criteria (all 1.0)
       const equalFlagCriteria = [
-        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 1.0 },
-        { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.0 },
-        { key: 'sped', label: 'SPED', short: 'SPED', weight: 1.0 },
+        { key: 'behavior', label: 'Behavior', weight: 1.0 },
+        { key: 'extendedLearning', label: 'Extended Learning', weight: 1.0 },
+        { key: 'sped', label: 'SPED', weight: 1.0 },
       ];
       
       const numClasses = 2;
@@ -1118,12 +1118,12 @@ describe('Optimizer', () => {
       
       // High weight for behavior
       const highWeightCriteria = [
-        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 2.0 },
+        { key: 'behavior', label: 'Behavior', weight: 2.0 },
       ];
       
       // Low weight for behavior
       const lowWeightCriteria = [
-        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 0.1 },
+        { key: 'behavior', label: 'Behavior', weight: 0.1 },
       ];
       
       const numClasses = 2;
@@ -1149,14 +1149,14 @@ describe('Optimizer', () => {
       
       // High weight on reading
       const readingWeightedCriteria = [
-        { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 3.0 },
-        { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
+        { key: 'readingScore', label: 'Reading Score', weight: 3.0 },
+        { key: 'mathScore', label: 'Math Score', weight: 1.0 },
       ];
       
       // Equal weights
       const equalCriteria = [
-        { key: 'readingScore', label: 'Reading Score', short: 'Read', weight: 1.0 },
-        { key: 'mathScore', label: 'Math Score', short: 'Math', weight: 1.0 },
+        { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
+        { key: 'mathScore', label: 'Math Score', weight: 1.0 },
       ];
       
       const numClasses = 2;
@@ -1190,9 +1190,9 @@ describe('Optimizer', () => {
       
       // Behavior weighted higher than extended learning
       const weightedCriteria = [
-        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 3.0 },
-        { key: 'extendedLearning', label: 'Extended Learning', short: 'ExtL', weight: 1.0 },
-        { key: 'sped', label: 'SPED', short: 'SPED', weight: 1.0 },
+        { key: 'behavior', label: 'Behavior', weight: 3.0 },
+        { key: 'extendedLearning', label: 'Extended Learning', weight: 1.0 },
+        { key: 'sped', label: 'SPED', weight: 1.0 },
       ];
       
       const numClasses = 2;
@@ -1220,7 +1220,7 @@ describe('Optimizer', () => {
       
       // Behavior has zero weight
       const zeroWeightCriteria = [
-        { key: 'behavior', label: 'Behavior', short: 'BEH', weight: 0 },
+        { key: 'behavior', label: 'Behavior', weight: 0 },
       ];
       
       const numClasses = 2;
