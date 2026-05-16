@@ -51,25 +51,25 @@ PR titles can include `#major` to trigger a major version bump; otherwise minor 
 ## Release Security Audit
 
 Every release ships with a per-version audit document at
-`audits/<version>.md`. CI blocks merge to `main` if the audit is
+`.security/audits/<version>.md`. CI blocks merge to `main` if the audit is
 missing, malformed, has a status other than `pass`/`conditional-pass`,
 has unfilled sign-off, or has a content-hash that doesn't match the
-current source/deps/`docs/SECURITY.md` (i.e., the tree drifted after
+current source/deps/`SECURITY.md` (i.e., the tree drifted after
 audit).
 
 To produce an audit for a release:
 
 1. In Claude Code (run from the repo root), invoke the
-   security-audit skill at
-   [`.claude/skills/security-audit/SKILL.md`](.claude/skills/security-audit/SKILL.md).
+   security-audit-system skill at
+   [`.claude/skills/security-audit-system/SKILL.md`](.claude/skills/security-audit-system/SKILL.md).
    It is hardened against prompt-injection from the codebase under
-   audit and will draft `audits/<version>.md`.
+   audit and will draft `.security/audits/<version>.md`.
 2. Review every finding manually. The signature is yours, not the
    model's.
 3. Run `npm run audit:verify`. Fix anything that fails.
 4. Commit and open the release PR.
 
-See [`audits/README.md`](audits/README.md) for full details.
+See [`.security/audits/README.md`](.security/audits/README.md) for full details.
 
 ## Building a Standalone Release
 

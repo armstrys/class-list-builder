@@ -96,7 +96,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
         {/* Admin/IT Note - moved under privacy */}
         <div className="welcome-admin-note">
           <strong>🔍 Admin or IT?</strong> Review our
-          <a href="https://github.com/armstrys/class-list-builder/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer"> security documentation</a>.
+          <a href="https://github.com/armstrys/class-list-builder/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer"> security documentation</a>.
         </div>
 
         {/* Features Section */}

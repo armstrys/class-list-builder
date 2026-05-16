@@ -1,0 +1,13 @@
+{
+  "$schema-comment": "Tier 2 structured exception registry. Each exception must have: id, summary, rationale, expires (YYYY-MM-DD), approvedBy, approvedOn. Audits cite IDs in 'Accepted Risks'. Expired entries fail CI. See .security/audits/README.md for format details.",
+  "exceptions": [
+    {
+      "id": "CLB-EXC-0001",
+      "summary": "Single maintainer — no separation of duties",
+      "rationale": "This project is maintained by a single developer (Ryan Armstrong). There is no second maintainer available to serve as an independent release approver. The AI assistant (via security-audit-system skill) assists with authoring, review, and security audit, but this does not constitute true separation of duties as the same person (Ryan) directs the AI and holds final sign-off authority. This exception acknowledges the risk that a single compromised account or malicious insider could bypass review. Mitigation: all changes are public on GitHub, releases are cryptographically attested by GitHub Actions (SLSA L2), and the audit trail is publicly verifiable. This exception should be reviewed and removed if/when a second trusted maintainer joins the project.",
+      "expires": "2027-05-16",
+      "approvedBy": "Ryan Armstrong <ryan.armstrong@example.org>",
+      "approvedOn": "2026-05-16"
+    }
+  ]
+}

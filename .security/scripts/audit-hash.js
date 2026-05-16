@@ -17,12 +17,12 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '../..');
 
 const COMPONENTS = {
   sources: ['src'],
   deps: ['package.json', 'package-lock.json'],
-  claims: ['docs/SECURITY.md'],
+  claims: ['SECURITY.md'],
   build: [
     'build-standalone.js',
     'class-list-builder-source.html',

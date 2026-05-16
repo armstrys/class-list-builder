@@ -6,7 +6,7 @@ function _uid() {
 // Escape CSV field value per RFC 4180 and defuse spreadsheet formula injection.
 // Cells whose first character is =, +, -, @, tab, or CR are prefixed with a
 // single quote so that Excel/LibreOffice treat them as text on import. See
-// audits/2.0.0.md F-005.
+// .security/audits/2.0.0.md F-005.
 function escapeCSVValue(value) {
   let str = String(value ?? '');
   if (str.length > 0 && /^[=+\-@\t\r]/.test(str)) {

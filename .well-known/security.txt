@@ -1,0 +1,11 @@
+# Security Contact for Class List Builder
+# Per RFC 9116. Place at /.well-known/security.txt on any HTTP-accessible deployment.
+# Update the Expires date at least annually.
+
+Contact: mailto:ryan.armstrong@example.org
+Contact: https://github.com/armstrys/class-list-builder/issues
+Expires: 2027-05-16T00:00:00Z
+Preferred-Languages: en
+Canonical: https://armstrys.github.io/class-list-builder/.well-known/security.txt
+Policy: https://github.com/armstrys/class-list-builder/blob/main/SECURITY.md
+Acknowledgments: https://github.com/armstrys/class-list-builder/blob/main/CONTRIBUTING.md

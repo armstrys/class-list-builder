@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const { computeAll } = require('./audit-hash');
 
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '../..');
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const REQUIRED_FRONTMATTER = [
@@ -81,13 +81,13 @@ function parseFrontMatter(text) {
 }
 
 function loadExceptions() {
-  const p = path.join(repoRoot, 'audits', 'exceptions.json');
+  const p = path.join(repoRoot, '.security', 'audits', 'exceptions.json');
   if (!fs.existsSync(p)) return new Map();
   let parsed;
   try {
     parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
   } catch (e) {
-    fail(`audits/exceptions.json is not valid JSON: ${e.message}`);
+    fail(`.security/audits/exceptions.json is not valid JSON: ${e.message}`);
     return new Map();
   }
   const out = new Map();
@@ -106,14 +106,14 @@ function main() {
     fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'),
   );
   const version = pkg.version;
-  const auditPath = path.join(repoRoot, 'audits', `${version}.md`);
+  const auditPath = path.join(repoRoot, '.security', 'audits', `${version}.md`);
 
   console.log(`Verifying audit for version ${version}`);
-  console.log(`  audit file: audits/${version}.md`);
+  console.log(`  audit file: .security/audits/${version}.md`);
 
   if (!fs.existsSync(auditPath)) {
     fail(
-      `Missing audits/${version}.md. Run the security-audit skill to produce one before merging.`,
+      `Missing .security/audits/${version}.md. Run the security-audit-system skill to produce one before merging.`,
     );
     return finish();
   }
@@ -191,7 +191,7 @@ function main() {
   for (const id of cited) {
     const ex = exceptionsRegistry.get(id);
     if (!ex) {
-      fail(`Audit cites exception ${id} but it is not in audits/exceptions.json.`);
+      fail(`Audit cites exception ${id} but it is not in .security/audits/exceptions.json.`);
       continue;
     }
     if (ex.expires && ex.expires < TODAY) {
@@ -210,7 +210,7 @@ function finish() {
   console.error('\nAudit verification: FAIL');
   for (const f of failures) console.error(`  - ${f}`);
   console.error(
-    '\nSee audits/README.md and .claude/skills/security-audit/SKILL.md for how to produce a passing audit.',
+    '\nSee .security/audits/README.md and .claude/skills/security-audit-system/SKILL.md for how to produce a passing audit.',
   );
   process.exit(1);
 }

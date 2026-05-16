@@ -1,0 +1,12 @@
+# This file is per RFC 9116. Place at /.well-known/security.txt on any
+# HTTP-accessible deployment. Update the Expires date at least annually.
+# OpenPGP cleartext-signing recommended for production.
+
+Contact: mailto:security@example.org
+Contact: https://example.org/security/report
+Expires: <REPLACE WITH ISO 8601 ONE YEAR OUT>
+Encryption: https://example.org/security/pgp.txt
+Preferred-Languages: en
+Canonical: https://example.org/.well-known/security.txt
+Policy: https://example.org/security/policy
+Acknowledgments: https://example.org/security/hall-of-fame
