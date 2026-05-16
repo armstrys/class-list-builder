@@ -249,9 +249,9 @@ function OptimizePage({ onBack }) {
         )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', borderRight: '1px solid var(--border)', paddingRight: 10, marginRight: 2 }}>
-            {flagCriteria.map(c => (
+            {flagCriteria.map((c, i) => (
               <span key={c.key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, color: 'var(--text3)' }} title={c.label}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: generateColor(c.key).dot, flexShrink: 0 }} />
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: generateColor(c.key, i).dot, flexShrink: 0 }} />
                 {c.label}
               </span>
             ))}

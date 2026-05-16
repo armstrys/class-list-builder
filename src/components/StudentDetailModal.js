@@ -1,7 +1,8 @@
 function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
   const { teachers } = useAppStateExport();
-  const activeFlags = flagCriteria.filter(c => student[c.key]);
-  const inactiveFlags = flagCriteria.filter(c => !student[c.key]);
+  const indexedFlags = flagCriteria.map((c, idx) => ({ ...c, idx }));
+  const activeFlags = indexedFlags.filter(c => student[c.key]);
+  const inactiveFlags = indexedFlags.filter(c => !student[c.key]);
 
   // Build student lookup
   const studentById = Object.fromEntries(allStudents.map(s => [s.id, s]));
@@ -67,7 +68,7 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
               <div className="panel-title">Active Flags</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {activeFlags.map(c => {
-                  const colors = generateColor(c.key);
+                  const colors = generateColor(c.key, c.idx);
                   return (
                     <span key={c.key} className="badge" style={{ fontSize: 12, padding: '3px 8px', background: colors.bg, color: colors.fg }}>{c.label}</span>
                   );

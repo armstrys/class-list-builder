@@ -205,7 +205,7 @@ function AppContent() {
  * Header component extracted from main App
  */
 function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSave, onOpenLoad }) {
-  const { view, teachers } = useAppStateExport();
+  const { view, teachers, theme, toggleTheme } = useAppStateExport();
   const { students } = useStudentsExport();
   return (
     <header className="app-header">
@@ -252,6 +252,14 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
             ⚙️ Settings
           </button>
         )}
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </div>
     </header>
   );

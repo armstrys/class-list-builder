@@ -243,14 +243,14 @@ function SetupPage({ onOptimize }) {
                             {s[c.key] || 0}
                           </td>
                         ))}
-                        {flagCriteria.map(c => (
+                        {flagCriteria.map((c, i) => (
                           <td key={c.key} className="col-check">
                             {s[c.key] && (
                               <span
                                 className="badge"
                                 style={{
-                                  background: generateColor(c.key).bg,
-                                  color: generateColor(c.key).fg,
+                                  background: generateColor(c.key, i).bg,
+                                  color: generateColor(c.key, i).fg,
                                 }}
                               >
                                 ✓
