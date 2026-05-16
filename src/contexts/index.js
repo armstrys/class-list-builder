@@ -472,11 +472,26 @@
 {
   const AppStateContext = React.createContext(null);
 
+  const THEME_STORAGE_KEY = 'clb-theme';
+  function getInitialTheme() {
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      if (stored === 'light' || stored === 'dark') return stored;
+    } catch {
+      // localStorage may be unavailable (private mode, sandboxed iframe)
+    }
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  }
+
   function AppStateProvider({ children }) {
     const [view, setView] = useState('setup');
     const [showSettings, setShowSettings] = useState(false);
     const [showSaveProject, setShowSaveProject] = useState(false);
     const [showLoadProject, setShowLoadProject] = useState(false);
+    const [theme, setTheme] = useState(getInitialTheme);
     const [teachers, setTeachers] = useState([
       { id: 'T1', name: 'Class A' },
       { id: 'T2', name: 'Class B' },
@@ -484,6 +499,31 @@
       { id: 'T4', name: 'Class D' },
       { id: 'T5', name: 'Class E' },
     ]);
+
+    // Sync the data-theme attribute during the parent's render so child
+    // components see the fresh value when they call generateColor() — which
+    // reads dataset.theme directly. If this were a useEffect, children would
+    // render once with the stale attribute, producing inline styles that
+    // don't match the freshly-applied CSS until the next remount.
+    if (
+      typeof document !== 'undefined' &&
+      document.documentElement.dataset.theme !== theme
+    ) {
+      document.documentElement.dataset.theme = theme;
+    }
+
+    useEffect(() => {
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+      } catch {
+        // localStorage may be unavailable; theme still applies for this session
+      }
+    }, [theme]);
+
+    const toggleTheme = useCallback(
+      () => setTheme(t => (t === 'dark' ? 'light' : 'dark')),
+      []
+    );
 
     const navigateToOptimize = useCallback(() => setView('optimize'), []);
     const navigateToSetup = useCallback(() => setView('setup'), []);
@@ -516,6 +556,8 @@
       closeAllModals,
       teachers,
       setTeachers,
+      theme,
+      toggleTheme,
     };
 
     return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

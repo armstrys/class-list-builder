@@ -21,9 +21,39 @@
   --blue-light: oklch(93% 0.04 245);
   --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
   --shadow: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --modal-scrim: rgba(0,0,0,.35);
+  --danger-tint-bg: rgba(220, 38, 38, 0.08);
+  --danger-tint-border: rgba(220, 38, 38, 0.2);
   --radius: 10px;
   --radius-sm: 6px;
   font-family: 'DM Sans', sans-serif;
+}
+
+:root[data-theme='dark'] {
+  --bg: #14130F;
+  --surface: #1E1C17;
+  --surface2: #2A2823;
+  --border: #38362F;
+  --text: #ECEAE2;
+  --text2: #A8A59A;
+  --text3: #6E6B62;
+  --accent: oklch(68% 0.13 168);
+  --accent-light: oklch(28% 0.05 168);
+  --accent-fg: #0F1A16;
+  --danger: oklch(70% 0.14 22);
+  --danger-light: oklch(28% 0.06 22);
+  --amber: oklch(75% 0.13 78);
+  --amber-light: oklch(28% 0.06 78);
+  --purple: oklch(72% 0.13 295);
+  --purple-light: oklch(28% 0.06 295);
+  --blue: oklch(72% 0.13 245);
+  --blue-light: oklch(28% 0.06 245);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+  --shadow: 0 4px 12px rgba(0,0,0,.5), 0 2px 4px rgba(0,0,0,.35);
+  --modal-scrim: rgba(0,0,0,.6);
+  --danger-tint-bg: rgba(248, 113, 113, 0.12);
+  --danger-tint-border: rgba(248, 113, 113, 0.3);
+  color-scheme: dark;
 }
 
 body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
@@ -227,7 +257,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 
 /* ── Modal ── */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  position: fixed; inset: 0; background: var(--modal-scrim);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000; backdrop-filter: blur(2px);
   animation: fadeIn .15s;
@@ -236,7 +266,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .modal {
   background: var(--surface);
   border-radius: 14px;
-  box-shadow: var(--shadow), 0 0 0 1px rgba(0,0,0,.06);
+  box-shadow: var(--shadow), 0 0 0 1px var(--border);
   width: 90%; max-width: 600px;
   max-height: 85vh;
   display: flex; flex-direction: column;
@@ -404,9 +434,9 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
   font-size: 13px;
   margin-top: 12px;
   padding: 10px 12px;
-  background: rgba(220, 38, 38, 0.08);
+  background: var(--danger-tint-bg);
   border-radius: var(--radius);
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  border: 1px solid var(--danger-tint-border);
 }
 
 /* ── Welcome Modal ── */

@@ -43,10 +43,10 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
     };
   });
 
-  const boolCounts = flagCriteria.map(m => ({
+  const boolCounts = flagCriteria.map((m, i) => ({
     label: m.label,
     val: students.filter(s => s[m.key]).length,
-    colors: generateColor(m.key),
+    colors: generateColor(m.key, i),
   })).filter(b => b.val > 0);
 
   const classTotalFlagsCount = students.reduce(

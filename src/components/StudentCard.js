@@ -1,6 +1,8 @@
 function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
-  const activeFlags = useMemo(() => 
-    flagCriteria.filter(c => student[c.key]),
+  const activeFlags = useMemo(() =>
+    flagCriteria
+      .map((c, idx) => ({ ...c, idx }))
+      .filter(c => student[c.key]),
     [flagCriteria, student]
   );
   const [showDetail, setShowDetail] = useState(false);
@@ -50,7 +52,7 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
           {activeFlags.length > 0 && (
             <span style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
               {activeFlags.map(c => (
-                <span key={c.key} style={{ width: 6, height: 6, borderRadius: '50%', background: generateColor(c.key).dot, flexShrink: 0 }} title={c.label} />
+                <span key={c.key} style={{ width: 6, height: 6, borderRadius: '50%', background: generateColor(c.key, c.idx).dot, flexShrink: 0 }} title={c.label} />
               ))}
             </span>
           )}
