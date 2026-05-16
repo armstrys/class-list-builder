@@ -126,8 +126,8 @@ function LoadProjectModal({
 
   function renderVersionInfo() {
     if (!validationResult) return null;
-    
-    const { metadata } = validationResult.data?._raw || {};
+
+    const metadata = validationResult.data?.metadata;
     if (!metadata) return null;
 
     return (

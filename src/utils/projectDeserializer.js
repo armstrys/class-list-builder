@@ -494,6 +494,7 @@ function deserializeProject(projectData, options = {}) {
   
   // Build result data
   const resultData = canLoad ? {
+    metadata: data.metadata,
     students: validatedStudents,
     teachers: validatedTeachers,
     numericCriteria: criteriaCheck.mergedNumCriteria,

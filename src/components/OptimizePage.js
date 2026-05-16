@@ -83,19 +83,23 @@ function OptimizePage({ onBack }) {
     }
   }, [numericCriteria, flagCriteria, students, assignment, numClasses, keepApart, keepTogether, keepOutOfClass]);
 
-  function handleReoptimize() {
+  const handleReoptimize = useCallback(() => {
     const lockedObj = new Map();
     locked.forEach(sid => {
       if (assignment[sid] !== undefined) lockedObj.set(sid, assignment[sid]);
     });
     runOptimize(lockedObj);
-  }
+  }, [locked, assignment, runOptimize]);
 
-  // Auto-reoptimize when criteria change (respecting locked students)
+  // Auto-reoptimize when criteria change (respecting locked students).
+  // Deps are intentionally limited to criteria — adding assignment/optimizing/
+  // handleReoptimize would re-trigger this on every reoptimize result and
+  // cause a runaway loop.
   useEffect(() => {
     if (assignment && Object.keys(assignment).length > 0 && !optimizing) {
       handleReoptimize();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numericCriteria, flagCriteria]);
 
   function handleToggleLock(sid) {

@@ -160,24 +160,27 @@ function SettingsModal({
       }
     }
 
-    // Check for duplicate keys
-    const allKeys = [...numCriteria.map(c => generateKeyFromLabel(c.label)), ...flagCriteriaState.map(c => generateKeyFromLabel(c.label))];
-    const uniqueKeys = new Set(allKeys);
-    if (uniqueKeys.size !== allKeys.length) {
+    // Check for duplicate labels (label is the user-facing identity)
+    const allLabels = [
+      ...numCriteria.map(c => c.label.trim().toLowerCase()),
+      ...flagCriteriaState.map(c => c.label.trim().toLowerCase()),
+    ];
+    if (new Set(allLabels).size !== allLabels.length) {
       setError('Duplicate field labels are not allowed. Labels must be unique.');
       return;
     }
 
-    // Finalize criteria with generated keys
+    // Preserve existing keys so renaming a criterion's label doesn't wipe
+    // student data. Only newly-added criteria (key === '') get a fresh key.
     const finalNumCriteria = numCriteria.map(c => ({
       ...c,
-      key: generateKeyFromLabel(c.label),
+      key: c.key || generateKeyFromLabel(c.label),
       weight: parseFloat(c.weight),
     }));
 
     const finalFlagCriteria = flagCriteriaState.map(c => ({
       ...c,
-      key: generateKeyFromLabel(c.label),
+      key: c.key || generateKeyFromLabel(c.label),
       weight: parseFloat(c.weight),
     }));
 

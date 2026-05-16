@@ -72,18 +72,16 @@ Your CSV needs at minimum a `name` column and a `gender` column (`M` or `F`). Al
 
 **Import appends** to your current student list. Click **Clear All** first if you want to replace your entire list.
 
-**Constraint Columns (optional):**
-- `keep_apart_group` — students with the same value stay in different classes
-- `keep_together_group` — students with the same value stay in the same class
-
 Example CSV:
 ```
-name,gender,readingScore,keep_apart_group,keep_together_group
-Alice,F,85,1,
-Bob,M,78,1,
-Charlie,M,70,,1
-Diana,F,92,,1
+name,gender,readingScore,sped,behavior
+Alice,F,85,0,0
+Bob,M,78,1,0
+Charlie,M,70,0,1
+Diana,F,92,0,0
 ```
+
+Constraints (keep apart / keep together) aren't stored in CSV — set them up in the **Constraints** dialog and persist them by saving the project as JSON (**Save Project**).
 
 **Option B: Add students manually**
 
@@ -161,7 +159,7 @@ Constraints are treated as high-priority requests, not absolute rules. If the op
 - Class size limits (asking 15 students to stay together when classes max at 12)
 - Balance trade-offs where satisfying constraints would make classes extremely unbalanced
 
-Constraints are cleared when you import new students. Use the `keep_apart_group` and `keep_together_group` CSV columns to persist them.
+Importing a CSV appends students but doesn't clear existing constraints. To persist constraints across sessions, use **Save Project** (JSON) — CSV doesn't carry constraints.
 
 ### Export
 

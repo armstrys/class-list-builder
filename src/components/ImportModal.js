@@ -120,12 +120,12 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
       return;
     }
     
-    const { students: importedStudents, errors, keepApart, keepTogether } = parseCSV(text, numericCriteria, flagCriteria);
+    const { students: importedStudents, errors } = parseCSV(text, numericCriteria, flagCriteria);
     if (!importedStudents.length) {
       setError(errors.length ? errors.join('; ') : 'No valid students found. Check your CSV format.');
       return;
     }
-    onImport(importedStudents, keepApart, keepTogether);
+    onImport(importedStudents);
     if (errors.length) {
       window.alert(`⚠️ Imported ${importedStudents.length} students with warnings:\n\n${errors.join('\n')}`);
     }
