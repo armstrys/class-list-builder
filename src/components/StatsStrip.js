@@ -19,6 +19,18 @@ function StatsStrip({ numClasses }) {
       students.filter(s => assignment[s.id] === i)
     );
 
+    const genderItems = ['M', 'F'].map(g => {
+      const vals = classes.map(cls => cls.filter(s => (s.gender || 'U') === g).length);
+      const mean = vals.reduce((a, b) => a + b, 0) / numClasses;
+      const sd = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / numClasses);
+      return {
+        label: g === 'M' ? 'Male' : 'Female',
+        vals,
+        maxVal: Math.max(...vals, 1),
+        cv: mean > 0 ? sd / mean : 0,
+      };
+    }).filter(item => item.maxVal > 0);
+
     const numItems = numericCriteria.map(m => {
       const allVals = students.map(s => s[m.key] || 0);
       const popMin = Math.min(...allVals);
@@ -81,7 +93,7 @@ function StatsStrip({ numClasses }) {
       compositeItems.push({ label: 'Total Score', vals: classMeanScores.map(v => Math.max(0, (v - popMin) / popRange)), maxVal: 1, cv });
     }
 
-    return [...numItems, ...boolItems, ...compositeItems];
+    return [...genderItems, ...numItems, ...boolItems, ...compositeItems];
   }, [students, assignment, numericCriteria, flagCriteria, numClasses]);
 
   const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];

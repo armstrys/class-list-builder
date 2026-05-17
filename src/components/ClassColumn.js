@@ -54,6 +54,10 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
     0
   );
 
+  const mCount = students.filter(s => s.gender === 'M').length;
+  const fCount = students.filter(s => s.gender === 'F').length;
+  const uCount = students.filter(s => !s.gender || s.gender === 'U').length;
+
   return (
     <div
       className={`class-col${dragOver ? ' drag-over' : ''}`}
@@ -110,6 +114,11 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
       </div>
 
       <div className="class-col-footer" style={fullscreen ? { display: 'none' } : {}}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+          <span className="badge badge-M">M {mCount}</span>
+          <span className="badge badge-F">F {fCount}</span>
+          {uCount > 0 && <span className="badge badge-U">U {uCount}</span>}
+        </div>
         {numStats.map(stat => (
           <div key={stat.label} className="class-stat-row">
             <span className="class-stat-label">{stat.label}</span>

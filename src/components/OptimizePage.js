@@ -276,6 +276,12 @@ function OptimizePage({ onBack }) {
             onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria), 'class-lists.csv', 'text/csv')}
             title="Save class lists as CSV"
           >⬇ Save Lists</button>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => window.print()}
+            disabled={Object.keys(assignment).length === 0}
+            title={Object.keys(assignment).length === 0 ? 'Run optimization first' : 'Print class list report'}
+          >🖨 Print Report</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setFullscreen(true)} title="Fullscreen class lists">⛶ Fullscreen</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowHelp(true)}>? How it works</button>
         </div>
@@ -323,6 +329,8 @@ function OptimizePage({ onBack }) {
       )}
 
       {!fullscreen && <StatsStrip numClasses={numClasses} />}
+
+      <PrintReportView />
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
