@@ -1,6 +1,6 @@
 /**
  * ApartTab - Keep Apart constraint management
- *
+ * 
  * @param {Object} props
  * @param {Array} props.students - All students
  * @param {Array} props.keepApart - Current apart constraints
@@ -15,9 +15,7 @@ function ApartTab({ students, keepApart, onAddKeepApart, onRemoveKeepApart }) {
 
   // Build adjacency list
   const apartAdj = {};
-  students.forEach(s => {
-    apartAdj[s.id] = [];
-  });
+  students.forEach(s => { apartAdj[s.id] = []; });
   keepApart.forEach(([id1, id2]) => {
     if (apartAdj[id1]) apartAdj[id1].push(id2);
     if (apartAdj[id2]) apartAdj[id2].push(id1);
@@ -35,7 +33,9 @@ function ApartTab({ students, keepApart, onAddKeepApart, onRemoveKeepApart }) {
   }));
 
   function toggleSelection(id) {
-    setSelectedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
   }
 
   function handleAdd() {
@@ -72,16 +72,12 @@ function ApartTab({ students, keepApart, onAddKeepApart, onRemoveKeepApart }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {apartConstraints.map((c, idx) => (
-              <div
-                key={idx}
-                className="constraint-item"
-                style={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '8px 12px',
-                }}
-              >
+              <div key={idx} className="constraint-item" style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '8px 12px',
+              }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
                     {c.name1}
@@ -90,16 +86,8 @@ function ApartTab({ students, keepApart, onAddKeepApart, onRemoveKeepApart }) {
                   <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
                     {c.name2}
                   </span>
-                  <span
-                    style={{
-                      marginLeft: 'auto',
-                      fontSize: 11,
-                      color: 'var(--text3)',
-                      fontStyle: 'italic',
-                    }}
-                  >
-                    {apartAdj[c.id1].length > 1 &&
-                      `${apartAdj[c.id1].length - 1} other constraints`}
+                  <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)', fontStyle: 'italic' }}>
+                    {apartAdj[c.id1].length > 1 && `${apartAdj[c.id1].length - 1} other constraints`}
                   </span>
                   <button
                     className="btn btn-danger btn-sm"
@@ -133,15 +121,13 @@ function ApartTab({ students, keepApart, onAddKeepApart, onRemoveKeepApart }) {
           style={{ marginBottom: 12 }}
         />
 
-        <div
-          style={{
-            maxHeight: 200,
-            overflow: 'auto',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            marginBottom: 12,
-          }}
-        >
+        <div style={{
+          maxHeight: 200,
+          overflow: 'auto',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)',
+          marginBottom: 12,
+        }}>
           {filteredStudents.length === 0 ? (
             <div style={{ padding: 16, color: 'var(--text3)', textAlign: 'center' }}>
               No students match your filter.
@@ -168,16 +154,7 @@ function ApartTab({ students, keepApart, onAddKeepApart, onRemoveKeepApart }) {
                   onChange={() => {}}
                   style={{ pointerEvents: 'none' }}
                 />
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--text3)',
-                    fontFamily: 'monospace',
-                    minWidth: 60,
-                  }}
-                >
-                  {s.id}
-                </span>
+                <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace', minWidth: 60 }}>{s.id}</span>
                 <span>{s.name}</span>
                 {apartAdj[s.id]?.length > 0 && (
                   <span style={{ fontSize: 10, marginLeft: 8, opacity: 0.7 }}>
@@ -193,26 +170,21 @@ function ApartTab({ students, keepApart, onAddKeepApart, onRemoveKeepApart }) {
         </div>
 
         {selectedIds.length > 0 && (
-          <div
-            style={{
-              marginBottom: 12,
-              padding: 12,
-              background: 'var(--surface)',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border)',
-            }}
-          >
+          <div style={{
+            marginBottom: 12,
+            padding: 12,
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border)'
+          }}>
             <div style={{ fontSize: 13, marginBottom: 8 }}>
               <strong>Selected ({selectedIds.length}):</strong>{' '}
               {selectedIds.map(id => studentById[id]?.name).join(', ')}
             </div>
             {selectedIds.length >= 2 && related.size > 0 && (
               <div style={{ fontSize: 12, color: 'var(--warning)' }}>
-                Note:{' '}
-                {Array.from(related)
-                  .map(id => studentById[id]?.name)
-                  .join(', ')}{' '}
-                already have apart constraints with selected students
+                Note: {Array.from(related).map(id => studentById[id]?.name).join(', ')} 
+                {' '}already have apart constraints with selected students
               </div>
             )}
           </div>
@@ -229,10 +201,7 @@ function ApartTab({ students, keepApart, onAddKeepApart, onRemoveKeepApart }) {
             disabled={selectedIds.length < 2}
             onClick={handleAdd}
           >
-            Add{' '}
-            {selectedIds.length >= 2
-              ? `${(selectedIds.length * (selectedIds.length - 1)) / 2} Constraints`
-              : 'Constraints'}
+            Add {selectedIds.length >= 2 ? `${(selectedIds.length * (selectedIds.length - 1)) / 2} Constraints` : 'Constraints'}
           </button>
         </div>
       </div>

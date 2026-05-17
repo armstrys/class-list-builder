@@ -139,7 +139,11 @@ function AppContent() {
 
   // Export students helper
   const handleExportStudents = useCallback(() => {
-    const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria);
+    const csv = exportStudentsToCSV(
+      students,
+      numericCriteria,
+      flagCriteria
+    );
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

@@ -12,9 +12,7 @@ function SampleDataDialog({ defaultCount, onGenerate, onClose }) {
       <div className="modal" style={{ maxWidth: 340 }}>
         <div className="modal-header">
           <div className="modal-title">Generate Sample Data</div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            ✕
-          </button>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="form-group">
@@ -35,14 +33,8 @@ function SampleDataDialog({ defaultCount, onGenerate, onClose }) {
           </p>
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleGenerate}
-            disabled={!parseInt(count) || parseInt(count) < 2}
-          >
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleGenerate} disabled={!parseInt(count) || parseInt(count) < 2}>
             Generate
           </button>
         </div>

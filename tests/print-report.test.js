@@ -177,7 +177,7 @@ describe('Print Report', () => {
     const readingAvg = data.classPages[0].numericStats.find(s => s.key === 'readingScore').avg;
     const mathAvg = data.classPages[0].numericStats.find(s => s.key === 'mathScore').avg;
     expect(readingAvg).toBe(75); // (80 + 70) / 2
-    expect(mathAvg).toBe(88); // (90 + 85) / 2
+    expect(mathAvg).toBe(87.5); // (90 + 85) / 2
   });
 
   test('buildPrintReportData calculates flag counts correctly', () => {
@@ -445,5 +445,41 @@ describe('Print Report', () => {
     const c2 = generateColor('sped', 1);
     // With the 12-slot palette, indices 0 and 1 should be different hues
     expect(c1.dot).not.toBe(c2.dot);
+  });
+});
+
+describe('Print Report CSS', () => {
+  // Regression guard for the original v2.2.0 bugs:
+  //   1. `#root > *:not(#print-report) { display:none }` hid every ancestor
+  //      of the print report and produced a blank PDF.
+  //   2. Wrapping the report in `position: absolute` (an earlier fix attempt)
+  //      broke `page-break-after` and rendered only the first page.
+  //   3. Flag dots are background-only circles, which browsers strip from
+  //      print unless `print-color-adjust: exact` is set.
+  // The current idiom: PrintReportView portals to <body>; CSS hides sibling
+  // body children with display:none (preserves block flow + pagination);
+  // print-color-adjust: exact keeps the dots visible.
+  test('print stylesheet hides body siblings, paginates correctly, and prints color', async () => {
+    const fs = await import('node:fs/promises');
+    const css = await fs.readFile(new URL('../src/styles.css', import.meta.url), 'utf8');
+
+    const printBlock = css.match(/@media print\s*\{[\s\S]*\n\}/);
+    expect(printBlock, 'styles.css must contain a @media print block').toBeTruthy();
+
+    const block = printBlock[0];
+    expect(block).toMatch(/body\s*>\s*\*:not\(#print-report\)\s*\{\s*display:\s*none/);
+    expect(block).toMatch(/print-color-adjust:\s*exact/);
+    // page-break-before / break-before:page on subsequent pages, NOT
+    // page-break-after on every page — the "after" idiom creates a trailing
+    // blank page when content ends at a page boundary (regression observed
+    // in v2.2.0 first prints).
+    expect(block).toMatch(
+      /\.print-page\s*\+\s*\.print-page\s*\{[^}]*(break-before:\s*page|page-break-before:\s*always)/
+    );
+
+    // Broken patterns from prior fix attempts must not return.
+    expect(block).not.toMatch(/#root\s*>\s*\*:not\(#print-report\)/);
+    expect(block).not.toMatch(/#print-report\s*\{[^}]*position:\s*absolute/);
+    expect(block).not.toMatch(/\.print-page\s*\{[^}]*page-break-after:\s*always/);
   });
 });

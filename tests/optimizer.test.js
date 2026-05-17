@@ -1,11 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import {
-  optimize,
-  computeCost,
-  computeSeed,
-  createSeededRNG,
-  computeAdaptiveAnnealingParams,
-} from '../src/optimizer.js';
+import { optimize, computeCost, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams } from '../src/optimizer.js';
 
 // Test helpers - use deterministic IDs for reproducible tests
 let idCounter = 0;
@@ -14,13 +8,14 @@ function uid() {
   return `test-student-${idCounter}`;
 }
 
+
 function createMockStudents(count, options = {}) {
   const students = [];
   for (let i = 0; i < count; i++) {
     const gender = options.gender || (i % 2 === 0 ? 'F' : 'M');
-    const readingScore = options.readingScore ?? 50 + ((i * 5) % 50);
-    const mathScore = options.mathScore ?? 40 + ((i * 7) % 50);
-    const languageScore = options.languageScore ?? 60 + ((i * 3) % 40);
+    const readingScore = options.readingScore ?? 50 + (i * 5) % 50;
+    const mathScore = options.mathScore ?? 40 + (i * 7) % 50;
+    const languageScore = options.languageScore ?? 60 + (i * 3) % 40;
     const behavior = options.behavior ?? false;
     const extendedLearning = options.extendedLearning ?? false;
     const sped = options.sped ?? false;
@@ -61,20 +56,8 @@ describe('Optimizer', () => {
       const lockedAssignments = {};
 
       // Act
-      const assignment1 = optimize(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria
-      );
-      const assignment2 = optimize(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria
-      );
+      const assignment1 = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria);
+      const assignment2 = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria);
 
       // Assert
       expect(assignment1).toEqual(assignment2);
@@ -119,20 +102,8 @@ describe('Optimizer', () => {
       const lockedAssignments = {};
 
       // Act
-      const seed1 = computeSeed(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria
-      );
-      const seed2 = computeSeed(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria
-      );
+      const seed1 = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria);
+      const seed2 = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria);
 
       // Assert
       expect(seed1).toBe(seed2);
@@ -210,35 +181,11 @@ describe('Optimizer', () => {
       const numClasses = 2;
 
       // Act
-      const balancedAssignment = optimize(
-        balancedStudents,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria
-      );
-      const variedAssignment = optimize(
-        variedStudents,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria
-      );
+      const balancedAssignment = optimize(balancedStudents, numClasses, {}, numericCriteria, flagCriteria);
+      const variedAssignment = optimize(variedStudents, numClasses, {}, numericCriteria, flagCriteria);
 
-      const balancedCost = computeCost(
-        balancedStudents,
-        balancedAssignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria
-      );
-      const variedCost = computeCost(
-        variedStudents,
-        variedAssignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria
-      );
+      const balancedCost = computeCost(balancedStudents, balancedAssignment, numClasses, numericCriteria, flagCriteria);
+      const variedCost = computeCost(variedStudents, variedAssignment, numClasses, numericCriteria, flagCriteria);
 
       // Assert - identical students should have near-zero cost
       expect(balancedCost).toBeLessThan(variedCost);
@@ -296,13 +243,7 @@ describe('Optimizer', () => {
       lockedAssignments[students[2].id] = 0;
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria
-      );
+      const assignment = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria);
 
       // Assert - locked students remain in their assigned class
       expect(assignment[students[0].id]).toBe(0);
@@ -322,13 +263,7 @@ describe('Optimizer', () => {
       lockedAssignments[students[3].id] = 0;
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria
-      );
+      const assignment = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria);
 
       // Assert - count in each class
       const classCounts = [0, 0];
@@ -351,13 +286,7 @@ describe('Optimizer', () => {
       });
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria
-      );
+      const assignment = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria);
 
       // Assert - should match locked assignments exactly
       students.forEach(s => {
@@ -510,14 +439,7 @@ describe('Optimizer', () => {
       const keepApart = [[students[0].id, students[1].id]];
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
 
       // Assert - the two students should be in different classes
       expect(assignment[students[0].id]).not.toBe(assignment[students[1].id]);
@@ -546,22 +468,8 @@ describe('Optimizer', () => {
       };
 
       // Act
-      const violatingCost = computeCost(
-        students,
-        violatingAssignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria,
-        keepApart
-      );
-      const validCost = computeCost(
-        students,
-        validAssignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria,
-        keepApart
-      );
+      const violatingCost = computeCost(students, violatingAssignment, numClasses, numericCriteria, flagCriteria, keepApart);
+      const validCost = computeCost(students, validAssignment, numClasses, numericCriteria, flagCriteria, keepApart);
 
       // Assert - violating cost should be higher by approximately 100 (penalty weight)
       expect(violatingCost).toBeGreaterThan(validCost + 90);
@@ -571,28 +479,11 @@ describe('Optimizer', () => {
       // Arrange
       const students = createMockStudents(6);
       const numClasses = 2;
-      const keepApart = [
-        [students[0].id, students[1].id],
-        [students[2].id, students[3].id],
-      ];
+      const keepApart = [[students[0].id, students[1].id], [students[2].id, students[3].id]];
 
       // Act - run twice with same inputs
-      const assignment1 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart
-      );
-      const assignment2 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart
-      );
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
 
       // Assert - should be identical
       expect(assignment1).toEqual(assignment2);
@@ -606,22 +497,8 @@ describe('Optimizer', () => {
       const keepApart2 = [[students[0].id, students[2].id]]; // Different constraint
 
       // Act
-      const seed1 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart1
-      );
-      const seed2 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart2
-      );
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, keepApart1);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, keepApart2);
 
       // Assert - different constraints should produce different seeds
       expect(seed1).not.toBe(seed2);
@@ -652,14 +529,7 @@ describe('Optimizer', () => {
       ];
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart);
 
       // Assert - check all constraints are satisfied
       expect(assignment[students[0].id]).not.toBe(assignment[students[1].id]);
@@ -673,21 +543,8 @@ describe('Optimizer', () => {
       const numClasses = 2;
 
       // Act
-      const assignmentWithConstraint = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        []
-      );
-      const assignmentWithoutConstraint = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria
-      );
+      const assignmentWithConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, []);
+      const assignmentWithoutConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria);
 
       // Assert - should produce same results
       expect(assignmentWithConstraint).toEqual(assignmentWithoutConstraint);
@@ -703,27 +560,11 @@ describe('Optimizer', () => {
       const keepTogether = [[students[0].id, students[1].id]];
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
 
       // Assert - with high penalty weight, optimizer should usually keep them together
       // Note: This is a soft constraint, not a guarantee
-      const cost = computeCost(
-        students,
-        assignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
+      const cost = computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, [], keepTogether);
 
       // The cost should be reasonably low, indicating the optimizer tried to respect the constraint
       expect(cost).toBeLessThan(500); // Very high cost would indicate ignoring the constraint
@@ -752,24 +593,8 @@ describe('Optimizer', () => {
       };
 
       // Act
-      const violatingCost = computeCost(
-        students,
-        violatingAssignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
-      const validCost = computeCost(
-        students,
-        validAssignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
+      const violatingCost = computeCost(students, violatingAssignment, numClasses, numericCriteria, flagCriteria, [], keepTogether);
+      const validCost = computeCost(students, validAssignment, numClasses, numericCriteria, flagCriteria, [], keepTogether);
 
       // Assert - violating cost should be higher by approximately 200 (penalty weight)
       expect(violatingCost).toBeGreaterThan(validCost + 190);
@@ -779,30 +604,11 @@ describe('Optimizer', () => {
       // Arrange
       const students = createMockStudents(6);
       const numClasses = 2;
-      const keepTogether = [
-        [students[0].id, students[1].id],
-        [students[2].id, students[3].id],
-      ];
+      const keepTogether = [[students[0].id, students[1].id], [students[2].id, students[3].id]];
 
       // Act - run twice with same inputs
-      const assignment1 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
-      const assignment2 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
 
       // Assert - should be identical
       expect(assignment1).toEqual(assignment2);
@@ -816,24 +622,8 @@ describe('Optimizer', () => {
       const keepTogether2 = [[students[0].id, students[2].id]]; // Different constraint
 
       // Act
-      const seed1 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether1
-      );
-      const seed2 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether2
-      );
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether1);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether2);
 
       // Assert - different constraints should produce different seeds
       expect(seed1).not.toBe(seed2);
@@ -846,24 +636,8 @@ describe('Optimizer', () => {
       const keepTogether = [[students[0].id, students[1].id]];
 
       // Act
-      const seed1 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
-      const seed2 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
 
       // Assert - same constraints should produce same seed
       expect(seed1).toBe(seed2);
@@ -879,15 +653,7 @@ describe('Optimizer', () => {
       ];
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
 
       // Assert - check all groups are together
       expect(assignment[students[0].id]).toBe(assignment[students[1].id]);
@@ -900,23 +666,8 @@ describe('Optimizer', () => {
       const numClasses = 2;
 
       // Act
-      const assignmentWithConstraint = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        []
-      );
-      const assignmentWithoutConstraint = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        []
-      );
+      const assignmentWithConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], []);
+      const assignmentWithoutConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, []);
 
       // Assert - should produce same results
       expect(assignmentWithConstraint).toEqual(assignmentWithoutConstraint);
@@ -929,15 +680,7 @@ describe('Optimizer', () => {
       const keepTogether = [[students[0].id]]; // Single student group
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
 
       // Assert - should work normally
       students.forEach(s => {
@@ -955,15 +698,7 @@ describe('Optimizer', () => {
 
       // Act
       const startTime = Date.now();
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        keepTogether
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], keepTogether);
       const duration = Date.now() - startTime;
 
       // Assert - group (size 5) should be together
@@ -1012,16 +747,7 @@ describe('Optimizer', () => {
 
       // Act
       const startTime = Date.now();
-      const assignment = optimize(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria,
-        keepApart,
-        keepTogether,
-        keepOutOfClass
-      );
+      const assignment = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
       const duration = Date.now() - startTime;
 
       // Assert - all keep-together groups should be together
@@ -1062,16 +788,7 @@ describe('Optimizer', () => {
       const keepOutOfClass = [{ studentId: students[0].id, classIndex: 0 }];
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
 
       // Assert - student should not be in class 0
       expect(assignment[students[0].id]).not.toBe(0);
@@ -1102,26 +819,8 @@ describe('Optimizer', () => {
       };
 
       // Act
-      const violatingCost = computeCost(
-        students,
-        violatingAssignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
-      const validCost = computeCost(
-        students,
-        validAssignment,
-        numClasses,
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
+      const violatingCost = computeCost(students, violatingAssignment, numClasses, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+      const validCost = computeCost(students, validAssignment, numClasses, numericCriteria, flagCriteria, [], [], keepOutOfClass);
 
       // Assert - violating cost should be higher by approximately 150 (penalty weight)
       expect(violatingCost).toBeGreaterThan(validCost + 140);
@@ -1133,30 +832,12 @@ describe('Optimizer', () => {
       const numClasses = 2;
       const keepOutOfClass = [
         { studentId: students[0].id, classIndex: 0 },
-        { studentId: students[1].id, classIndex: 1 },
+        { studentId: students[1].id, classIndex: 1 }
       ];
 
       // Act - run twice with same inputs
-      const assignment1 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
-      const assignment2 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
 
       // Assert - should be identical
       expect(assignment1).toEqual(assignment2);
@@ -1170,26 +851,8 @@ describe('Optimizer', () => {
       const keepOutOfClass2 = [{ studentId: students[0].id, classIndex: 1 }]; // Different constraint
 
       // Act
-      const seed1 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass1
-      );
-      const seed2 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass2
-      );
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass1);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass2);
 
       // Assert - different constraints should produce different seeds
       expect(seed1).not.toBe(seed2);
@@ -1202,26 +865,8 @@ describe('Optimizer', () => {
       const keepOutOfClass = [{ studentId: students[0].id, classIndex: 0 }];
 
       // Act
-      const seed1 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
-      const seed2 = computeSeed(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
+      const seed1 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
+      const seed2 = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
 
       // Assert - same constraints should produce same seed
       expect(seed1).toBe(seed2);
@@ -1238,16 +883,7 @@ describe('Optimizer', () => {
       ];
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], keepOutOfClass);
 
       // Assert - check all constraints are satisfied
       expect(assignment[students[0].id]).not.toBe(0);
@@ -1261,25 +897,8 @@ describe('Optimizer', () => {
       const numClasses = 2;
 
       // Act
-      const assignmentWithConstraint = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        []
-      );
-      const assignmentWithoutConstraint = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        [],
-        []
-      );
+      const assignmentWithConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], []);
+      const assignmentWithoutConstraint = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], []);
 
       // Assert - should produce same results
       expect(assignmentWithConstraint).toEqual(assignmentWithoutConstraint);
@@ -1293,16 +912,7 @@ describe('Optimizer', () => {
       const lockedAssignments = { [students[0].id]: 1 }; // Lock student 0 to class 1
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        lockedAssignments,
-        numericCriteria,
-        flagCriteria,
-        [],
-        [],
-        keepOutOfClass
-      );
+      const assignment = optimize(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, [], [], keepOutOfClass);
 
       // Assert - locked assignment should be respected and also satisfy constraint
       expect(assignment[students[0].id]).toBe(1);
@@ -1318,15 +928,7 @@ describe('Optimizer', () => {
       const keepTogether = [[students[0].id, students[1].id]];
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart,
-        keepTogether
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether);
 
       // Assert - students 0 and 1 should be together
       expect(assignment[students[0].id]).toBe(assignment[students[1].id]);
@@ -1342,24 +944,8 @@ describe('Optimizer', () => {
       const keepTogether = [[students[0].id, students[1].id]];
 
       // Act
-      const assignment1 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart,
-        keepTogether
-      );
-      const assignment2 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart,
-        keepTogether
-      );
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether);
 
       // Assert - should be identical
       expect(assignment1).toEqual(assignment2);
@@ -1374,16 +960,7 @@ describe('Optimizer', () => {
       const keepOutOfClass = [{ studentId: students[0].id, classIndex: 0 }];
 
       // Act
-      const assignment = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart,
-        keepTogether,
-        keepOutOfClass
-      );
+      const assignment = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
 
       // Assert - check all constraints
       expect(assignment[students[0].id]).not.toBe(assignment[students[1].id]); // Apart
@@ -1400,26 +977,8 @@ describe('Optimizer', () => {
       const keepOutOfClass = [{ studentId: students[3].id, classIndex: 0 }];
 
       // Act
-      const assignment1 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart,
-        keepTogether,
-        keepOutOfClass
-      );
-      const assignment2 = optimize(
-        students,
-        numClasses,
-        {},
-        numericCriteria,
-        flagCriteria,
-        keepApart,
-        keepTogether,
-        keepOutOfClass
-      );
+      const assignment1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
+      const assignment2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
 
       // Assert - should be identical
       expect(assignment1).toEqual(assignment2);
@@ -1454,7 +1013,7 @@ describe('Optimizer', () => {
       expect(mediumParams.maxIters).toBeGreaterThan(smallParams.maxIters);
       // Both 500×25 and 5000×250 are capped at 500k, so they may be equal
       expect(largeParams.maxIters).toBeGreaterThanOrEqual(mediumParams.maxIters);
-
+      
       // Large problem should have at least 300k iterations (or hit the 500k cap)
       expect(largeParams.maxIters).toBeGreaterThan(300000);
       expect(largeParams.maxIters).toBeLessThanOrEqual(500000);
@@ -1514,84 +1073,32 @@ describe('Optimizer', () => {
     test('individual flag weights affect total flags composite', () => {
       // Arrange - two students with different flags
       const students = [
-        {
-          id: 'student-1',
-          name: 'High Weight',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: true,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-2',
-          name: 'Low Weight',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: true,
-          sped: false,
-        },
-        {
-          id: 'student-3',
-          name: 'None',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-4',
-          name: 'None',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
+        { id: 'student-1', name: 'High Weight', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'Low Weight', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: true, sped: false },
+        { id: 'student-3', name: 'None', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-4', name: 'None', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
       ];
-
+      
       // High-weighted flag criteria (behavior=3.0, extendedLearning=0.5)
       const weightedFlagCriteria = [
         { key: 'behavior', label: 'Behavior', weight: 3.0 },
         { key: 'extendedLearning', label: 'Extended Learning', weight: 0.5 },
         { key: 'sped', label: 'SPED', weight: 1.0 },
       ];
-
+      
       // Equal-weighted flag criteria (all 1.0)
       const equalFlagCriteria = [
         { key: 'behavior', label: 'Behavior', weight: 1.0 },
         { key: 'extendedLearning', label: 'Extended Learning', weight: 1.0 },
         { key: 'sped', label: 'SPED', weight: 1.0 },
       ];
-
+      
       const numClasses = 2;
       const assignment = { 'student-1': 0, 'student-2': 0, 'student-3': 1, 'student-4': 1 };
 
       // Act - compute costs with different flag weightings
-      const weightedCost = computeCost(
-        students,
-        assignment,
-        numClasses,
-        numericCriteria,
-        weightedFlagCriteria
-      );
-      const equalCost = computeCost(
-        students,
-        assignment,
-        numClasses,
-        numericCriteria,
-        equalFlagCriteria
-      );
+      const weightedCost = computeCost(students, assignment, numClasses, numericCriteria, weightedFlagCriteria);
+      const equalCost = computeCost(students, assignment, numClasses, numericCriteria, equalFlagCriteria);
 
       // Assert - weighted cost should be different (weighted total flags: 3.5 vs 2.0 for class 0)
       expect(weightedCost).not.toBe(equalCost);
@@ -1600,76 +1107,28 @@ describe('Optimizer', () => {
     test('downweighted flags contribute less to total flags composite', () => {
       // Arrange - student with a flag
       const students = [
-        {
-          id: 'student-1',
-          name: 'Student',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: true,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-2',
-          name: 'Student',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-3',
-          name: 'Student',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-4',
-          name: 'Student',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
+        { id: 'student-1', name: 'Student', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'Student', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-3', name: 'Student', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-4', name: 'Student', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
       ];
-
+      
       // High weight for behavior
-      const highWeightCriteria = [{ key: 'behavior', label: 'Behavior', weight: 2.0 }];
-
+      const highWeightCriteria = [
+        { key: 'behavior', label: 'Behavior', weight: 2.0 },
+      ];
+      
       // Low weight for behavior
-      const lowWeightCriteria = [{ key: 'behavior', label: 'Behavior', weight: 0.1 }];
-
+      const lowWeightCriteria = [
+        { key: 'behavior', label: 'Behavior', weight: 0.1 },
+      ];
+      
       const numClasses = 2;
       const assignment = { 'student-1': 0, 'student-2': 0, 'student-3': 1, 'student-4': 1 };
 
       // Act - compute costs
-      const highCost = computeCost(
-        students,
-        assignment,
-        numClasses,
-        numericCriteria,
-        highWeightCriteria
-      );
-      const lowCost = computeCost(
-        students,
-        assignment,
-        numClasses,
-        numericCriteria,
-        lowWeightCriteria
-      );
+      const highCost = computeCost(students, assignment, numClasses, numericCriteria, highWeightCriteria);
+      const lowCost = computeCost(students, assignment, numClasses, numericCriteria, lowWeightCriteria);
 
       // Assert - high weight should produce higher total flags variance penalty
       // (class 0 has weighted total of 2.0 vs class 1 having 0, vs 0.1 vs 0 for low weight)
@@ -1679,77 +1138,31 @@ describe('Optimizer', () => {
     test('individual score weights affect total score composite', () => {
       // Arrange - students with varied scores
       const students = [
-        {
-          id: 'student-1',
-          name: 'High Reading',
-          gender: 'F',
-          readingScore: 90,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-2',
-          name: 'Low Reading',
-          gender: 'F',
-          readingScore: 30,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-3',
-          name: 'Medium High',
-          gender: 'F',
-          readingScore: 80,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-4',
-          name: 'Medium Low',
-          gender: 'F',
-          readingScore: 40,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
+        { id: 'student-1', name: 'High Reading', gender: 'F', readingScore: 90, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'Low Reading', gender: 'F', readingScore: 30, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-3', name: 'Medium High', gender: 'F', readingScore: 80, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-4', name: 'Medium Low', gender: 'F', readingScore: 40, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
       ];
-
+      
       // High weight on reading
       const readingWeightedCriteria = [
         { key: 'readingScore', label: 'Reading Score', weight: 3.0 },
         { key: 'mathScore', label: 'Math Score', weight: 1.0 },
       ];
-
+      
       // Equal weights
       const equalCriteria = [
         { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
         { key: 'mathScore', label: 'Math Score', weight: 1.0 },
       ];
-
+      
       const numClasses = 2;
-
+      
       // Create an imbalanced assignment
       const assignment = { 'student-1': 0, 'student-2': 0, 'student-3': 0, 'student-4': 1 };
 
       // Act
-      const weightedCost = computeCost(
-        students,
-        assignment,
-        numClasses,
-        readingWeightedCriteria,
-        flagCriteria
-      );
+      const weightedCost = computeCost(students, assignment, numClasses, readingWeightedCriteria, flagCriteria);
       const equalCost = computeCost(students, assignment, numClasses, equalCriteria, flagCriteria);
 
       // Assert - weighted total score should produce different cost
@@ -1764,81 +1177,21 @@ describe('Optimizer', () => {
     test('optimizer respects weighted composites in assignment', () => {
       // Arrange - students where weighted flags should drive distribution
       const students = [
-        {
-          id: 'student-1',
-          name: 'High Weight Flag',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: true,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-2',
-          name: 'High Weight Flag',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: true,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-3',
-          name: 'Low Weight Flag',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: true,
-          sped: false,
-        },
-        {
-          id: 'student-4',
-          name: 'Low Weight Flag',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: true,
-          sped: false,
-        },
-        {
-          id: 'student-5',
-          name: 'No Flags',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-6',
-          name: 'No Flags',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
+        { id: 'student-1', name: 'High Weight Flag', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'High Weight Flag', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-3', name: 'Low Weight Flag', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: true, sped: false },
+        { id: 'student-4', name: 'Low Weight Flag', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: true, sped: false },
+        { id: 'student-5', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-6', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
       ];
-
+      
       // Behavior weighted higher than extended learning
       const weightedCriteria = [
         { key: 'behavior', label: 'Behavior', weight: 3.0 },
         { key: 'extendedLearning', label: 'Extended Learning', weight: 1.0 },
         { key: 'sped', label: 'SPED', weight: 1.0 },
       ];
-
+      
       const numClasses = 2;
 
       // Act
@@ -1848,7 +1201,7 @@ describe('Optimizer', () => {
       // With weighted totals, the optimizer should try to balance the weighted sum
       const class0Behaviors = students.filter(s => s.behavior && assignment[s.id] === 0).length;
       const class1Behaviors = students.filter(s => s.behavior && assignment[s.id] === 1).length;
-
+      
       // Both behavior students shouldn't be in the same class if total flags matter
       expect(class0Behaviors + class1Behaviors).toBe(2);
     });
@@ -1856,66 +1209,22 @@ describe('Optimizer', () => {
     test('zero-weight flags contribute nothing to total flags', () => {
       // Arrange - student with zero-weighted flag
       const students = [
-        {
-          id: 'student-1',
-          name: 'Zero Weight',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: true,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-2',
-          name: 'No Flags',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-3',
-          name: 'No Flags',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
-        {
-          id: 'student-4',
-          name: 'No Flags',
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 50,
-          languageScore: 50,
-          behavior: false,
-          extendedLearning: false,
-          sped: false,
-        },
+        { id: 'student-1', name: 'Zero Weight', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: true, extendedLearning: false, sped: false },
+        { id: 'student-2', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-3', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
+        { id: 'student-4', name: 'No Flags', gender: 'F', readingScore: 50, mathScore: 50, languageScore: 50, behavior: false, extendedLearning: false, sped: false },
       ];
-
+      
       // Behavior has zero weight
-      const zeroWeightCriteria = [{ key: 'behavior', label: 'Behavior', weight: 0 }];
-
+      const zeroWeightCriteria = [
+        { key: 'behavior', label: 'Behavior', weight: 0 },
+      ];
+      
       const numClasses = 2;
       const assignment = { 'student-1': 0, 'student-2': 0, 'student-3': 1, 'student-4': 1 };
 
       // Act
-      const cost = computeCost(
-        students,
-        assignment,
-        numClasses,
-        numericCriteria,
-        zeroWeightCriteria
-      );
+      const cost = computeCost(students, assignment, numClasses, numericCriteria, zeroWeightCriteria);
 
       // Assert - cost should be 0 since weighted total flags are equal (0 vs 0)
       // (ignoring other balance metrics like gender/class size)

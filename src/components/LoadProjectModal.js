@@ -1,18 +1,21 @@
 /**
  * LoadProjectModal - Load project from JSON file
- *
+ * 
  * Uses contexts:
  * - useCriteria: To check compatibility with current criteria
- *
+ * 
  * @param {Object} props
  * @param {Function} props.onLoad - Load callback
  * @param {Function} props.onClose - Close callback
  * @param {boolean} props.hasExistingData - Whether data already exists
  */
-function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
+function LoadProjectModal({
+  onLoad,
+  onClose,
+  hasExistingData
+}) {
   // Get current criteria from context for compatibility checking
-  const { numericCriteria: currentNumCriteria, flagCriteria: currentFlagCriteria } =
-    useCriteriaExport();
+  const { numericCriteria: currentNumCriteria, flagCriteria: currentFlagCriteria } = useCriteriaExport();
   const [file, setFile] = useState(null);
   const [validationResult, setValidationResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +43,7 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
     e.preventDefault();
     e.stopPropagation();
     setDragOver(false);
-
+    
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const droppedFile = files[0];
@@ -73,21 +76,19 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
       const result = deserializeProject(projectData, {
         currentVersion,
         currentNumCriteria,
-        currentFlagCriteria,
+        currentFlagCriteria
       });
-
+      
       setValidationResult(result);
-
+      
       // Auto-select load mode based on validation
       if (!result.canLoad) {
         setLoadMode(null);
-      } else if (
-        result.warnings.length === 0 &&
-        result.invalidItems.students.length === 0 &&
-        result.invalidItems.teachers.length === 0 &&
-        result.invalidItems.keepApart.length === 0 &&
-        result.invalidItems.keepTogether.length === 0
-      ) {
+      } else if (result.warnings.length === 0 && 
+                 result.invalidItems.students.length === 0 &&
+                 result.invalidItems.teachers.length === 0 &&
+                 result.invalidItems.keepApart.length === 0 &&
+                 result.invalidItems.keepTogether.length === 0) {
         setLoadMode('compatible');
       } else {
         setLoadMode(null); // Wait for user to choose
@@ -102,7 +103,7 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
 
   function handleLoad() {
     if (!validationResult || !validationResult.canLoad) return;
-
+    
     if (hasExistingData && !showOverwriteConfirm) {
       setShowOverwriteConfirm(true);
       return;
@@ -110,7 +111,7 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
 
     // Filter data based on load mode
     let dataToLoad = validationResult.data;
-
+    
     if (loadMode === 'compatible') {
       // Use only valid items (already filtered by deserializer)
       dataToLoad = validationResult.data;
@@ -130,23 +131,16 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
     if (!metadata) return null;
 
     return (
-      <div
-        className="load-version-info"
-        style={{
-          padding: '8px 12px',
-          background: 'var(--bg2)',
-          borderRadius: 6,
-          fontSize: 13,
-          marginBottom: 12,
-        }}
-      >
-        <div>
-          Project version: <strong>{metadata.appVersion || 'unknown'}</strong>
-        </div>
+      <div className="load-version-info" style={{
+        padding: '8px 12px',
+        background: 'var(--bg2)',
+        borderRadius: 6,
+        fontSize: 13,
+        marginBottom: 12
+      }}>
+        <div>Project version: <strong>{metadata.appVersion || 'unknown'}</strong></div>
         <div>Format version: {metadata.formatVersion || 'unknown'}</div>
-        <div>
-          Saved: {metadata.exportedAt ? new Date(metadata.exportedAt).toLocaleString() : 'unknown'}
-        </div>
+        <div>Saved: {metadata.exportedAt ? new Date(metadata.exportedAt).toLocaleString() : 'unknown'}</div>
       </div>
     );
   }
@@ -155,22 +149,19 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
     if (!validationResult || validationResult.warnings.length === 0) return null;
 
     return (
-      <div
-        className="load-warnings"
-        style={{
-          padding: 12,
-          background: 'rgba(234, 179, 8, 0.1)',
-          border: '1px solid var(--warning)',
-          borderRadius: 8,
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--warning)' }}>⚠️ Warnings</div>
+      <div className="load-warnings" style={{
+        padding: 12,
+        background: 'rgba(234, 179, 8, 0.1)',
+        border: '1px solid var(--warning)',
+        borderRadius: 8,
+        marginBottom: 12
+      }}>
+        <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--warning)' }}>
+          ⚠️ Warnings
+        </div>
         <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
           {validationResult.warnings.map((warning, i) => (
-            <li key={i} style={{ marginBottom: 4 }}>
-              {warning}
-            </li>
+            <li key={i} style={{ marginBottom: 4 }}>{warning}</li>
           ))}
         </ul>
       </div>
@@ -181,22 +172,19 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
     if (!validationResult || validationResult.errors.length === 0) return null;
 
     return (
-      <div
-        className="load-errors"
-        style={{
-          padding: 12,
-          background: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid var(--error)',
-          borderRadius: 8,
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--error)' }}>✕ Errors</div>
+      <div className="load-errors" style={{
+        padding: 12,
+        background: 'rgba(239, 68, 68, 0.1)',
+        border: '1px solid var(--error)',
+        borderRadius: 8,
+        marginBottom: 12
+      }}>
+        <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--error)' }}>
+          ✕ Errors
+        </div>
         <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
           {validationResult.errors.map((err, i) => (
-            <li key={i} style={{ marginBottom: 4 }}>
-              {err}
-            </li>
+            <li key={i} style={{ marginBottom: 4 }}>{err}</li>
           ))}
         </ul>
       </div>
@@ -205,27 +193,23 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
 
   function renderInvalidItems() {
     if (!validationResult) return null;
-
+    
     const { invalidItems } = validationResult;
-    const hasInvalidItems =
-      invalidItems.students.length > 0 ||
-      invalidItems.teachers.length > 0 ||
-      invalidItems.keepApart.length > 0 ||
-      invalidItems.keepTogether.length > 0;
-
+    const hasInvalidItems = invalidItems.students.length > 0 ||
+                           invalidItems.teachers.length > 0 ||
+                           invalidItems.keepApart.length > 0 ||
+                           invalidItems.keepTogether.length > 0;
+    
     if (!hasInvalidItems) return null;
 
     return (
-      <div
-        className="load-invalid-items"
-        style={{
-          padding: 12,
-          background: 'var(--bg2)',
-          borderRadius: 8,
-          marginBottom: 12,
-          fontSize: 13,
-        }}
-      >
+      <div className="load-invalid-items" style={{
+        padding: 12,
+        background: 'var(--bg2)',
+        borderRadius: 8,
+        marginBottom: 12,
+        fontSize: 13
+      }}>
         <div style={{ fontWeight: 600, marginBottom: 8 }}>
           Invalid items found (will be skipped):
         </div>
@@ -275,11 +259,10 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
   function renderLoadOptions() {
     if (!validationResult || !validationResult.canLoad) return null;
 
-    const hasInvalidItems =
-      validationResult.invalidItems.students.length > 0 ||
-      validationResult.invalidItems.teachers.length > 0 ||
-      validationResult.invalidItems.keepApart.length > 0 ||
-      validationResult.invalidItems.keepTogether.length > 0;
+    const hasInvalidItems = validationResult.invalidItems.students.length > 0 ||
+                           validationResult.invalidItems.teachers.length > 0 ||
+                           validationResult.invalidItems.keepApart.length > 0 ||
+                           validationResult.invalidItems.keepTogether.length > 0;
 
     if (!hasInvalidItems && validationResult.warnings.length === 0) return null;
 
@@ -287,15 +270,13 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
       <div className="load-options" style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 8 }}>How would you like to proceed?</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <label
-            style={{
-              padding: 12,
-              border: `2px solid ${loadMode === 'compatible' ? 'var(--primary)' : 'var(--border)'}`,
-              borderRadius: 8,
-              cursor: 'pointer',
-              background: loadMode === 'compatible' ? 'rgba(59, 130, 246, 0.05)' : 'var(--bg1)',
-            }}
-          >
+          <label style={{
+            padding: 12,
+            border: `2px solid ${loadMode === 'compatible' ? 'var(--primary)' : 'var(--border)'}`,
+            borderRadius: 8,
+            cursor: 'pointer',
+            background: loadMode === 'compatible' ? 'rgba(59, 130, 246, 0.05)' : 'var(--bg1)'
+          }}>
             <input
               type="radio"
               name="loadMode"
@@ -309,17 +290,15 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
               Skip invalid students, teachers, and constraints. Safest option.
             </div>
           </label>
-
+          
           {hasInvalidItems && (
-            <label
-              style={{
-                padding: 12,
-                border: `2px solid ${loadMode === 'force' ? 'var(--warning)' : 'var(--border)'}`,
-                borderRadius: 8,
-                cursor: 'pointer',
-                background: loadMode === 'force' ? 'rgba(234, 179, 8, 0.05)' : 'var(--bg1)',
-              }}
-            >
+            <label style={{
+              padding: 12,
+              border: `2px solid ${loadMode === 'force' ? 'var(--warning)' : 'var(--border)'}`,
+              borderRadius: 8,
+              cursor: 'pointer',
+              background: loadMode === 'force' ? 'rgba(234, 179, 8, 0.05)' : 'var(--bg1)'
+            }}>
               <input
                 type="radio"
                 name="loadMode"
@@ -334,16 +313,14 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
               </div>
             </label>
           )}
-
-          <label
-            style={{
-              padding: 12,
-              border: `2px solid ${loadMode === null ? 'var(--error)' : 'var(--border)'}`,
-              borderRadius: 8,
-              cursor: 'pointer',
-              background: loadMode === null ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg1)',
-            }}
-          >
+          
+          <label style={{
+            padding: 12,
+            border: `2px solid ${loadMode === null ? 'var(--error)' : 'var(--border)'}`,
+            borderRadius: 8,
+            cursor: 'pointer',
+            background: loadMode === null ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg1)'
+          }}>
             <input
               type="radio"
               name="loadMode"
@@ -364,31 +341,31 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
 
   function renderOverwriteConfirm() {
     return (
-      <div
-        className="load-overwrite-confirm"
-        style={{
-          padding: 16,
-          background: 'rgba(234, 179, 8, 0.1)',
-          border: '2px solid var(--warning)',
-          borderRadius: 8,
-          marginBottom: 12,
-        }}
-      >
+      <div className="load-overwrite-confirm" style={{
+        padding: 16,
+        background: 'rgba(234, 179, 8, 0.1)',
+        border: '2px solid var(--warning)',
+        borderRadius: 8,
+        marginBottom: 12
+      }}>
         <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--warning)' }}>
           ⚠️ Overwrite existing data?
         </div>
         <p style={{ margin: '0 0 12px 0', fontSize: 14 }}>
-          You currently have data loaded. Loading this project will replace all existing students,
+          You currently have data loaded. Loading this project will replace all existing students, 
           classes, and settings. This cannot be undone.
         </p>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button
+          <button 
             className="btn btn-secondary btn-sm"
             onClick={() => setShowOverwriteConfirm(false)}
           >
             Go back
           </button>
-          <button className="btn btn-danger btn-sm" onClick={handleLoad}>
+          <button 
+            className="btn btn-danger btn-sm"
+            onClick={handleLoad}
+          >
             Yes, replace my data
           </button>
         </div>
@@ -401,11 +378,9 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
       <div className="modal" style={{ maxWidth: 560 }}>
         <div className="modal-header">
           <div className="modal-title">Load Project</div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            ✕
-          </button>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
-
+        
         <div className="modal-body">
           {!file && (
             <div
@@ -422,7 +397,7 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
-
+              
               {isLoading ? (
                 <div className="drop-zone-content">
                   <div className="drop-zone-icon">⏳</div>
@@ -437,24 +412,22 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
               )}
             </div>
           )}
-
+          
           {file && !isLoading && (
-            <div
-              style={{
-                padding: 12,
-                background: 'var(--bg2)',
-                borderRadius: 8,
-                marginBottom: 12,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
+            <div style={{ 
+              padding: 12, 
+              background: 'var(--bg2)', 
+              borderRadius: 8, 
+              marginBottom: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 20 }}>📄</span>
                 <span style={{ fontWeight: 500 }}>{file.name}</span>
               </div>
-              <button
+              <button 
                 className="btn btn-ghost btn-sm"
                 onClick={() => {
                   setFile(null);
@@ -468,23 +441,20 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
               </button>
             </div>
           )}
-
+          
           {error && (
-            <div
-              className="load-error"
-              style={{
-                padding: 12,
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid var(--error)',
-                borderRadius: 8,
-                color: 'var(--error)',
-                marginBottom: 12,
-              }}
-            >
+            <div className="load-error" style={{
+              padding: 12,
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid var(--error)',
+              borderRadius: 8,
+              color: 'var(--error)',
+              marginBottom: 12
+            }}>
               {error}
             </div>
           )}
-
+          
           {validationResult && renderVersionInfo()}
           {validationResult && renderErrors()}
           {validationResult && renderWarnings()}
@@ -492,13 +462,17 @@ function LoadProjectModal({ onLoad, onClose, hasExistingData }) {
           {validationResult && renderLoadOptions()}
           {showOverwriteConfirm && renderOverwriteConfirm()}
         </div>
-
+        
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>
             Cancel
           </button>
           {validationResult?.canLoad && !showOverwriteConfirm && (
-            <button className="btn btn-primary" onClick={handleLoad} disabled={loadMode === null}>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleLoad}
+              disabled={loadMode === null}
+            >
               Load Project
             </button>
           )}

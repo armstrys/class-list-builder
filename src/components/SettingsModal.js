@@ -30,56 +30,20 @@ function HelpTooltip({ content }) {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isVisible]);
-  const btnStyle = {
-    width: 18,
-    height: 18,
-    padding: 0,
-    borderRadius: '50%',
-    fontSize: 11,
-    lineHeight: '18px',
-    textTransform: 'none',
-  };
+  const btnStyle = { width: 18, height: 18, padding: 0, borderRadius: '50%', fontSize: 11, lineHeight: '18px', textTransform: 'none' };
   const tooltipStyle = {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: 6,
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-md)',
-    padding: '12px 16px',
-    width: 280,
-    maxWidth: 'calc(100vw - 40px)',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-    zIndex: 10000,
-    fontSize: 13,
-    lineHeight: 1.5,
-    color: 'var(--text)',
-    whiteSpace: 'pre-wrap',
-    textTransform: 'none',
-    fontWeight: 'normal',
+    position: 'absolute', top: '100%', right: 0, marginTop: 6, background: 'var(--surface)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-md)', padding: '12px 16px', width: 280, maxWidth: 'calc(100vw - 40px)',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 10000, fontSize: 13, lineHeight: 1.5, color: 'var(--text)',
+    whiteSpace: 'pre-wrap', textTransform: 'none', fontWeight: 'normal'
   };
   const arrowStyle = {
-    position: 'absolute',
-    top: -5,
-    right: 6,
-    width: 8,
-    height: 8,
-    background: 'var(--surface)',
-    borderLeft: '1px solid var(--border)',
-    borderTop: '1px solid var(--border)',
-    transform: 'rotate(45deg)',
+    position: 'absolute', top: -5, right: 6, width: 8, height: 8, background: 'var(--surface)',
+    borderLeft: '1px solid var(--border)', borderTop: '1px solid var(--border)', transform: 'rotate(45deg)'
   };
   return (
     <span ref={tooltipRef} style={{ position: 'relative', display: 'inline-block' }}>
-      <button
-        className="btn btn-ghost btn-sm"
-        onClick={() => setIsVisible(!isVisible)}
-        style={btnStyle}
-        title="Click for help"
-      >
-        ?
-      </button>
+      <button className="btn btn-ghost btn-sm" onClick={() => setIsVisible(!isVisible)} style={btnStyle} title="Click for help">?</button>
       {isVisible && (
         <div style={tooltipStyle}>
           <div style={arrowStyle} />
@@ -89,7 +53,13 @@ function HelpTooltip({ content }) {
     </span>
   );
 }
-function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onClearStudents }) {
+function SettingsModal({
+  onSave,
+  onClose,
+  hasStudentData,
+  onExportStudents,
+  onClearStudents
+}) {
   // Get criteria from context
   const { numericCriteria, flagCriteria } = useCriteriaExport();
   const [activeTab, setActiveTab] = useState('numeric');
@@ -122,25 +92,19 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
   }
 
   function addNumericCriterion() {
-    setNumCriteria(prev => [
-      ...prev,
-      {
-        key: '',
-        label: '',
-        weight: 1.0,
-      },
-    ]);
+    setNumCriteria(prev => [...prev, {
+      key: '',
+      label: '',
+      weight: 1.0
+    }]);
   }
 
   function addFlagCriterion() {
-    setFlagCriteriaState(prev => [
-      ...prev,
-      {
-        key: '',
-        label: '',
-        weight: 1.5,
-      },
-    ]);
+    setFlagCriteriaState(prev => [...prev, {
+      key: '',
+      label: '',
+      weight: 1.5
+    }]);
   }
 
   function requestRemoveNum(index) {
@@ -230,16 +194,12 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
       numericCriteria: numCriteria.map(c => ({ ...c, key: generateKeyFromLabel(c.label) })),
       flagCriteria: flagCriteriaState.map(c => ({ ...c, key: generateKeyFromLabel(c.label) })),
     };
-    triggerDownload(
-      JSON.stringify(config, null, 2),
-      'class-optimizer-config.json',
-      'application/json'
-    );
+    triggerDownload(JSON.stringify(config, null, 2), 'class-optimizer-config.json', 'application/json');
   }
 
   function importConfig(file) {
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = (e) => {
       try {
         const config = JSON.parse(e.target.result);
         if (!config.numericCriteria || !config.flagCriteria) {
@@ -260,8 +220,7 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
             // Show helpful modal instead of just an error
             setConfigConflict({
               config,
-              message:
-                'The config file has different fields than your current setup. Student data is incompatible with the new config.',
+              message: 'The config file has different fields than your current setup. Student data is incompatible with the new config.'
             });
             return;
           }
@@ -315,12 +274,8 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
 
   const footer = (
     <>
-      <button className="btn btn-secondary" onClick={onClose}>
-        Cancel
-      </button>
-      <button className="btn btn-primary" onClick={handleSave}>
-        Save Settings
-      </button>
+      <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      <button className="btn btn-primary" onClick={handleSave}>Save Settings</button>
     </>
   );
 
@@ -336,47 +291,31 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
       >
         <div>
           {hasStudentData && (
-            <div
-              style={{
-                background: 'var(--amber-light)',
-                border: '1px solid var(--amber)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '10px 14px',
-                marginBottom: 16,
-                fontSize: 13,
-                color: 'var(--text)',
-              }}
-            >
+            <div style={{
+              background: 'var(--amber-light)',
+              border: '1px solid var(--amber)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '10px 14px',
+              marginBottom: 16,
+              fontSize: 13,
+              color: 'var(--text)'
+            }}>
               ⚠️ Student data exists. Removing fields with data will require confirmation.
             </div>
           )}
 
           <div className="config-actions">
-            <button className="btn btn-secondary btn-sm" onClick={exportConfig}>
-              ⬇ Save Config
-            </button>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              ⬆ Import Config
-            </button>
+            <button className="btn btn-secondary btn-sm" onClick={exportConfig}>⬇ Save Config</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>⬆ Import Config</button>
             <input
               ref={fileInputRef}
               type="file"
               accept=".json"
               style={{ display: 'none' }}
-              onChange={e => {
-                if (e.target.files?.[0]) importConfig(e.target.files[0]);
-                e.target.value = '';
-              }}
+              onChange={e => { if (e.target.files?.[0]) importConfig(e.target.files[0]); e.target.value = ''; }}
             />
-            <button className="btn btn-ghost btn-sm" onClick={resetToDefaults}>
-              Reset to Defaults
-            </button>
-            <button className="btn btn-danger btn-sm" onClick={() => setConfirmClear(true)}>
-              🗑 Clear Cache
-            </button>
+            <button className="btn btn-ghost btn-sm" onClick={resetToDefaults}>Reset to Defaults</button>
+            <button className="btn btn-danger btn-sm" onClick={() => setConfirmClear(true)}>🗑 Clear Cache</button>
           </div>
 
           <div className="settings-tabs">
@@ -423,20 +362,14 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
                       className="btn btn-danger btn-sm"
                       onClick={() => requestRemoveNum(i)}
                       disabled={numCriteria.length <= 1}
-                      title={
-                        numCriteria.length <= 1 ? 'Must have at least one numeric field' : 'Remove'
-                      }
+                      title={numCriteria.length <= 1 ? 'Must have at least one numeric field' : 'Remove'}
                     >
                       ✕
                     </button>
                   </div>
                 ))}
               </div>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={addNumericCriterion}
-                style={{ marginTop: 12 }}
-              >
+              <button className="btn btn-secondary btn-sm" onClick={addNumericCriterion} style={{ marginTop: 12 }}>
                 + Add Numeric Field
               </button>
             </div>
@@ -477,18 +410,16 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
                   </div>
                 ))}
               </div>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={addFlagCriterion}
-                style={{ marginTop: 12 }}
-              >
+              <button className="btn btn-secondary btn-sm" onClick={addFlagCriterion} style={{ marginTop: 12 }}>
                 + Add Flag Field
               </button>
             </div>
           )}
 
           {error && (
-            <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12 }}>{error}</div>
+            <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12 }}>
+              {error}
+            </div>
           )}
         </div>
       </Modal>
@@ -500,15 +431,12 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
         size="sm"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>
-              Cancel
-            </button>
+            <button className="btn btn-secondary" onClick={() => setConfirmRemove(null)}>Cancel</button>
             <button
               className="btn btn-danger"
-              onClick={() =>
-                confirmRemove.type === 'numeric'
-                  ? removeNumCriterion(confirmRemove.index)
-                  : removeFlagCriterion(confirmRemove.index)
+              onClick={() => confirmRemove.type === 'numeric'
+                ? removeNumCriterion(confirmRemove.index)
+                : removeFlagCriterion(confirmRemove.index)
               }
             >
               Remove Field
@@ -517,8 +445,8 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
         }
       >
         <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-          Student data exists. Removing "{confirmRemove?.label}" will delete this data from all
-          student records. This cannot be undone.
+          Student data exists. Removing "{confirmRemove?.label}" will delete this data from all student records.
+          This cannot be undone.
         </p>
       </Modal>
 
@@ -529,12 +457,8 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
         size="sm"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setConfirmClear(false)}>
-              Cancel
-            </button>
-            <button className="btn btn-danger" onClick={clearSavedSettings}>
-              Reset to Defaults
-            </button>
+            <button className="btn btn-secondary" onClick={() => setConfirmClear(false)}>Cancel</button>
+            <button className="btn btn-danger" onClick={clearSavedSettings}>Reset to Defaults</button>
           </>
         }
       >
@@ -551,39 +475,27 @@ function SettingsModal({ onSave, onClose, hasStudentData, onExportStudents, onCl
         size="md"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setConfigConflict(null)}>
-              Cancel
-            </button>
-            <button className="btn btn-secondary" onClick={handleExportOnly}>
-              ⬇ Export Students
-            </button>
-            <button className="btn btn-danger" onClick={handleClearAndApply}>
-              Clear & Apply Config
-            </button>
+            <button className="btn btn-secondary" onClick={() => setConfigConflict(null)}>Cancel</button>
+            <button className="btn btn-secondary" onClick={handleExportOnly}>⬇ Export Students</button>
+            <button className="btn btn-danger" onClick={handleClearAndApply}>Clear & Apply Config</button>
           </>
         }
       >
         <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>
           {configConflict?.message}
         </p>
-        <div
-          style={{
-            background: 'var(--surface2)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '12px 16px',
-            marginBottom: 16,
-            fontSize: 13,
-          }}
-        >
+        <div style={{
+          background: 'var(--surface2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '12px 16px',
+          marginBottom: 16,
+          fontSize: 13
+        }}>
           <strong>What you can do:</strong>
           <ol style={{ margin: '8px 0 0 16px', padding: 0, lineHeight: 1.6 }}>
-            <li>
-              <strong>Export</strong> your current students as CSV (optional backup)
-            </li>
-            <li>
-              <strong>Clear</strong> student data to remove the conflict
-            </li>
+            <li><strong>Export</strong> your current students as CSV (optional backup)</li>
+            <li><strong>Clear</strong> student data to remove the conflict</li>
             <li>The new config will be applied automatically</li>
           </ol>
         </div>

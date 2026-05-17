@@ -80,7 +80,11 @@ function SetupPage({ onOptimize }) {
 
   function saveStudentsCSV() {
     if (students.length === 0) return;
-    const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria);
+    const csv = exportStudentsToCSV(
+      students,
+      numericCriteria,
+      flagCriteria
+    );
     triggerDownload(csv, 'students.csv', 'text/csv');
   }
 

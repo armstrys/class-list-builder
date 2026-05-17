@@ -1,6 +1,6 @@
 /**
  * TogetherTab - Keep Together constraint management
- *
+ * 
  * @param {Object} props
  * @param {Array} props.students - All students
  * @param {Array} props.keepTogether - Current together groups
@@ -30,7 +30,9 @@ function TogetherTab({ students, keepTogether, onAddKeepTogether, onRemoveKeepTo
   }));
 
   function toggleSelection(id) {
-    setSelectedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
   }
 
   function handleAdd() {
@@ -53,34 +55,20 @@ function TogetherTab({ students, keepTogether, onAddKeepTogether, onRemoveKeepTo
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {togetherConstraints.map(c => (
-              <div
-                key={c.idx}
-                className="constraint-item"
-                style={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '8px 12px',
-                }}
-              >
+            {togetherConstraints.map((c) => (
+              <div key={c.idx} className="constraint-item" style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '8px 12px',
+              }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--accent)',
-                      fontWeight: 500,
-                      marginRight: 8,
-                    }}
-                  >
+                  <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 500, marginRight: 8 }}>
                     Group {c.idx + 1}:
                   </span>
                   {c.names.map((name, i) => (
                     <span key={i}>
-                      <span
-                        className="badge"
-                        style={{ background: 'var(--bg)', color: 'var(--text)' }}
-                      >
+                      <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
                         {name}
                       </span>
                       {i < c.names.length - 1 && (
@@ -121,15 +109,13 @@ function TogetherTab({ students, keepTogether, onAddKeepTogether, onRemoveKeepTo
           style={{ marginBottom: 12 }}
         />
 
-        <div
-          style={{
-            maxHeight: 200,
-            overflow: 'auto',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            marginBottom: 12,
-          }}
-        >
+        <div style={{
+          maxHeight: 200,
+          overflow: 'auto',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)',
+          marginBottom: 12,
+        }}>
           {filteredStudents.length === 0 ? (
             <div style={{ padding: 16, color: 'var(--text3)', textAlign: 'center' }}>
               No students match your filter.
@@ -156,21 +142,10 @@ function TogetherTab({ students, keepTogether, onAddKeepTogether, onRemoveKeepTo
                   onChange={() => {}}
                   style={{ pointerEvents: 'none' }}
                 />
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--text3)',
-                    fontFamily: 'monospace',
-                    minWidth: 60,
-                  }}
-                >
-                  {s.id}
-                </span>
+                <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace', minWidth: 60 }}>{s.id}</span>
                 <span>{s.name}</span>
                 {togetherStudentSet.has(s.id) && (
-                  <span
-                    style={{ fontSize: 10, marginLeft: 8, opacity: 0.7, color: 'var(--accent)' }}
-                  >
+                  <span style={{ fontSize: 10, marginLeft: 8, opacity: 0.7, color: 'var(--accent)' }}>
                     (in group)
                   </span>
                 )}
@@ -183,15 +158,13 @@ function TogetherTab({ students, keepTogether, onAddKeepTogether, onRemoveKeepTo
         </div>
 
         {selectedIds.length > 0 && (
-          <div
-            style={{
-              marginBottom: 12,
-              padding: 12,
-              background: 'var(--surface)',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border)',
-            }}
-          >
+          <div style={{
+            marginBottom: 12,
+            padding: 12,
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border)'
+          }}>
             <div style={{ fontSize: 13, marginBottom: 8 }}>
               <strong>Selected ({selectedIds.length}):</strong>{' '}
               {selectedIds.map(id => studentById[id]?.name).join(', ')}

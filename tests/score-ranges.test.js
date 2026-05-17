@@ -116,7 +116,7 @@ describe('Numeric Score Range Handling', () => {
           name: `Student ${i + 1}`,
           gender: 'F',
           readingScore: 100 + i * 10, // 100-210 range
-          mathScore: 2500 + i * 100, // 2500-3600 range
+          mathScore: 2500 + i * 100,  // 2500-3600 range
           languageScore: 2200 + i * 50, // 2200-2750 range
           behavior: false,
           extendedLearning: false,
@@ -263,7 +263,7 @@ describe('Numeric Score Range Handling', () => {
           id: 's2',
           name: 'Bob',
           gender: 'M',
-          readingScore: 200.5,
+          readingScore: 200.50,
           mathScore: 2899.99,
           languageScore: 2800.01,
           behavior: true,
@@ -410,26 +410,8 @@ describe('Numeric Score Range Handling', () => {
     test('exports students with mixed score ranges', () => {
       // Arrange
       const students = [
-        {
-          id: 's1',
-          name: 'Alice',
-          gender: 'F',
-          readingScore: 150,
-          mathScore: 2500,
-          languageScore: 2200,
-          behavior: false,
-          sped: false,
-        },
-        {
-          id: 's2',
-          name: 'Bob',
-          gender: 'M',
-          readingScore: 200,
-          mathScore: 2800,
-          languageScore: 2750,
-          behavior: true,
-          sped: false,
-        },
+        { id: 's1', name: 'Alice', gender: 'F', readingScore: 150, mathScore: 2500, languageScore: 2200, behavior: false, sped: false },
+        { id: 's2', name: 'Bob', gender: 'M', readingScore: 200, mathScore: 2800, languageScore: 2750, behavior: true, sped: false },
       ];
 
       // Act
@@ -489,38 +471,14 @@ Bob,M,200,2800,2750,true,false`;
     test('class list export includes mixed range scores', () => {
       // Arrange
       const students = [
-        {
-          id: 's1',
-          name: 'Alice',
-          gender: 'F',
-          readingScore: 150,
-          mathScore: 2500,
-          languageScore: 2200,
-          behavior: false,
-          sped: false,
-        },
-        {
-          id: 's2',
-          name: 'Bob',
-          gender: 'M',
-          readingScore: 200,
-          mathScore: 2800,
-          languageScore: 2750,
-          behavior: true,
-          sped: false,
-        },
+        { id: 's1', name: 'Alice', gender: 'F', readingScore: 150, mathScore: 2500, languageScore: 2200, behavior: false, sped: false },
+        { id: 's2', name: 'Bob', gender: 'M', readingScore: 200, mathScore: 2800, languageScore: 2750, behavior: true, sped: false },
       ];
-      const assignment = { s1: 0, s2: 1 };
+      const assignment = { 's1': 0, 's2': 1 };
       const teachers = [{ name: 'Mrs. Smith' }, { name: 'Mr. Jones' }];
 
       // Act
-      const csv = exportClassListsToCSV(
-        students,
-        assignment,
-        teachers,
-        mixedRangeCriteria,
-        flagCriteria
-      );
+      const csv = exportClassListsToCSV(students, assignment, teachers, mixedRangeCriteria, flagCriteria);
 
       // Assert
       expect(csv).toContain('150');
@@ -543,13 +501,7 @@ Bob,M,200,2800,2750,true,false`;
         resetIdCounter();
         const runStudents = createMixedRangeStudents(24);
         const assignment = optimize(runStudents, numClasses, {}, mixedRangeCriteria, flagCriteria);
-        const cost = computeCost(
-          runStudents,
-          assignment,
-          numClasses,
-          mixedRangeCriteria,
-          flagCriteria
-        );
+        const cost = computeCost(runStudents, assignment, numClasses, mixedRangeCriteria, flagCriteria);
         costs.push(cost);
       }
 
@@ -576,12 +528,10 @@ Bob,M,200,2800,2750,true,false`;
       mixedRangeCriteria.forEach(criterion => {
         const allValues = students.map(s => s[criterion.key]);
         const popMean = allValues.reduce((a, b) => a + b, 0) / allValues.length;
-        const popStd = Math.sqrt(
-          allValues.reduce((s, v) => s + (v - popMean) ** 2, 0) / allValues.length
-        );
+        const popStd = Math.sqrt(allValues.reduce((s, v) => s + (v - popMean) ** 2, 0) / allValues.length);
 
-        const classMeans = classes.map(
-          cls => cls.reduce((sum, s) => sum + s[criterion.key], 0) / cls.length
+        const classMeans = classes.map(cls =>
+          cls.reduce((sum, s) => sum + s[criterion.key], 0) / cls.length
         );
 
         // Class means should be within 2 standard deviations of population mean
@@ -656,8 +606,8 @@ Bob,M,200,2800,2750,true,false`;
           name: `Student ${i + 1}`,
           gender: 'F',
           readingScore: -100 + Math.floor(Math.random() * 200), // -100 to 100
-          mathScore: -500 + Math.floor(Math.random() * 1000), // -500 to 500
-          languageScore: -50 + Math.floor(Math.random() * 100), // -50 to 50
+          mathScore: -500 + Math.floor(Math.random() * 1000),    // -500 to 500
+          languageScore: -50 + Math.floor(Math.random() * 100),  // -50 to 50
           behavior: false,
         });
       }

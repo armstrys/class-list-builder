@@ -18,13 +18,13 @@ const PROJECT_FORMAT_VERSION = 1;
  */
 function serializeProject(state) {
   const appVersion = typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'unknown';
-
+  
   const projectData = {
     metadata: {
       appVersion,
       formatVersion: PROJECT_FORMAT_VERSION,
       exportedAt: new Date().toISOString(),
-      description: 'Class List Builder Project File',
+      description: 'Class List Builder Project File'
     },
     data: {
       students: state.students || [],
@@ -35,8 +35,8 @@ function serializeProject(state) {
       keepTogether: state.keepTogether || [],
       keepOutOfClass: state.keepOutOfClass || [],
       assignment: state.assignment || {},
-      locked: state.locked || [],
-    },
+      locked: state.locked || []
+    }
   };
 
   // Include optimization results if provided
@@ -45,9 +45,8 @@ function serializeProject(state) {
       score: state.optimizationResults.score,
       iterations: state.optimizationResults.iterations,
       // Convert Map to plain object for JSON serialization
-      assignments: state.optimizationResults.assignments
-        ? Object.fromEntries(state.optimizationResults.assignments)
-        : {},
+      assignments: state.optimizationResults.assignments ? 
+        Object.fromEntries(state.optimizationResults.assignments) : {}
     };
   }
 
@@ -101,6 +100,6 @@ if (typeof module !== 'undefined' && module.exports) {
     generateProjectFilename,
     createProjectSaveUrl,
     saveProject,
-    PROJECT_FORMAT_VERSION,
+    PROJECT_FORMAT_VERSION
   };
 }

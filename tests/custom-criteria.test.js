@@ -21,18 +21,10 @@ const teachers = [
 ];
 
 const students = [
-  {
-    id: 's1',
-    name: 'Alice',
-    gender: 'F',
-    scienceScore: 85,
-    artScore: 90,
-    gifted: false,
-    ell: false,
-  },
-  { id: 's2', name: 'Bob', gender: 'M', scienceScore: 78, artScore: 82, gifted: true, ell: false },
-  { id: 's3', name: 'Cara', gender: 'F', scienceScore: 92, artScore: 88, gifted: false, ell: true },
-  { id: 's4', name: 'Dan', gender: 'M', scienceScore: 70, artScore: 75, gifted: false, ell: false },
+  { id: 's1', name: 'Alice', gender: 'F', scienceScore: 85, artScore: 90, gifted: false, ell: false },
+  { id: 's2', name: 'Bob',   gender: 'M', scienceScore: 78, artScore: 82, gifted: true,  ell: false },
+  { id: 's3', name: 'Cara',  gender: 'F', scienceScore: 92, artScore: 88, gifted: false, ell: true },
+  { id: 's4', name: 'Dan',   gender: 'M', scienceScore: 70, artScore: 75, gifted: false, ell: false },
 ];
 
 describe('Custom Criteria End-to-End', () => {
@@ -45,7 +37,7 @@ describe('Custom Criteria End-to-End', () => {
       customFlagCriteria,
       [], // no keepApart
       [], // no keepTogether
-      [] // no keepOutOfClass
+      []  // no keepOutOfClass
     );
 
     // Should assign all students
@@ -68,9 +60,7 @@ describe('Custom Criteria End-to-End', () => {
       2,
       customNumericCriteria,
       customFlagCriteria,
-      [],
-      [],
-      []
+      [], [], []
     );
 
     expect(typeof cost).toBe('number');
@@ -142,24 +132,10 @@ describe('Custom Criteria End-to-End', () => {
 
   test('optimization with custom criteria produces deterministic results', () => {
     const assignment1 = optimize(
-      students,
-      2,
-      {},
-      customNumericCriteria,
-      customFlagCriteria,
-      [],
-      [],
-      []
+      students, 2, {}, customNumericCriteria, customFlagCriteria, [], [], []
     );
     const assignment2 = optimize(
-      students,
-      2,
-      {},
-      customNumericCriteria,
-      customFlagCriteria,
-      [],
-      [],
-      []
+      students, 2, {}, customNumericCriteria, customFlagCriteria, [], [], []
     );
 
     expect(assignment1).toEqual(assignment2);

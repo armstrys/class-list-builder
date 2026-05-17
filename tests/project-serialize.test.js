@@ -19,42 +19,10 @@ const teachers = [
 ];
 
 const students = [
-  {
-    id: 's1',
-    name: 'Alice',
-    gender: 'F',
-    readingScore: 85,
-    mathScore: 90,
-    behavior: false,
-    sped: false,
-  },
-  {
-    id: 's2',
-    name: 'Bob',
-    gender: 'M',
-    readingScore: 78,
-    mathScore: 82,
-    behavior: true,
-    sped: false,
-  },
-  {
-    id: 's3',
-    name: 'Cara',
-    gender: 'F',
-    readingScore: 92,
-    mathScore: 88,
-    behavior: false,
-    sped: true,
-  },
-  {
-    id: 's4',
-    name: 'Dan',
-    gender: 'M',
-    readingScore: 70,
-    mathScore: 75,
-    behavior: false,
-    sped: false,
-  },
+  { id: 's1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: false, sped: false },
+  { id: 's2', name: 'Bob',   gender: 'M', readingScore: 78, mathScore: 82, behavior: true,  sped: false },
+  { id: 's3', name: 'Cara',  gender: 'F', readingScore: 92, mathScore: 88, behavior: false, sped: true },
+  { id: 's4', name: 'Dan',   gender: 'M', readingScore: 70, mathScore: 75, behavior: false, sped: false },
 ];
 
 const fullState = {

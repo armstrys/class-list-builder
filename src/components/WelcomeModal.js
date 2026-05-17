@@ -23,8 +23,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
     // 1. GitHub Pages build flag is set (injected during build), OR
     // 2. welcome=1 URL parameter is set (for dev testing)
     // ...but NOT if skipwelcome=1 is set or forceShow prop is false
-    const shouldShow =
-      (window.SHOW_WELCOME_MODAL || forceWelcome) && !skipWelcome && forceShow !== false;
+    const shouldShow = (window.SHOW_WELCOME_MODAL || forceWelcome) && !skipWelcome && forceShow !== false;
     if (shouldShow) {
       setIsVisible(true);
     }
@@ -53,22 +52,27 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
       closeOnOverlayClick={false}
       showCloseButton={false}
       footer={
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
-          <button className="btn btn-ghost btn-sm" onClick={handleReadMore} type="button">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleReadMore}
+            type="button"
+          >
             📖 Read Documentation
           </button>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn btn-primary" onClick={() => handleClose(true)} type="button">
+            <button
+              className="btn btn-primary"
+              onClick={() => handleClose(true)}
+              type="button"
+            >
               ▶️ Demo
             </button>
-            <button className="btn btn-secondary" onClick={() => handleClose(false)} type="button">
+            <button
+              className="btn btn-secondary"
+              onClick={() => handleClose(false)}
+              type="button"
+            >
               Close
             </button>
           </div>
@@ -82,10 +86,9 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
           <div className="welcome-section-content">
             <h3>Student Data Stays Private</h3>
             <p>
-              This tool runs entirely in your browser.{' '}
-              <strong>Student data never leaves your computer</strong> — no uploads, no accounts, no
-              servers. You can even verify this by turning off your internet connection after the
-              page loads; the tool continues to work normally.
+              This tool runs entirely in your browser. <strong>Student data never leaves your computer</strong> —
+              no uploads, no accounts, no servers. You can even verify this by turning off your internet connection
+              after the page loads; the tool continues to work normally.
             </p>
           </div>
         </div>
@@ -93,15 +96,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
         {/* Admin/IT Note - moved under privacy */}
         <div className="welcome-admin-note">
           <strong>🔍 Admin or IT?</strong> Review our
-          <a
-            href="https://github.com/armstrys/class-list-builder/blob/main/SECURITY.md"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {' '}
-            security documentation
-          </a>
-          .
+          <a href="https://github.com/armstrys/class-list-builder/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer"> security documentation</a>.
         </div>
 
         {/* Features Section */}
@@ -143,18 +138,10 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
         <div className="welcome-section welcome-quickstart">
           <h3>Quick Start</h3>
           <ol className="quickstart-list">
-            <li>
-              Configure your criteria in <strong>Settings</strong> (top right)
-            </li>
-            <li>
-              Set up your classes in the <strong>Teachers / Classes</strong> panel
-            </li>
-            <li>
-              Import your students via <strong>Import Students</strong> or add them manually
-            </li>
-            <li>
-              Click <strong>Optimize Classes</strong> to generate balanced lists
-            </li>
+            <li>Configure your criteria in <strong>Settings</strong> (top right)</li>
+            <li>Set up your classes in the <strong>Teachers / Classes</strong> panel</li>
+            <li>Import your students via <strong>Import Students</strong> or add them manually</li>
+            <li>Click <strong>Optimize Classes</strong> to generate balanced lists</li>
           </ol>
         </div>
 
@@ -162,14 +149,7 @@ function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
         <div className="welcome-note">
           <strong>💡 Tip:</strong> Want to use this offline? Download the standalone HTML file.
           <div style={{ marginTop: '8px' }}>
-            <a
-              href="https://github.com/armstrys/class-list-builder/releases"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="releases-link"
-            >
-              ➡️ Visit Releases Page
-            </a>
+            <a href="https://github.com/armstrys/class-list-builder/releases" target="_blank" rel="noopener noreferrer" className="releases-link">➡️ Visit Releases Page</a>
           </div>
         </div>
       </div>

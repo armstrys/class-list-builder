@@ -67,11 +67,10 @@ function ClassFilterDropdown({
   }
 
   // Filter students by name or ID
-  const filteredStudents = studentFilter.trim()
-    ? students.filter(
-        s =>
-          s.name.toLowerCase().includes(studentFilter.toLowerCase()) ||
-          s.id.toLowerCase().includes(studentFilter.toLowerCase())
+  const filteredStudents = studentFilter.trim() 
+    ? students.filter(s => 
+        s.name.toLowerCase().includes(studentFilter.toLowerCase()) ||
+        s.id.toLowerCase().includes(studentFilter.toLowerCase())
       )
     : [];
 
@@ -94,7 +93,7 @@ function ClassFilterDropdown({
       >
         👁️ Show Classes ({selectedCount}/{totalCount})
       </button>
-
+      
       {showClassFilter && (
         <div
           style={{
@@ -147,7 +146,7 @@ function ClassFilterDropdown({
               {selectedCount} selected
             </span>
           </div>
-
+          
           {/* Student search section */}
           <div
             style={{
@@ -163,7 +162,7 @@ function ClassFilterDropdown({
               type="text"
               placeholder="Name or ID..."
               value={studentFilter}
-              onChange={e => setStudentFilter(e.target.value)}
+              onChange={(e) => setStudentFilter(e.target.value)}
               style={{
                 width: '100%',
                 padding: '6px 10px',
@@ -193,31 +192,18 @@ function ClassFilterDropdown({
                         justifyContent: 'space-between',
                         alignItems: 'center',
                       }}
-                      onMouseEnter={e => {
+                      onMouseEnter={(e) => {
                         e.currentTarget.style.background = 'var(--surface)';
                       }}
-                      onMouseLeave={e => {
+                      onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent';
                       }}
                     >
-                      <span
-                        style={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {student.name}
                       </span>
                       {classInfo && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            color: 'var(--accent)',
-                            whiteSpace: 'nowrap',
-                            marginLeft: 8,
-                          }}
-                        >
+                        <span style={{ fontSize: 10, color: 'var(--accent)', whiteSpace: 'nowrap', marginLeft: 8 }}>
                           {classInfo.name}
                         </span>
                       )}
@@ -225,28 +211,19 @@ function ClassFilterDropdown({
                   );
                 })}
                 {filteredStudents.length > 5 && (
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: 'var(--text3)',
-                      padding: '4px 8px',
-                      fontStyle: 'italic',
-                    }}
-                  >
+                  <div style={{ fontSize: 10, color: 'var(--text3)', padding: '4px 8px', fontStyle: 'italic' }}>
                     ...and {filteredStudents.length - 5} more
                   </div>
                 )}
               </div>
             )}
             {studentFilter.trim() && filteredStudents.length === 0 && (
-              <div
-                style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6, fontStyle: 'italic' }}
-              >
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6, fontStyle: 'italic' }}>
                 No students found
               </div>
             )}
           </div>
-
+          
           <div
             style={{
               overflowY: 'auto',
@@ -266,10 +243,10 @@ function ClassFilterDropdown({
                   transition: 'background 0.1s',
                   fontSize: 13,
                 }}
-                onMouseEnter={e => {
+                onMouseEnter={(e) => {
                   e.currentTarget.style.background = 'var(--surface2)';
                 }}
-                onMouseLeave={e => {
+                onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'transparent';
                 }}
               >

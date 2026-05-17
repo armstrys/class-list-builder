@@ -19,8 +19,8 @@ const OUTPUT_DIR = 'dist';
 
 // Size thresholds for warnings
 const SIZE_THRESHOLDS = {
-  WARN_MB: 3.0, // Yellow warning at 3MB
-  ERROR_MB: 5.0, // Red error at 5MB
+  WARN_MB: 3.0,    // Yellow warning at 3MB
+  ERROR_MB: 5.0,   // Red error at 5MB
 };
 
 /**
@@ -59,9 +59,7 @@ function displayBundleReport(outputFile) {
   console.log('📦 Bundle Size Report');
   console.log('═'.repeat(60));
   console.log(`   Original: ${formatBytes(stats.size)}`);
-  console.log(
-    `   Gzipped:  ${formatBytes(gzipSize)} (~${((gzipSize / stats.size) * 100).toFixed(1)}% of original)`
-  );
+  console.log(`   Gzipped:  ${formatBytes(gzipSize)} (~${((gzipSize / stats.size) * 100).toFixed(1)}% of original)`);
   console.log('─'.repeat(60));
 
   // Warning levels
@@ -91,15 +89,9 @@ function displayBundleReport(outputFile) {
   });
 
   console.log('\n   Breakdown:');
-  console.log(
-    `      Scripts: ${formatBytes(scriptSize)} (${((scriptSize / htmlSize) * 100).toFixed(1)}%)`
-  );
-  console.log(
-    `      Styles:  ${formatBytes(styleSize)} (${((styleSize / htmlSize) * 100).toFixed(1)}%)`
-  );
-  console.log(
-    `      HTML:    ${formatBytes(htmlSize - scriptSize - styleSize)} (${(((htmlSize - scriptSize - styleSize) / htmlSize) * 100).toFixed(1)}%)`
-  );
+  console.log(`      Scripts: ${formatBytes(scriptSize)} (${((scriptSize / htmlSize) * 100).toFixed(1)}%)`);
+  console.log(`      Styles:  ${formatBytes(styleSize)} (${((styleSize / htmlSize) * 100).toFixed(1)}%)`);
+  console.log(`      HTML:    ${formatBytes(htmlSize - scriptSize - styleSize)} (${(((htmlSize - scriptSize - styleSize) / htmlSize) * 100).toFixed(1)}%)`);
   console.log('═'.repeat(60));
 }
 
@@ -127,7 +119,7 @@ function analyzeSourceFiles() {
           path: fullPath,
           relative: path.join(prefix, item),
           size: stat.size,
-          lines: fs.readFileSync(fullPath, 'utf8').split('\n').length,
+          lines: fs.readFileSync(fullPath, 'utf8').split('\n').length
         });
       }
     });
@@ -195,8 +187,8 @@ function verifyIntegrity(buffer, integrity, url) {
   }
   throw new Error(
     `Subresource Integrity check failed for ${url}.\n` +
-      `  Expected: ${integrity}\n` +
-      `  Actual:   ${tried.join(' ') || '(no recognized algorithm in pinned value)'}`
+    `  Expected: ${integrity}\n` +
+    `  Actual:   ${tried.join(' ') || '(no recognized algorithm in pinned value)'}`,
   );
 }
 
@@ -204,8 +196,7 @@ function verifyIntegrity(buffer, integrity, url) {
 // class-list-builder-source.html must appear here so the release artifact
 // is fully self-contained and the release CSP can keep script-src to 'self'.
 const RESOURCES = {
-  'https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap':
-    { type: 'css' },
+  'https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap': { type: 'css' },
   'https://unpkg.com/react@18.3.1/umd/react.production.min.js': { type: 'js' },
   'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js': { type: 'js' },
   'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js': { type: 'js' },
@@ -215,8 +206,7 @@ const RESOURCES = {
 // Inline local <link rel="stylesheet" href="src/..."> tags
 function inlineLocalStyles(html) {
   // Match <link ... rel="stylesheet" ... href="src/..."> in any attribute order
-  const regex =
-    /<link\b[^>]*rel="stylesheet"[^>]*href="(src\/[^"]+)"[^>]*>|<link\b[^>]*href="(src\/[^"]+)"[^>]*rel="stylesheet"[^>]*>/gi;
+  const regex = /<link\b[^>]*rel="stylesheet"[^>]*href="(src\/[^"]+)"[^>]*>|<link\b[^>]*href="(src\/[^"]+)"[^>]*rel="stylesheet"[^>]*>/gi;
   return html.replace(regex, (match, href1, href2) => {
     const href = href1 || href2;
     const filePath = path.resolve(href);
@@ -250,7 +240,7 @@ function applyReleaseCsp(html) {
   if (!re.test(html)) {
     throw new Error(
       'Source HTML is missing a Content-Security-Policy meta tag; the release build expects one to replace. ' +
-        'Re-add the dev CSP block in class-list-builder-source.html (see .security/audits/2.0.0.md F-003).'
+      'Re-add the dev CSP block in class-list-builder-source.html (see .security/audits/2.0.0.md F-003).',
     );
   }
   return html.replace(re, tag);
@@ -258,27 +248,24 @@ function applyReleaseCsp(html) {
 
 // Concatenate local <script type="text/babel" src="src/..."> tags into one inline block
 function inlineLocalScripts(html) {
-  const regex =
-    /[ \t]*<script\b[^>]*type="text\/babel"[^>]*src="(src\/[^"]+)"[^>]*><\/script>\n?/gi;
+  const regex = /[ \t]*<script\b[^>]*type="text\/babel"[^>]*src="(src\/[^"]+)"[^>]*><\/script>\n?/gi;
   const sources = [];
   html = html.replace(regex, (_match, src) => {
     sources.push(src);
-    return ''; // remove individual tag
+    return '';  // remove individual tag
   });
 
   if (!sources.length) return html;
 
-  const concatenated = sources
-    .map(src => {
-      const filePath = path.resolve(src);
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`Local script not found: ${src}`);
-      }
-      const body = fs.readFileSync(filePath, 'utf8');
-      console.log(`  Inlined local JS:  ${src}`);
-      return `// ─── ${src} ───\n${body}`;
-    })
-    .join('\n');
+  const concatenated = sources.map(src => {
+    const filePath = path.resolve(src);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Local script not found: ${src}`);
+    }
+    const body = fs.readFileSync(filePath, 'utf8');
+    console.log(`  Inlined local JS:  ${src}`);
+    return `// ─── ${src} ───\n${body}`;
+  }).join('\n');
 
   // Insert the combined block where the first <script src="src/..."> was
   // (we removed all of them, so append before </body>)
@@ -294,13 +281,11 @@ function fetchUrl(url, redirectDepth = 0) {
   if (redirectDepth > 5) return Promise.reject(new Error(`Too many redirects for ${url}`));
   return new Promise((resolve, reject) => {
     console.log(`Fetching: ${url}`);
-    const req = https.get(url, { timeout: 30000 }, res => {
+    const req = https.get(url, { timeout: 30000 }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         // Follow redirects
         console.log(`  Redirecting to: ${res.headers.location}`);
-        fetchUrl(res.headers.location, redirectDepth + 1)
-          .then(resolve)
-          .catch(reject);
+        fetchUrl(res.headers.location, redirectDepth + 1).then(resolve).catch(reject);
         return;
       }
       if (res.statusCode !== 200) {
@@ -402,8 +387,8 @@ async function build() {
           if (!pinned) {
             throw new Error(
               `No Subresource Integrity hash pinned in ${SOURCE_FILE} for ${url}. ` +
-                `Add an integrity="sha384-…" attribute to the matching <script> tag, ` +
-                `or remove the URL from RESOURCES if it should not be inlined.`
+              `Add an integrity="sha384-…" attribute to the matching <script> tag, ` +
+              `or remove the URL from RESOURCES if it should not be inlined.`,
             );
           }
           const alg = verifyIntegrity(contentBuffer, pinned, url);
@@ -470,6 +455,7 @@ async function build() {
     console.log('\n💡 Next steps:');
     console.log('   • Run tests: npm test');
     console.log('   • Run lint:  npm run lint');
+
   } catch (err) {
     console.error('\n❌ Build failed:', err.message);
     process.exit(1);

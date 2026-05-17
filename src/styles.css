@@ -619,64 +619,101 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .print-report { display: none; }
 
 @media print {
-  /* Hide everything except the root container */
-  body > *:not(#root) { display: none !important; }
-  /* Inside the root, hide everything except the print report */
-  #root > *:not(#print-report) { display: none !important; }
-  /* Ensure root and report are visible */
-  #root { display: block !important; }
+  /* PrintReportView portals #print-report directly under <body>, so we can
+     hide every other body child with display:none. This preserves normal
+     block flow inside #print-report — required for page-break-after on
+     each .print-page to actually paginate. visibility:hidden would still
+     occupy layout, and position:absolute breaks pagination. */
+  body > *:not(#print-report) { display: none !important; }
 
-  /* Show and style the print report */
+  /* Force backgrounds and colors to print — browsers strip these by default,
+     which is why the flag dots (background-only circles) print invisibly. */
+  #print-report, #print-report * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force light-mode palette inside the print report even when the app is
+     in dark mode — the report should always print on white with light-theme
+     badge colors (--blue, --purple, etc. resolve to their light values). */
   #print-report {
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --surface2: #F0EFE9;
+    --border: #E2E0D8;
+    --text: #1C1B18;
+    --text2: #6B6860;
+    --text3: #A09E98;
+    --accent: oklch(48% 0.13 168);
+    --accent-light: oklch(94% 0.04 168);
+    --danger: oklch(58% 0.18 22);
+    --danger-light: oklch(94% 0.04 22);
+    --amber: oklch(60% 0.15 78);
+    --amber-light: oklch(94% 0.04 78);
+    --purple: oklch(52% 0.18 295);
+    --purple-light: oklch(94% 0.04 295);
+    --blue: oklch(52% 0.18 245);
+    --blue-light: oklch(94% 0.04 245);
+
     display: block !important;
-    position: static;
-    width: 100%;
     background: white;
     color: black;
     font-family: 'DM Sans', sans-serif;
-    font-size: 11pt;
-    line-height: 1.4;
+    font-size: 10pt;
+    line-height: 1.35;
   }
 
+  /* Use page-break-before on every page after the first, instead of
+     page-break-after on every page. The "after" idiom forces a trailing
+     break even when content already ends at a page boundary, producing
+     a blank page; "before" only breaks where the next page begins.
+     A small residual blank can still appear when the previous class's
+     content extends just past a page boundary — accepted trade-off. */
   .print-page {
-    page-break-after: always;
-    padding: 20px 30px;
-    min-height: 100vh;
+    padding: 16px 28px;
   }
 
-  .print-page:last-child {
-    page-break-after: auto;
+  .print-page + .print-page {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* Keep the class header (title + meta + stats badges) together at the
+     top of the page rather than letting it split across a page boundary. */
+  .print-page-header,
+  .print-page-stats {
+    break-inside: avoid;
   }
 
   .print-page-header {
     border-bottom: 2px solid #1a7a5e;
-    padding-bottom: 10px;
-    margin-bottom: 16px;
+    padding-bottom: 7px;
+    margin-bottom: 10px;
   }
 
   .print-page-header h2 {
     margin: 0 0 4px 0;
-    font-size: 18pt;
+    font-size: 14pt;
     color: #1a7a5e;
   }
 
   .print-page-meta span {
-    font-size: 10pt;
+    font-size: 8pt;
     color: #555;
-    margin-right: 16px;
+    margin-right: 14px;
   }
 
   .print-page-stats {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
 
   .print-stat-badge {
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 4px;
-    font-size: 9pt;
+    font-size: 7.5pt;
     font-weight: 500;
     border: 1px solid #ddd;
     background: #f5f5f0;
@@ -685,22 +722,53 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
   .print-student-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10pt;
+    font-size: 7.5pt;
     table-layout: auto;
   }
 
   .print-student-table th {
     background: #f5f5f0;
     border-bottom: 2px solid #ddd;
-    padding: 6px 8px;
+    padding: 4px 6px;
     text-align: left;
     font-weight: 600;
   }
 
   .print-student-table td {
     border-bottom: 1px solid #eee;
-    padding: 5px 8px;
+    padding: 3px 6px;
   }
+
+  /* Density modifiers — applied based on student count so that large
+     classes fit on a single page. Steps down font-size and row padding
+     in two tiers. Print can't reliably auto-fit, so we approximate. */
+  .print-page--dense .print-student-table {
+    font-size: 6.5pt;
+  }
+  .print-page--dense .print-student-table th { padding: 3px 5px; }
+  .print-page--dense .print-student-table td { padding: 2px 5px; }
+  .print-page--dense .print-page-header h2 { font-size: 12.5pt; }
+  .print-page--dense .print-stat-badge { font-size: 6.5pt; padding: 2px 6px; }
+
+  .print-page--ultra .print-student-table {
+    font-size: 5.5pt;
+  }
+  .print-page--ultra .print-student-table th { padding: 2px 4px; }
+  .print-page--ultra .print-student-table td { padding: 1px 4px; }
+  .print-page--ultra .print-page-header h2 { font-size: 11.5pt; }
+  .print-page--ultra .print-stat-badge { font-size: 6pt; padding: 2px 5px; }
+
+  .print-page-footer {
+    margin-top: 4px;
+    padding-top: 3px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    gap: 14px;
+    font-size: 8pt;
+    color: #555;
+    break-inside: avoid;
+  }
+  .print-page-footer strong { color: #1a7a5e; }
 
   .print-student-table tr:nth-child(even) {
     background: #fafaf8;
@@ -722,5 +790,61 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .print-section-heading {
+    font-size: 12pt;
+    color: #1a7a5e;
+    margin: 18px 0 8px 0;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+  }
+
+  /* Class overview table — many columns (numeric criteria + flag criteria
+     + totals). Headers wrap to multiple lines at spaces so multi-word
+     labels don't blow the column wide; data cells stay compact. */
+  .print-overview-table {
+    font-size: 7.5pt;
+    table-layout: auto;
+  }
+  .print-overview-table th,
+  .print-overview-table td {
+    text-align: center;
+    padding: 3px 4px;
+  }
+  .print-overview-table th {
+    font-size: 7pt;
+    line-height: 1.15;
+    vertical-align: bottom;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+  .print-overview-table th:first-child,
+  .print-overview-table td:first-child {
+    text-align: left;
+  }
+
+  .print-constraints {
+    font-size: 9pt;
+    color: #333;
+  }
+  .print-constraint-group {
+    margin-bottom: 12px;
+    break-inside: avoid;
+  }
+  .print-constraint-group h4 {
+    font-size: 9.5pt;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: #555;
+  }
+  .print-constraint-group ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .print-constraint-group li {
+    margin-bottom: 2px;
   }
 }
