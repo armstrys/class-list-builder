@@ -503,7 +503,19 @@ function deserializeProject(projectData, options = {}) {
       }
     });
   }
-  
+
+  // TEMPORARY (v2.2.0 backward compatibility):
+  // Pre-v2.2.0 projects stored assignments in optimizationResults.assignments.
+  // If no flat assignment exists, migrate from the old format.
+  // TODO: Remove this fallback in v3.0.0 once all active projects are v2.2.0+.
+  if (Object.keys(assignment).length === 0 && projectState.optimizationResults?.assignments) {
+    Object.entries(projectState.optimizationResults.assignments).forEach(([studentId, teacherIndex]) => {
+      if (validStudentIds.has(studentId) && teacherIndex >= 0 && teacherIndex < validatedTeachers.length) {
+        assignment[studentId] = teacherIndex;
+      }
+    });
+  }
+
   // Process locked students if present
   let locked = [];
   if (projectState.locked && Array.isArray(projectState.locked)) {
