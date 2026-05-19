@@ -115,4 +115,32 @@ describe('Project save/load round-trip', () => {
 
     expect(result.data.assignment).toEqual({ s1: 0, s3: 2 });
   });
+
+  test('migrates optimizationResults.assignments to flat assignment (pre-v2.2.0 compat)', () => {
+    const oldFormatProject = {
+      metadata: { appVersion: '2.1.0', formatVersion: 1 },
+      data: {
+        students,
+        teachers,
+        numericCriteria,
+        flagCriteria,
+        assignment: {}, // empty — old projects didn't populate this
+        locked: [],
+        optimizationResults: {
+          score: 0.123,
+          iterations: 100,
+          assignments: { s1: 0, s2: 1, s3: 2, s4: 2 }, // old format
+        },
+      },
+    };
+
+    const result = deserializeProject(oldFormatProject, {
+      currentVersion: '2.2.0',
+      currentNumCriteria: numericCriteria,
+      currentFlagCriteria: flagCriteria,
+    });
+
+    expect(result.canLoad).toBe(true);
+    expect(result.data.assignment).toEqual({ s1: 0, s2: 1, s3: 2, s4: 2 });
+  });
 });
