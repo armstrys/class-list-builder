@@ -120,6 +120,9 @@ function OptimizePage({ onBack }) {
           numClasses,
           numericCriteria,
           flagCriteria,
+          keepApart,
+          keepTogether,
+          keepOutOfClass,
         });
         if (!cancelled) {
           setAssessment(result);

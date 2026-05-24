@@ -19,9 +19,9 @@
 // Penalty weights reference - points to global PENALTY_WEIGHTS or uses inline defaults
 // Check for global first (set by defaults.js), fall back to inline defaults
 const PW = (typeof PENALTY_WEIGHTS !== 'undefined') ? PENALTY_WEIGHTS : {
-  KEEP_APART: 100.0,
-  KEEP_TOGETHER: 200.0,
-  KEEP_OUT_OF_CLASS: 150.0,
+  KEEP_APART: 1000.0,
+  KEEP_TOGETHER: 2000.0,
+  KEEP_OUT_OF_CLASS: 1500.0,
   TOTAL_FLAGS: 2.0,
   TOTAL_SCORE: 1.5,
   CLASS_SIZE: 3.0,

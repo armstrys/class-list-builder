@@ -194,6 +194,9 @@ async function computeBaselineRandomAsync(students, numClasses, numericCriteria,
  * @param {number} params.numClasses - Total number of classes
  * @param {Array<{key: string, weight: number}>} params.numericCriteria - Numeric criteria
  * @param {Array<{key: string, weight: number}>} params.flagCriteria - Flag criteria
+ * @param {Array<[string, string]>} params.keepApart - Keep apart constraints
+ * @param {Array<string[]>} params.keepTogether - Keep together constraints
+ * @param {Array<{studentId: string, classIndex: number}>} params.keepOutOfClass - Keep out constraints
  * @param {Function} params.onProgress - Optional callback(progressPercent, message)
  * @returns {Promise<Object>} Assessment result
  */
@@ -203,6 +206,9 @@ async function runFullAssessment({
   numClasses,
   numericCriteria,
   flagCriteria,
+  keepApart = [],
+  keepTogether = [],
+  keepOutOfClass = [],
   onProgress,
 }) {
   if (!students.length || !numClasses) {
@@ -220,7 +226,7 @@ async function runFullAssessment({
     if (onProgress) onProgress(pct, msg);
   };
 
-  // Step 1: Compute current cost
+  // Step 1: Compute current cost (with constraints)
   reportProgress(5, 'Computing current assignment cost...');
   const currentCost = computeCostRef(
     students,
@@ -228,7 +234,9 @@ async function runFullAssessment({
     numClasses,
     numericCriteria,
     flagCriteria,
-    [], [], []
+    keepApart,
+    keepTogether,
+    keepOutOfClass
   );
 
   // Step 2: Compute class stats

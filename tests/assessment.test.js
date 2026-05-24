@@ -331,6 +331,58 @@ describe('Assessment Engine', () => {
       expect(result.score).toBeLessThanOrEqual(100);
     });
 
+    test('violated constraints produce near-zero score', async () => {
+      // Create students with keep-apart constraint that is violated
+      const students = [];
+      for (let i = 0; i < 27; i++) {
+        students.push({
+          id: uid(),
+          name: `Student ${i + 1}`,
+          gender: i % 3 === 0 ? 'F' : i % 3 === 1 ? 'M' : 'U',
+          readingScore: 50 + (i % 10) * 20,
+          mathScore: 2000 + (i % 10) * 100,
+          behavior: i % 4 === 0,
+          sped: i % 6 === 0,
+        });
+      }
+
+      // Put students 0 and 1 in same class (they should be kept apart)
+      const keepApart = [[students[0].id, students[1].id]];
+
+      // Assignment that violates the constraint
+      const assignment = {};
+      students.forEach((s, i) => {
+        assignment[s.id] = i % 3;
+      });
+      // Force violation: put student 0 and 1 in same class
+      assignment[students[0].id] = 0;
+      assignment[students[1].id] = 0;
+
+      // Compute cost WITH constraints
+      const constrainedCost = computeCost(students, assignment, 3, numericCriteria, flagCriteria, keepApart, [], []);
+
+      // Compute cost WITHOUT constraints (for baselines)
+      const unconstrainedCost = computeCost(students, assignment, 3, numericCriteria, flagCriteria, [], [], []);
+
+      // With 10x penalty weights, constrained cost should be MUCH higher
+      expect(constrainedCost).toBeGreaterThan(unconstrainedCost * 5);
+
+      // Now run full assessment (baselines have no constraints, current has constraints)
+      const result = await runFullAssessment({
+        students,
+        assignment,
+        numClasses: 3,
+        numericCriteria,
+        flagCriteria,
+        keepApart,
+      });
+
+      expect(result.ready).toBe(true);
+      // With violated constraints, score should be very low (near 0)
+      // because currentCost >> randomCost (which has no constraints)
+      expect(result.score).toBeLessThan(10);
+    });
+
     test('returns empty result for no students', async () => {
       const result = await runFullAssessment({
         students: [],

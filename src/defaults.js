@@ -29,9 +29,9 @@ const STORAGE_KEYS = {
 // These control the severity of constraint violations and balance metrics
 const PENALTY_WEIGHTS = {
   // Constraint penalties (higher = stricter enforcement)
-  KEEP_APART: 100.0, // Weight for keep-apart constraint violations
-  KEEP_TOGETHER: 200.0, // Weight for keep-together constraint violations
-  KEEP_OUT_OF_CLASS: 150.0, // Weight for keep-out-of-class constraint violations
+  KEEP_APART: 1000.0, // Weight for keep-apart constraint violations
+  KEEP_TOGETHER: 2000.0, // Weight for keep-together constraint violations
+  KEEP_OUT_OF_CLASS: 1500.0, // Weight for keep-out-of-class constraint violations
 
   // Balance metric weights
   TOTAL_FLAGS: 2.0, // Weight for total flags balance variance
