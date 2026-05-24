@@ -428,6 +428,75 @@ describe('Optimizer', () => {
         expect(assignment[s.id]).toBeDefined();
       });
     });
+
+    test('empty numeric criteria optimizes with flags and gender only', () => {
+      // Arrange - students with flags but no numeric scores
+      const students = createMockStudents(12, {
+        readingScore: 0,
+        mathScore: 0,
+        languageScore: 0,
+        behavior: true,
+        extendedLearning: false,
+        sped: true,
+      });
+      const numClasses = 3;
+      const emptyNumericCriteria = [];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, emptyNumericCriteria, flagCriteria);
+      const cost = computeCost(students, assignment, numClasses, emptyNumericCriteria, flagCriteria);
+
+      // Assert - all students assigned
+      students.forEach(s => {
+        expect(assignment[s.id]).toBeDefined();
+        expect(assignment[s.id]).toBeGreaterThanOrEqual(0);
+        expect(assignment[s.id]).toBeLessThan(numClasses);
+      });
+
+      // Cost should be finite and positive
+      expect(Number.isFinite(cost)).toBe(true);
+      expect(cost).toBeGreaterThanOrEqual(0);
+
+      // Class sizes should be balanced
+      const classCounts = new Array(numClasses).fill(0);
+      students.forEach(s => {
+        classCounts[assignment[s.id]]++;
+      });
+      const expectedSize = students.length / numClasses;
+      classCounts.forEach(count => {
+        expect(Math.abs(count - expectedSize)).toBeLessThanOrEqual(1);
+      });
+    });
+
+    test('empty numeric criteria with no flags optimizes gender and size only', () => {
+      // Arrange - students with only gender, no scores, no flags
+      const students = createMockStudents(8, {
+        readingScore: 0,
+        mathScore: 0,
+        languageScore: 0,
+        behavior: false,
+        extendedLearning: false,
+        sped: false,
+      });
+      const numClasses = 2;
+      const emptyNumericCriteria = [];
+      const emptyFlagCriteria = [];
+
+      // Act
+      const assignment = optimize(students, numClasses, {}, emptyNumericCriteria, emptyFlagCriteria);
+      const cost = computeCost(students, assignment, numClasses, emptyNumericCriteria, emptyFlagCriteria);
+
+      // Assert - all students assigned
+      students.forEach(s => {
+        expect(assignment[s.id]).toBeDefined();
+        expect(assignment[s.id]).toBeGreaterThanOrEqual(0);
+        expect(assignment[s.id]).toBeLessThan(numClasses);
+      });
+
+      // Cost should be finite
+      expect(Number.isFinite(cost)).toBe(true);
+      expect(cost).toBeGreaterThanOrEqual(0);
+    });
   });
 
   describe('Keep Apart Constraints', () => {

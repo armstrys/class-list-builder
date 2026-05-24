@@ -361,8 +361,7 @@ function SettingsModal({
                     <button
                       className="btn btn-danger btn-sm"
                       onClick={() => requestRemoveNum(i)}
-                      disabled={numCriteria.length <= 1}
-                      title={numCriteria.length <= 1 ? 'Must have at least one numeric field' : 'Remove'}
+                      title="Remove"
                     >
                       ✕
                     </button>
