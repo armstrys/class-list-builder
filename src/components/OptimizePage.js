@@ -43,6 +43,7 @@ function OptimizePage({ onBack }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [showClassFilter, setShowClassFilter] = useState(false);
   const [visibleClasses, setVisibleClasses] = useState(new Set());
+  const [showAssessment, setShowAssessment] = useState(false);
 
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
@@ -309,6 +310,14 @@ function OptimizePage({ onBack }) {
           </button>
           <button
             className="btn btn-secondary btn-sm"
+            onClick={() => setShowAssessment(true)}
+            disabled={Object.keys(assignment).length === 0}
+            title={Object.keys(assignment).length === 0 ? 'Run optimization first' : 'View balance assessment'}
+          >
+            📊 Assess
+          </button>
+          <button
+            className="btn btn-secondary btn-sm"
             onClick={() => window.print()}
             disabled={Object.keys(assignment).length === 0}
             title={Object.keys(assignment).length === 0 ? 'Run optimization first' : 'Print class list report'}
@@ -399,6 +408,8 @@ function OptimizePage({ onBack }) {
           ✕ Exit Fullscreen (Esc)
         </button>
       )}
+
+      {showAssessment && <AssessmentModal onClose={() => setShowAssessment(false)} />}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
