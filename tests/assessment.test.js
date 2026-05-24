@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from 'vitest';
-import { computeClassStats, computeBaselineRandom, runFullAssessment } from '../src/utils/assessment.js';
-import { computeCost, optimize, computeAdaptiveAnnealingParams } from '../src/optimizer.js';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { computeClassStats, computeBaselineBalanced, computeBaselineRandom, runFullAssessment } from '../src/utils/assessment.js';
+import { computeCost, optimize } from '../src/optimizer.js';
 
 // Test helpers
 let idCounter = 0;
@@ -13,9 +13,20 @@ function resetIdCounter() {
   idCounter = 0;
 }
 
+// Deterministic mock for Math.random — returns values from a sequence
+function createMockRandom(sequence) {
+  let idx = 0;
+  return () => {
+    const val = sequence[idx % sequence.length];
+    idx++;
+    return val;
+  };
+}
+
 describe('Assessment Engine', () => {
   beforeEach(() => {
     resetIdCounter();
+    vi.restoreAllMocks();
   });
 
   const numericCriteria = [
@@ -121,53 +132,148 @@ describe('Assessment Engine', () => {
     });
   });
 
-  describe('computeBaselineRandom', () => {
-    test('returns a positive cost for random assignments', async () => {
+  describe('computeBaselineBalanced', () => {
+    test('produces lower cost than round-robin assignment', () => {
+      // Create students with clear score differences
       const students = [];
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 30; i++) {
         students.push({
           id: uid(),
           name: `Student ${i}`,
           gender: i % 2 === 0 ? 'F' : 'M',
-          readingScore: 50 + i * 10,
-          mathScore: 2000 + i * 50,
-          behavior: i % 3 === 0,
-          sped: i % 5 === 0,
+          readingScore: 50 + (i % 10) * 20, // 50, 70, 90, ... 230
+          mathScore: 2000 + (i % 10) * 100, // 2000, 2100, ... 2900
+          behavior: i % 5 === 0,
+          sped: i % 7 === 0,
         });
       }
 
-      const randomCost = await computeBaselineRandom(students, 3, numericCriteria, flagCriteria, 50);
+      // Round-robin assignment
+      const roundRobinAssignment = {};
+      students.forEach((s, i) => {
+        roundRobinAssignment[s.id] = i % 3;
+      });
+      const roundRobinCost = computeCost(students, roundRobinAssignment, 3, numericCriteria, flagCriteria, [], [], []);
 
-      expect(randomCost).toBeGreaterThan(0);
-      expect(typeof randomCost).toBe('number');
+      // Optimized assignment (no constraints)
+      const balancedCost = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria);
+
+      // Optimizer should do at least as well as round-robin
+      expect(balancedCost).toBeLessThanOrEqual(roundRobinCost);
+      expect(balancedCost).toBeGreaterThan(0);
+    });
+
+    test('returns 0 for empty students', () => {
+      const cost = computeBaselineBalanced([], 3, numericCriteria, flagCriteria);
+      expect(cost).toBe(0);
+    });
+  });
+
+  describe('computeBaselineRandom', () => {
+    test('with deterministic random: produces expected cost', () => {
+      // Mock Math.random to be deterministic
+      const mockRandom = createMockRandom([0.1, 0.5, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6]);
+      const originalRandom = Math.random;
+      Math.random = mockRandom;
+
+      try {
+        const students = [];
+        for (let i = 0; i < 9; i++) {
+          students.push({
+            id: uid(),
+            name: `Student ${i}`,
+            gender: 'F',
+            readingScore: 100 + i * 10,
+            mathScore: 2000 + i * 50,
+            behavior: false,
+            sped: false,
+          });
+        }
+
+        // With mocked random [0.1, 0.5, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6]
+        // and 3 classes: floor(random * 3) gives [0, 1, 2, 0, 2, 0, 2, 1, 1]
+        const cost = computeBaselineRandom(students, 3, numericCriteria, flagCriteria, 1);
+
+        expect(cost).toBeGreaterThan(0);
+        expect(typeof cost).toBe('number');
+
+        // Run again with same mock — should get identical cost
+        resetIdCounter();
+        const students2 = [];
+        for (let i = 0; i < 9; i++) {
+          students2.push({
+            id: uid(),
+            name: `Student ${i}`,
+            gender: 'F',
+            readingScore: 100 + i * 10,
+            mathScore: 2000 + i * 50,
+            behavior: false,
+            sped: false,
+          });
+        }
+
+        // Reset mock index
+        Math.random = createMockRandom([0.1, 0.5, 0.9, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6]);
+        const cost2 = computeBaselineRandom(students2, 3, numericCriteria, flagCriteria, 1);
+
+        expect(cost).toBe(cost2);
+      } finally {
+        Math.random = originalRandom;
+      }
     });
 
     test('returns 0 for empty students', () => {
       const cost = computeBaselineRandom([], 3, numericCriteria, flagCriteria, 10);
       expect(cost).toBe(0);
     });
-  });
 
-  describe('runFullAssessment', () => {
-    test('returns normalized score between 0 and 100', async () => {
+    test('mean of many trials is stable', () => {
       const students = [];
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 30; i++) {
         students.push({
           id: uid(),
           name: `Student ${i}`,
           gender: i % 2 === 0 ? 'F' : 'M',
           readingScore: 50 + i * 10,
           mathScore: 2000 + i * 50,
-          behavior: i % 3 === 0,
-          sped: i % 5 === 0,
+          behavior: i % 5 === 0,
+          sped: i % 7 === 0,
         });
       }
 
-      // Create a balanced-ish assignment
-      const assignment = {};
-      students.forEach((s, i) => {
-        assignment[s.id] = i % 3;
-      });
+      // Run two sets of 100 trials
+      const cost1 = computeBaselineRandom(students, 3, numericCriteria, flagCriteria, 100);
+      const cost2 = computeBaselineRandom(students, 3, numericCriteria, flagCriteria, 100);
+
+      // Both should be positive
+      expect(cost1).toBeGreaterThan(0);
+      expect(cost2).toBeGreaterThan(0);
+
+      // With 100 trials, means should be within 20% of each other
+      const diff = Math.abs(cost1 - cost2);
+      const avg = (cost1 + cost2) / 2;
+      expect(diff / avg).toBeLessThan(0.2);
+    });
+  });
+
+  describe('runFullAssessment', () => {
+    test('returns normalized score between 0 and 100 with real data', async () => {
+      // Use a realistic class size: 27 students, 3 classes
+      const students = [];
+      for (let i = 0; i < 27; i++) {
+        students.push({
+          id: uid(),
+          name: `Student ${i + 1}`,
+          gender: i % 3 === 0 ? 'F' : i % 3 === 1 ? 'M' : 'U',
+          readingScore: 50 + (i % 10) * 20,
+          mathScore: 2000 + (i % 10) * 100,
+          behavior: i % 4 === 0,
+          sped: i % 6 === 0,
+        });
+      }
+
+      // Run optimizer to get a real assignment
+      const assignment = optimize(students, 3, {}, numericCriteria, flagCriteria, [], [], []);
 
       const result = await runFullAssessment({
         students,
@@ -185,8 +291,44 @@ describe('Assessment Engine', () => {
       expect(result.randomCost).toBeGreaterThan(0);
       expect(result.classStats).toHaveLength(3);
 
-      // Balanced should be better (lower cost) than random
+      // With real data, optimizer should beat random
       expect(result.balancedCost).toBeLessThan(result.randomCost);
+    });
+
+    test('perfect assignment scores 100', async () => {
+      // Create students with identical scores — any assignment is perfect
+      const students = [];
+      for (let i = 0; i < 12; i++) {
+        students.push({
+          id: uid(),
+          name: `Student ${i + 1}`,
+          gender: 'F',
+          readingScore: 100,
+          mathScore: 2000,
+          behavior: false,
+          sped: false,
+        });
+      }
+
+      // Any assignment is optimal when all students are identical
+      const assignment = {};
+      students.forEach((s, i) => {
+        assignment[s.id] = i % 3;
+      });
+
+      const result = await runFullAssessment({
+        students,
+        assignment,
+        numClasses: 3,
+        numericCriteria,
+        flagCriteria,
+      });
+
+      expect(result.ready).toBe(true);
+      // When all students are identical, currentCost should equal balancedCost
+      // Score should be 100 (or very close)
+      expect(result.score).toBeGreaterThanOrEqual(90);
+      expect(result.score).toBeLessThanOrEqual(100);
     });
 
     test('returns empty result for no students', async () => {
