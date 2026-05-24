@@ -283,9 +283,14 @@ async function runFullAssessment({
   let score = 0;
   if (range > 0) {
     // currentCost should be between balancedCost (best) and randomCost (worst)
-    // If currentCost < balancedCost, something is wrong (score > 100)
-    // If currentCost > randomCost, something is wrong (score < 0)
-    score = ((randomCost - currentCost) / range) * 100;
+    // Use non-linear transform: small deviations from optimal cause big score drops
+    // Power law with p=0.35: being 1% worse than optimal → score ~80 (not ~99)
+    const d = currentCost - balancedCost; // distance from optimal
+    const maxD = range; // max distance = randomCost - balancedCost
+    // Clamp normalized to [0, 1] to protect against edge cases
+    const normalized = Math.max(0, Math.min(1, d / maxD));
+    const p = 0.35; // power law exponent (lower = more sensitive near optimal)
+    score = (1 - Math.pow(normalized, p)) * 100;
   } else if (range < 0) {
     // Balanced is worse than random — this shouldn't happen
     console.warn('Assessment: balanced cost is worse than random cost', { balancedCost, randomCost });
