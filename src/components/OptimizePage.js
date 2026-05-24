@@ -400,10 +400,6 @@ function OptimizePage({ onBack }) {
         </button>
       )}
 
-      {!fullscreen && <StatsStrip numClasses={numClasses} />}
-
-      <PrintReportView />
-
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {showConstraints && (
