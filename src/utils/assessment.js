@@ -9,18 +9,16 @@
  */
 
 // Node.js imports for testing
-let _computeCost, _optimize, _computeAdaptiveAnnealingParams;
+let _computeCost, _optimize;
 if (typeof module !== 'undefined' && module.exports) {
   const optimizer = require('../optimizer.js');
   _computeCost = optimizer.computeCost;
   _optimize = optimizer.optimize;
-  _computeAdaptiveAnnealingParams = optimizer.computeAdaptiveAnnealingParams;
 }
 
 // Use global functions in browser, imported functions in Node
 const computeCostRef = typeof computeCost !== 'undefined' ? computeCost : _computeCost;
 const optimizeRef = typeof optimize !== 'undefined' ? optimize : _optimize;
-const computeAdaptiveAnnealingParamsRef = typeof computeAdaptiveAnnealingParams !== 'undefined' ? computeAdaptiveAnnealingParams : _computeAdaptiveAnnealingParams;
 
 /**
  * Compute per-class aggregate statistics.
@@ -255,16 +253,14 @@ async function runFullAssessment({
   // Step 4: Compute random baseline (async, batched)
   reportProgress(40, 'Computing random baseline...');
 
-  // Get adaptive iteration count but cap for responsiveness
-  const params = computeAdaptiveAnnealingParamsRef(students.length, numClasses);
-  const numTrials = Math.min(params.maxIters, 500); // Cap at 500 trials
+  const NUM_RANDOM_TRIALS = 1000; // Fixed number of random trials
 
   const randomCost = await computeBaselineRandomAsync(
     students,
     numClasses,
     numericCriteria,
     flagCriteria,
-    numTrials,
+    NUM_RANDOM_TRIALS,
     (completed, total) => {
       const pct = 40 + Math.floor((completed / total) * 50);
       reportProgress(pct, `Computing random baseline... ${completed}/${total}`);
