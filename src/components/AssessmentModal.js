@@ -48,10 +48,10 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
       <div style={{ maxWidth: 720, maxHeight: '80vh', overflow: 'auto' }}>
         <h2 style={{ marginBottom: 4 }}>Class Balance Assessment</h2>
         <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 20 }}>
-          Comparing current assignment against theoretical and random baselines.
+          Understanding your class list quality score.
         </p>
 
-        {/* Score Display */}
+        {/* Quality Score Display */}
         <div
           style={{
             textAlign: 'center',
@@ -62,7 +62,7 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
           }}
         >
           <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 8 }}>
-            Balance Score
+            Quality Score
           </div>
           <div
             style={{
@@ -85,6 +85,33 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
               ? 'Good balance — some criteria show moderate variation between classes.'
               : 'Fair balance — significant variation detected. Consider adjusting constraints or re-optimizing.'}
           </div>
+        </div>
+
+        {/* What This Means */}
+        <div
+          style={{
+            padding: 16,
+            background: 'var(--surface2)',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: 24,
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: 'var(--text2)',
+          }}
+        >
+          <h4 style={{ margin: '0 0 8px 0', fontSize: 14, color: 'var(--text1)' }}>How the Quality Score Works</h4>
+          <p style={{ margin: '0 0 8px 0' }}>
+            The Quality Score measures how well your current class assignments are balanced compared to two extremes:
+          </p>
+          <ul style={{ margin: '0 0 8px 0', paddingLeft: 20 }}>
+            <li><strong>Balanced (Optimal)</strong>: The best possible balance if there were no constraints at all.</li>
+            <li><strong>Random</strong>: The average balance from completely random assignments.</li>
+          </ul>
+          <p style={{ margin: 0 }}>
+            A score of <strong>100</strong> means your classes are as balanced as theoretically possible. 
+            A score of <strong>0</strong> means no better than random. 
+            The score is sensitive to small deviations — even a slight imbalance causes a noticeable drop.
+          </p>
         </div>
 
         {/* Baseline Comparison */}

@@ -289,7 +289,7 @@ function OptimizePage({ onBack }) {
             style={{ cursor: 'pointer' }}
             title="Click to view detailed assessment"
           >
-            <span className="label">Balance</span>
+            <span className="label">Quality</span>
             <span
               className="value"
               style={{
@@ -302,7 +302,7 @@ function OptimizePage({ onBack }) {
         )}
         {isAssessing && (
           <div className="score-badge">
-            <span className="label">Balance</span>
+            <span className="label">Quality</span>
             <span className="value" style={{ color: 'var(--text3)' }}>…</span>
           </div>
         )}
