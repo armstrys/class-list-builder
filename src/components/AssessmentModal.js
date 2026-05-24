@@ -110,6 +110,7 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
           <p style={{ margin: 0 }}>
             A score of <strong>100</strong> means your classes are as balanced as theoretically possible. 
             A score of <strong>0</strong> means no better than random. 
+            Constraints and locked students reduce the maximum achievable score — the Quality Score reflects this trade-off.
             The score is sensitive to small deviations — even a slight imbalance causes a noticeable drop.
           </p>
         </div>
