@@ -44,7 +44,7 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
   const scoreColor = score >= 80 ? 'var(--accent)' : score >= 50 ? 'var(--amber)' : 'var(--danger)';
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} isOpen={true} title="Class Balance Assessment" size="lg">
       <div style={{ maxWidth: 720, maxHeight: '80vh', overflow: 'auto' }}>
         <h2 style={{ marginBottom: 4 }}>Class Balance Assessment</h2>
         <p style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 20 }}>
