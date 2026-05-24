@@ -70,34 +70,31 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
 }
 
 /**
- * Compute the constrained optimal baseline.
- * Runs the optimizer with the user's constraints.
+ * Compute the unconstrained optimal baseline.
+ * Runs the optimizer with no constraints and no locked students.
  *
  * @param {Array<Object>} students - All student objects
  * @param {number} numClasses - Total number of classes
  * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric criteria with weights
  * @param {Array<{key: string, weight: number}>} flagCriteria - Flag criteria with weights
- * @param {Array<[string, string]>} keepApart - Keep apart constraints
- * @param {Array<string[]>} keepTogether - Keep together constraints
- * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Keep out constraints
- * @returns {number} Cost of the constrained optimal assignment
+ * @returns {number} Cost of the unconstrained optimal assignment
  */
-function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
+function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria) {
   if (!students.length || !numClasses) return 0;
 
-  // Run optimizer WITH user's constraints
+  // Run optimizer with zero constraints
   const assignment = optimizeRef(
     students,
     numClasses,
     {}, // no locked assignments
     numericCriteria,
     flagCriteria,
-    keepApart,
-    keepTogether,
-    keepOutOfClass
+    [], // keepApart
+    [], // keepTogether
+    []  // keepOutOfClass
   );
 
-  return computeCostRef(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
+  return computeCostRef(students, assignment, numClasses, numericCriteria, flagCriteria, [], [], []);
 }
 
 /**
@@ -145,14 +142,11 @@ function computeBaselineRandom(students, numClasses, numericCriteria, flagCriter
  * @param {number} numClasses - Total number of classes
  * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric criteria with weights
  * @param {Array<{key: string, weight: number}>} flagCriteria - Flag criteria with weights
- * @param {Array<[string, string]>} keepApart - Keep apart constraints
- * @param {Array<string[]>} keepTogether - Keep together constraints
- * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Keep out constraints
  * @param {number} numTrials - Number of random trials
  * @param {Function} onProgress - Optional callback(completed, total)
  * @returns {Promise<number>} Mean cost across all random assignments
  */
-async function computeBaselineRandomAsync(students, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], numTrials, onProgress) {
+async function computeBaselineRandomAsync(students, numClasses, numericCriteria, flagCriteria, numTrials, onProgress) {
   if (!students.length || !numClasses) return 0;
 
   const BATCH_SIZE = 50; // Process 50 trials before yielding
@@ -174,9 +168,7 @@ async function computeBaselineRandomAsync(students, numClasses, numericCriteria,
         numClasses,
         numericCriteria,
         flagCriteria,
-        keepApart,
-        keepTogether,
-        keepOutOfClass
+        [], [], []
       );
     }
 
@@ -257,16 +249,13 @@ async function runFullAssessment({
     flagCriteria
   );
 
-  // Step 3: Compute balanced baseline (constrained optimal)
+  // Step 3: Compute balanced baseline (unconstrained optimal)
   reportProgress(20, 'Computing balanced baseline...');
   const balancedCost = computeBaselineBalanced(
     students,
     numClasses,
     numericCriteria,
-    flagCriteria,
-    keepApart,
-    keepTogether,
-    keepOutOfClass
+    flagCriteria
   );
 
   // Step 4: Compute random baseline (async, batched)
@@ -279,9 +268,6 @@ async function runFullAssessment({
     numClasses,
     numericCriteria,
     flagCriteria,
-    keepApart,
-    keepTogether,
-    keepOutOfClass,
     NUM_RANDOM_TRIALS,
     (completed, total) => {
       const pct = 40 + Math.floor((completed / total) * 50);
