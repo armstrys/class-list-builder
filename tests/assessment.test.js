@@ -156,7 +156,7 @@ describe('Assessment Engine', () => {
       const roundRobinCost = computeCost(students, roundRobinAssignment, 3, numericCriteria, flagCriteria, [], [], []);
 
       // Optimized assignment (no constraints)
-      const balancedCost = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria);
+      const balancedCost = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria, [], [], []);
 
       // Optimizer should do at least as well as round-robin
       expect(balancedCost).toBeLessThanOrEqual(roundRobinCost);
@@ -164,7 +164,7 @@ describe('Assessment Engine', () => {
     });
 
     test('returns 0 for empty students', () => {
-      const cost = computeBaselineBalanced([], 3, numericCriteria, flagCriteria);
+      const cost = computeBaselineBalanced([], 3, numericCriteria, flagCriteria, [], [], []);
       expect(cost).toBe(0);
     });
   });
