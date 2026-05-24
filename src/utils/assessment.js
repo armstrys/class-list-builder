@@ -302,9 +302,9 @@ async function runFullAssessment({
 
   return {
     score: Math.round(score * 10) / 10,
-    currentCost: Math.round(currentCost * 1000) / 1000,
-    balancedCost: Math.round(balancedCost * 1000) / 1000,
-    randomCost: Math.round(randomCost * 1000) / 1000,
+    currentCost: Math.round(currentCost * 100000) / 100000,
+    balancedCost: Math.round(balancedCost * 100000) / 100000,
+    randomCost: Math.round(randomCost * 100000) / 100000,
     classStats,
     ready: true,
   };
