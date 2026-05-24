@@ -173,11 +173,76 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 
 /* ── Optimize Page ── */
 .optimize-layout { display: flex; flex-direction: column; height: calc(100vh - 56px); }
-.optimize-toolbar { padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 10px; }
+.optimize-toolbar { padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .score-badge { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--surface2); font-size: 12px; }
 .score-badge .label { color: var(--text2); }
 .score-badge .value { font-weight: 600; font-family: 'DM Mono', monospace; font-size: 12px; }
 .classes-area { flex: 1; overflow-x: auto; overflow-y: hidden; display: flex; gap: 0; padding: 16px; }
+
+/* Violations badge */
+.violations-badge {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+}
+.violations-badge:hover { background: var(--surface2); }
+
+/* Toolbar actions (right side) */
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* Toolbar dropdown */
+.toolbar-dropdown { position: relative; }
+.toolbar-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  z-index: 1000;
+  min-width: 180px;
+  padding: 4px 0;
+}
+.toolbar-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.toolbar-dropdown-item:hover:not(:disabled) { background: var(--surface2); }
+.toolbar-dropdown-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.toolbar-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 8px;
+}
+.toolbar-dropdown-item-danger { color: var(--danger); }
+.toolbar-dropdown-item-danger:hover:not(:disabled) { background: var(--danger-light); }
 
 /* ── Class Column ── */
 .class-col {
@@ -315,9 +380,6 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .empty-state .icon { font-size: 28px; margin-bottom: 10px; }
 .divider { height: 1px; background: var(--border); margin: 14px 0; }
 .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; }
-
-.lock-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); margin-left: 8px; }
-.locked-count { font-weight: 600; color: var(--accent); }
 
 .config-actions { display: flex; gap: 8px; margin-bottom: 16px; }
 

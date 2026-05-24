@@ -53,6 +53,7 @@
     "PENALTY_WEIGHTS": "readonly",
     "saveProject": "readonly",
     "generateSampleStudents": "readonly",
+    "generateSampleConstraints": "readonly",
     "PROJECT_FORMAT_VERSION": "readonly",
     "escapeCSVValue": "readonly",
     "Modal": "readonly",

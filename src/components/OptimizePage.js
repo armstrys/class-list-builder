@@ -44,11 +44,27 @@ function OptimizePage({ onBack }) {
   const [showClassFilter, setShowClassFilter] = useState(false);
   const [visibleClasses, setVisibleClasses] = useState(new Set());
 
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef(null);
+
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape' && fullscreen) setFullscreen(false); }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [fullscreen]);
+
+  // Close More menu on click outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) {
+        setShowMoreMenu(false);
+      }
+    }
+    if (showMoreMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMoreMenu]);
 
   // Initialize visible classes when teachers change
   useEffect(() => {
@@ -110,9 +126,6 @@ function OptimizePage({ onBack }) {
     });
   }
 
-  function handleLockAll() {
-    setLocked(new Set(students.map(s => s.id)));
-  }
   function handleUnlockAll() {
     setLocked(new Set());
   }
@@ -186,6 +199,7 @@ function OptimizePage({ onBack }) {
   return (
     <div className="optimize-layout" style={fullscreen ? { position: 'fixed', inset: 0, zIndex: 500, background: 'var(--bg)' } : {}}>
       {!fullscreen && <div className="optimize-toolbar">
+        {/* Left: Navigation & primary actions */}
         <button className="btn btn-secondary btn-sm" onClick={onBack}>← Setup</button>
         <button
           className="btn btn-primary btn-sm"
@@ -194,68 +208,83 @@ function OptimizePage({ onBack }) {
         >
           {optimizing ? '⟳ Optimizing…' : '⟳ Re-Optimize'}
         </button>
-        <div className="lock-legend">
+
+        {/* Lock count — info only, no actions */}
+        <div className="lock-badge" title={`${locked.size} student${locked.size === 1 ? '' : 's'} locked. Use individual lock icons in class lists.`}>
+          <span className="lock-icon">🔒</span>
           <span className="locked-count">{locked.size}</span>
-          <span>locked</span>
-          <button className="btn btn-ghost btn-sm" onClick={handleLockAll}>Lock All</button>
-          <button className="btn btn-ghost btn-sm" onClick={handleUnlockAll}>Unlock All</button>
         </div>
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+
+        {/* Undo / Redo — icon buttons */}
+        <div className="toolbar-icon-group">
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm toolbar-icon-btn"
             onClick={undo}
             disabled={!canUndo}
             title="Undo (Cmd/Ctrl+Z)"
+            aria-label="Undo"
           >
-            ↶ Undo
+            ↶
           </button>
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm toolbar-icon-btn"
             onClick={redo}
             disabled={!canRedo}
             title="Redo (Cmd/Ctrl+Shift+Z)"
+            aria-label="Redo"
           >
-            ↷ Redo
+            ↷
           </button>
         </div>
+
+        {/* Score badge */}
         {cost !== null && (
           <div className="score-badge">
-            <span className="label">Balance score</span>
+            <span className="label">Balance</span>
             <span className="value" style={{ color: costColor }}>{cost.toFixed(4)}</span>
-            <span style={{ fontSize: 10, color: 'var(--text3)' }}>(lower is better)</span>
           </div>
         )}
-        {totalViolations > 0 && (
-          <button
-            className="violations-badge"
-            onClick={() => setShowViolations(true)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px 8px',
-              borderRadius: 'var(--radius-sm)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-            title="Click to see violated constraints"
-          >
+
+        {/* Violations — always visible */}
+        <button
+          className="violations-badge"
+          onClick={() => totalViolations > 0 && setShowViolations(true)}
+          style={{ cursor: totalViolations > 0 ? 'pointer' : 'default' }}
+          title={(() => {
+            const apartTotal = keepApart.length;
+            const togetherTotal = keepTogether.length;
+            const outTotal = keepOutOfClass.length;
+            const lines = [];
+            if (apartTotal > 0) {
+              const v = apartViolations.length;
+              lines.push(`Keep Apart: ${apartTotal - v}/${apartTotal} satisfied${v > 0 ? ` (${v} violation${v === 1 ? '' : 's'})` : ' ✓'}`);
+            }
+            if (togetherTotal > 0) {
+              const v = togetherViolations.length;
+              lines.push(`Keep Together: ${togetherTotal - v}/${togetherTotal} satisfied${v > 0 ? ` (${v} violation${v === 1 ? '' : 's'})` : ' ✓'}`);
+            }
+            if (outTotal > 0) {
+              const v = outOfClassViolations.length;
+              lines.push(`Keep Out of Class: ${outTotal - v}/${outTotal} satisfied${v > 0 ? ` (${v} violation${v === 1 ? '' : 's'})` : ' ✓'}`);
+            }
+            if (lines.length === 0) return 'No constraints configured';
+            if (totalViolations === 0) return 'All constraints satisfied! ✓\n' + lines.join('\n');
+            return `${totalViolations} violation${totalViolations === 1 ? '' : 's'} total\n` + lines.join('\n');
+          })()}
+        >
+          {totalViolations > 0 ? (
             <span style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 500 }}>
-              ⚠️ {totalViolations} violation{totalViolations === 1 ? '' : 's'}
+              ⚠️ {totalViolations}
             </span>
-            <span style={{ fontSize: 10, color: 'var(--text3)' }}>ℹ️</span>
-          </button>
-        )}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', borderRight: '1px solid var(--border)', paddingRight: 10, marginRight: 2 }}>
-            {flagCriteria.map((c, i) => (
-              <span key={c.key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, color: 'var(--text3)' }} title={c.label}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: generateColor(c.key, i).dot, flexShrink: 0 }} />
-                {c.label}
-              </span>
-            ))}
-          </div>
+          ) : (
+            <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 500 }}>
+              ✓ All constraints met
+            </span>
+          )}
+        </button>
+
+        {/* Right: Actions */}
+        <div className="toolbar-actions">
           <ClassFilterDropdown
             visibleClasses={visibleClasses}
             setVisibleClasses={setVisibleClasses}
@@ -275,15 +304,58 @@ function OptimizePage({ onBack }) {
             className="btn btn-secondary btn-sm"
             onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria), 'class-lists.csv', 'text/csv')}
             title="Save class lists as CSV"
-          >⬇ Save Lists</button>
+          >
+            ⬇ Save Lists
+          </button>
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => window.print()}
             disabled={Object.keys(assignment).length === 0}
             title={Object.keys(assignment).length === 0 ? 'Run optimization first' : 'Print class list report'}
-          >🖨 Print Report</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setFullscreen(true)} title="Fullscreen class lists">⛶ Fullscreen</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowHelp(true)}>? How it works</button>
+          >
+            🖨 Print Report
+          </button>
+          <button
+            className="btn btn-ghost btn-sm toolbar-icon-btn"
+            onClick={() => setFullscreen(true)}
+            title="Fullscreen class lists"
+            aria-label="Fullscreen"
+          >
+            ⛶
+          </button>
+          <button
+            className="btn btn-ghost btn-sm toolbar-icon-btn"
+            onClick={() => setShowHelp(true)}
+            title="How it works"
+            aria-label="How it works"
+          >
+            ?
+          </button>
+
+          {/* More dropdown — only Unlock All remains */}
+          <div ref={moreMenuRef} className="toolbar-dropdown">
+            <button
+              className="btn btn-ghost btn-sm toolbar-icon-btn"
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              title="More actions"
+              aria-label="More actions"
+            >
+              ⋯
+            </button>
+            {showMoreMenu && (
+              <div className="toolbar-dropdown-menu">
+                <button
+                  className="toolbar-dropdown-item toolbar-dropdown-item-danger"
+                  onClick={() => { handleUnlockAll(); setShowMoreMenu(false); }}
+                  disabled={locked.size === 0}
+                  title={locked.size === 0 ? 'No students are locked' : `Unlock all ${locked.size} locked students`}
+                >
+                  <span>🔓</span>
+                  <span>Unlock All</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>}
 

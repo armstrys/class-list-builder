@@ -18,6 +18,9 @@ function SetupPage({ onOptimize }) {
     clearAllStudents: clearAllStudentsContext,
     replaceAllStudents,
     clearAssignmentsForClassCountChange,
+    setKeepApart,
+    setKeepTogether,
+    setKeepOutOfClass,
   } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
   const { openSettings, teachers, setTeachers } = useAppStateExport();
@@ -321,7 +324,14 @@ function SetupPage({ onOptimize }) {
           defaultCount={sampleCount}
           onGenerate={n => {
             setSampleCount(n);
-            replaceAllStudents(generateSampleStudents(n, numericCriteria, flagCriteria));
+            const newStudents = generateSampleStudents(n, numericCriteria, flagCriteria);
+            replaceAllStudents(newStudents);
+            // Generate random constraints
+            const numClasses = teachers.length;
+            const constraints = generateSampleConstraints(newStudents, numClasses);
+            setKeepApart(constraints.keepApart);
+            setKeepTogether(constraints.keepTogether);
+            setKeepOutOfClass(constraints.keepOutOfClass);
             setShowSampleDialog(false);
           }}
           onClose={() => setShowSampleDialog(false)}

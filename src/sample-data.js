@@ -54,3 +54,72 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
   }
   return students;
 }
+
+/**
+ * Generate random non-conflicting constraints for sample/demo data.
+ * Ensures no student is in both keepApart and keepTogether,
+ * and no keepTogether group conflicts with keepOutOfClass.
+ *
+ * @param {Array} students - Array of student objects with id
+ * @param {number} numClasses - Number of classes
+ * @returns {Object} { keepApart, keepTogether, keepOutOfClass }
+ */
+function generateSampleConstraints(students, numClasses) {
+  if (students.length < 4 || numClasses < 2) {
+    return { keepApart: [], keepTogether: [], keepOutOfClass: [] };
+  }
+
+  const ids = students.map(s => s.id);
+  const keepApart = [];
+  const keepTogether = [];
+  const keepOutOfClass = [];
+
+  // Track which students are in keepTogether groups (to avoid keepApart conflicts)
+  const inKeepTogether = new Set();
+
+  // Generate 2-4 keepTogether groups (2-3 students each)
+  const numTogetherGroups = Math.min(rnd(2, 4), Math.floor(students.length / 3));
+  const availableForTogether = [...ids];
+  shuffleArray(availableForTogether);
+
+  for (let g = 0; g < numTogetherGroups && availableForTogether.length >= 2; g++) {
+    const groupSize = Math.min(rnd(2, 3), availableForTogether.length);
+    const group = availableForTogether.splice(0, groupSize).sort();
+    keepTogether.push(group);
+    group.forEach(id => inKeepTogether.add(id));
+  }
+
+  // Generate 3-6 keepApart pairs from students NOT in keepTogether
+  const availableForApart = ids.filter(id => !inKeepTogether.has(id));
+  shuffleArray(availableForApart);
+  const numApartPairs = Math.min(rnd(3, 6), Math.floor(availableForApart.length / 2));
+
+  for (let i = 0; i < numApartPairs && availableForApart.length >= 2; i++) {
+    const id1 = availableForApart.pop();
+    const id2 = availableForApart.pop();
+    const pair = id1 < id2 ? [id1, id2] : [id2, id1];
+    keepApart.push(pair);
+  }
+
+  // Generate 2-4 keepOutOfClass constraints
+  // Pick students not in keepTogether (to avoid conflicts)
+  const availableForOut = ids.filter(id => !inKeepTogether.has(id));
+  shuffleArray(availableForOut);
+  const numOutConstraints = Math.min(rnd(2, 4), availableForOut.length);
+
+  for (let i = 0; i < numOutConstraints && availableForOut.length > 0; i++) {
+    const studentId = availableForOut.pop();
+    const classIndex = rnd(0, numClasses - 1);
+    keepOutOfClass.push({ studentId, classIndex });
+  }
+
+  return { keepApart, keepTogether, keepOutOfClass };
+}
+
+/** Fisher-Yates shuffle */
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
