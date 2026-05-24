@@ -1,16 +1,12 @@
 /**
  * AssessmentModal - Display assessment results with baselines and class statistics.
  *
- * Uses contexts:
- * - useStudents: assessment data
- * - useCriteria: criteria configuration
- * - useAppState: teachers/classes
- *
  * @param {Object} props
  * @param {Function} props.onClose - Close modal callback
+ * @param {Object} props.assessment - Assessment result data
+ * @param {boolean} props.isAssessing - Whether assessment is running
  */
-function AssessmentModal({ onClose }) {
-  const { assessment, isAssessing } = useStudentsExport();
+function AssessmentModal({ onClose, assessment, isAssessing }) {
   const { numericCriteria, flagCriteria } = useCriteriaExport();
   const { teachers } = useAppStateExport();
 

@@ -44,6 +44,8 @@ function OptimizePage({ onBack }) {
   const [showClassFilter, setShowClassFilter] = useState(false);
   const [visibleClasses, setVisibleClasses] = useState(new Set());
   const [showAssessment, setShowAssessment] = useState(false);
+  const [assessment, setAssessment] = useState(null);
+  const [isAssessing, setIsAssessing] = useState(false);
 
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
@@ -99,6 +101,44 @@ function OptimizePage({ onBack }) {
       setCost(computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
     }
   }, [numericCriteria, flagCriteria, students, assignment, numClasses, keepApart, keepTogether, keepOutOfClass]);
+
+  // Auto-run assessment when assignment changes
+  useEffect(() => {
+    if (!students.length || !Object.keys(assignment).length) {
+      setAssessment(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function runAssessment() {
+      setIsAssessing(true);
+      try {
+        const result = await runFullAssessment({
+          students,
+          assignment,
+          numClasses,
+          numericCriteria,
+          flagCriteria,
+        });
+        if (!cancelled) {
+          setAssessment(result);
+        }
+      } catch (e) {
+        console.error('Assessment failed:', e);
+      } finally {
+        if (!cancelled) {
+          setIsAssessing(false);
+        }
+      }
+    }
+
+    runAssessment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [students, assignment, numClasses, numericCriteria, flagCriteria]);
 
   const handleReoptimize = useCallback(() => {
     const lockedObj = new Map();
@@ -238,11 +278,29 @@ function OptimizePage({ onBack }) {
           </button>
         </div>
 
-        {/* Score badge */}
-        {cost !== null && (
+        {/* Assessment score badge */}
+        {assessment && assessment.ready && (
+          <div
+            className="score-badge"
+            onClick={() => setShowAssessment(true)}
+            style={{ cursor: 'pointer' }}
+            title="Click to view detailed assessment"
+          >
+            <span className="label">Balance</span>
+            <span
+              className="value"
+              style={{
+                color: assessment.score >= 80 ? 'var(--accent)' : assessment.score >= 50 ? 'var(--amber)' : 'var(--danger)',
+              }}
+            >
+              {assessment.score}
+            </span>
+          </div>
+        )}
+        {isAssessing && (
           <div className="score-badge">
             <span className="label">Balance</span>
-            <span className="value" style={{ color: costColor }}>{cost.toFixed(4)}</span>
+            <span className="value" style={{ color: 'var(--text3)' }}>…</span>
           </div>
         )}
 
@@ -307,14 +365,6 @@ function OptimizePage({ onBack }) {
             title="Save class lists as CSV"
           >
             ⬇ Save Lists
-          </button>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => setShowAssessment(true)}
-            disabled={Object.keys(assignment).length === 0}
-            title={Object.keys(assignment).length === 0 ? 'Run optimization first' : 'View balance assessment'}
-          >
-            📊 Assess
           </button>
           <button
             className="btn btn-secondary btn-sm"
@@ -409,7 +459,13 @@ function OptimizePage({ onBack }) {
         </button>
       )}
 
-      {showAssessment && <AssessmentModal onClose={() => setShowAssessment(false)} />}
+      {showAssessment && (
+        <AssessmentModal
+          onClose={() => setShowAssessment(false)}
+          assessment={assessment}
+          isAssessing={isAssessing}
+        />
+      )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
