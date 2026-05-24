@@ -77,8 +77,8 @@ function generateSampleConstraints(students, numClasses) {
   // Track which students are in keepTogether groups (to avoid keepApart conflicts)
   const inKeepTogether = new Set();
 
-  // Generate 2-4 keepTogether groups (2-3 students each)
-  const numTogetherGroups = Math.min(rnd(2, 4), Math.floor(students.length / 3));
+  // Generate 4-6 keepTogether groups (2-3 students each)
+  const numTogetherGroups = Math.min(rnd(4, 6), Math.floor(students.length / 3));
   const availableForTogether = [...ids];
   shuffleArray(availableForTogether);
 
@@ -89,10 +89,10 @@ function generateSampleConstraints(students, numClasses) {
     group.forEach(id => inKeepTogether.add(id));
   }
 
-  // Generate 3-6 keepApart pairs from students NOT in keepTogether
+  // Generate 6-10 keepApart pairs from students NOT in keepTogether
   const availableForApart = ids.filter(id => !inKeepTogether.has(id));
   shuffleArray(availableForApart);
-  const numApartPairs = Math.min(rnd(3, 6), Math.floor(availableForApart.length / 2));
+  const numApartPairs = Math.min(rnd(6, 10), Math.floor(availableForApart.length / 2));
 
   for (let i = 0; i < numApartPairs && availableForApart.length >= 2; i++) {
     const id1 = availableForApart.pop();
@@ -101,11 +101,11 @@ function generateSampleConstraints(students, numClasses) {
     keepApart.push(pair);
   }
 
-  // Generate 2-4 keepOutOfClass constraints
+  // Generate 4-6 keepOutOfClass constraints
   // Pick students not in keepTogether (to avoid conflicts)
   const availableForOut = ids.filter(id => !inKeepTogether.has(id));
   shuffleArray(availableForOut);
-  const numOutConstraints = Math.min(rnd(2, 4), availableForOut.length);
+  const numOutConstraints = Math.min(rnd(4, 6), availableForOut.length);
 
   for (let i = 0; i < numOutConstraints && availableForOut.length > 0; i++) {
     const studentId = availableForOut.pop();

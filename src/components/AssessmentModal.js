@@ -141,7 +141,7 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <td style={{ padding: '10px 0', fontWeight: 500 }}>Current Assignment</td>
               <td style={{ padding: '10px 0', textAlign: 'right', fontFamily: "'DM Mono', monospace" }}>
-                {currentCost.toFixed(3)}
+                {currentCost.toFixed(5)}
               </td>
               <td style={{ padding: '10px 0 10px 16px', color: 'var(--text2)', fontSize: 12 }}>
                 Your current class assignments with all constraints applied.
@@ -159,7 +159,7 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
                   color: 'var(--accent)',
                 }}
               >
-                {balancedCost.toFixed(3)}
+                {balancedCost.toFixed(5)}
               </td>
               <td style={{ padding: '10px 0 10px 16px', color: 'var(--text2)', fontSize: 12 }}>
                 Theoretical best with no constraints — the ceiling.
@@ -177,7 +177,7 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
                   color: 'var(--danger)',
                 }}
               >
-                {randomCost.toFixed(3)}
+                {randomCost.toFixed(5)}
               </td>
               <td style={{ padding: '10px 0 10px 16px', color: 'var(--text2)', fontSize: 12 }}>
                 Average of random assignments — the floor.
