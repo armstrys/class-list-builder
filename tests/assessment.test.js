@@ -122,7 +122,7 @@ describe('Assessment Engine', () => {
   });
 
   describe('computeBaselineRandom', () => {
-    test('returns a positive cost for random assignments', () => {
+    test('returns a positive cost for random assignments', async () => {
       const students = [];
       for (let i = 0; i < 20; i++) {
         students.push({
@@ -136,7 +136,7 @@ describe('Assessment Engine', () => {
         });
       }
 
-      const randomCost = computeBaselineRandom(students, 3, numericCriteria, flagCriteria, 50);
+      const randomCost = await computeBaselineRandom(students, 3, numericCriteria, flagCriteria, 50);
 
       expect(randomCost).toBeGreaterThan(0);
       expect(typeof randomCost).toBe('number');

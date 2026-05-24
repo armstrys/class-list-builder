@@ -102,32 +102,25 @@ function computeBaselineBalanced(students, numClasses, numericCriteria, flagCrit
 /**
  * Compute random assignment baseline.
  * Generates N random assignments and returns the mean cost.
- * N defaults to the optimizer's adaptive iteration count.
+ * Each student is assigned to a random class independently.
  *
  * @param {Array<Object>} students - All student objects
  * @param {number} numClasses - Total number of classes
  * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric criteria with weights
  * @param {Array<{key: string, weight: number}>} flagCriteria - Flag criteria with weights
- * @param {number} [numTrials] - Number of random trials (defaults to optimizer iterations)
+ * @param {number} numTrials - Number of random trials
  * @returns {number} Mean cost across all random assignments
  */
 function computeBaselineRandom(students, numClasses, numericCriteria, flagCriteria, numTrials) {
   if (!students.length || !numClasses) return 0;
 
-  // Default to optimizer's adaptive iteration count
-  if (!numTrials) {
-    const params = computeAdaptiveAnnealingParamsRef(students.length, numClasses);
-    numTrials = params.maxIters;
-  }
-
   let totalCost = 0;
 
   for (let t = 0; t < numTrials; t++) {
-    // Generate random assignment: shuffle students and distribute round-robin
-    const shuffled = [...students].sort(() => Math.random() - 0.5);
+    // Generate truly random assignment: each student gets a random class
     const assignment = {};
-    shuffled.forEach((s, i) => {
-      assignment[s.id] = i % numClasses;
+    students.forEach(s => {
+      assignment[s.id] = Math.floor(Math.random() * numClasses);
     });
 
     totalCost += computeCostRef(
@@ -138,6 +131,57 @@ function computeBaselineRandom(students, numClasses, numericCriteria, flagCriter
       flagCriteria,
       [], [], []
     );
+  }
+
+  return totalCost / numTrials;
+}
+
+/**
+ * Compute random assignment baseline asynchronously.
+ * Processes trials in batches to avoid blocking the main thread.
+ *
+ * @param {Array<Object>} students - All student objects
+ * @param {number} numClasses - Total number of classes
+ * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric criteria with weights
+ * @param {Array<{key: string, weight: number}>} flagCriteria - Flag criteria with weights
+ * @param {number} numTrials - Number of random trials
+ * @param {Function} onProgress - Optional callback(completed, total)
+ * @returns {Promise<number>} Mean cost across all random assignments
+ */
+async function computeBaselineRandomAsync(students, numClasses, numericCriteria, flagCriteria, numTrials, onProgress) {
+  if (!students.length || !numClasses) return 0;
+
+  const BATCH_SIZE = 50; // Process 50 trials before yielding
+  let totalCost = 0;
+  let completed = 0;
+
+  while (completed < numTrials) {
+    const batchEnd = Math.min(completed + BATCH_SIZE, numTrials);
+
+    for (let t = completed; t < batchEnd; t++) {
+      const assignment = {};
+      students.forEach(s => {
+        assignment[s.id] = Math.floor(Math.random() * numClasses);
+      });
+
+      totalCost += computeCostRef(
+        students,
+        assignment,
+        numClasses,
+        numericCriteria,
+        flagCriteria,
+        [], [], []
+      );
+    }
+
+    completed = batchEnd;
+
+    if (onProgress) {
+      onProgress(completed, numTrials);
+    }
+
+    // Yield to browser/event loop
+    await new Promise(resolve => setTimeout(resolve, 0));
   }
 
   return totalCost / numTrials;
@@ -208,26 +252,42 @@ async function runFullAssessment({
     flagCriteria
   );
 
-  // Step 4: Compute random baseline
-  reportProgress(50, 'Computing random baseline...');
-  const randomCost = computeBaselineRandom(
+  // Step 4: Compute random baseline (async, batched)
+  reportProgress(40, 'Computing random baseline...');
+
+  // Get adaptive iteration count but cap for responsiveness
+  const params = computeAdaptiveAnnealingParamsRef(students.length, numClasses);
+  const numTrials = Math.min(params.maxIters, 500); // Cap at 500 trials
+
+  const randomCost = await computeBaselineRandomAsync(
     students,
     numClasses,
     numericCriteria,
-    flagCriteria
+    flagCriteria,
+    numTrials,
+    (completed, total) => {
+      const pct = 40 + Math.floor((completed / total) * 50);
+      reportProgress(pct, `Computing random baseline... ${completed}/${total}`);
+    }
   );
 
   reportProgress(100, 'Assessment complete');
 
   // Normalize score: 100 = as good as balanced, 0 = as good as random
-  // If balanced >= random, something is wrong — return 0
-  const range = balancedCost - randomCost;
+  // Lower cost is better. If balanced >= random, the optimizer isn't working.
+  const range = randomCost - balancedCost;
   let score = 0;
   if (range > 0) {
-    // currentCost is between randomCost (worst) and balancedCost (best)
-    // Lower cost is better, so invert: closer to balanced = higher score
+    // currentCost should be between balancedCost (best) and randomCost (worst)
+    // If currentCost < balancedCost, something is wrong (score > 100)
+    // If currentCost > randomCost, something is wrong (score < 0)
     score = ((randomCost - currentCost) / range) * 100;
+  } else if (range < 0) {
+    // Balanced is worse than random — this shouldn't happen
+    console.warn('Assessment: balanced cost is worse than random cost', { balancedCost, randomCost });
+    score = 100; // Assume perfect
   }
+
   // Clamp to 0-100
   score = Math.max(0, Math.min(100, score));
 
