@@ -17,7 +17,7 @@ src/
   styles.css                       # All component styles
   defaults.js                      # Default criteria, color/key helpers, React destructure
   optimizer.js                     # computeCost + simulated-annealing optimize()
-  sample-data.js                   # uid() and generateSampleStudents()
+  sample-data.js                   # uid(), generateSampleStudents(), generateSampleConstraints()
   csv.js                           # CSV parse/export and triggerDownload()
   app.js                           # App root + ReactDOM.render
   components/                      # One file per React component

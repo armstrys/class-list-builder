@@ -32,6 +32,7 @@ function AppContent() {
     showLoadProject,
     openLoadProject,
     closeLoadProject,
+    teachers,
     setTeachers,
   } = useAppStateExport();
 
@@ -211,6 +212,12 @@ function AppContent() {
         onLoadDemo={() => {
           const demoStudents = generateSampleStudents(100, numericCriteria, flagCriteria);
           replaceAllStudents(demoStudents);
+          // Generate random constraints after students are created
+          const numClasses = teachers.length;
+          const constraints = generateSampleConstraints(demoStudents, numClasses);
+          setKeepApart(constraints.keepApart);
+          setKeepTogether(constraints.keepTogether);
+          setKeepOutOfClass(constraints.keepOutOfClass);
         }}
       />
     </div>

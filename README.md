@@ -143,7 +143,7 @@ Sometimes a student must be in a specific class (a separation request, a particu
 
 Once you've locked the students who need to stay put, click **Re-Optimize** to redistribute only the unlocked students around them.
 
-You can also use **Lock All** and **Unlock All** in the toolbar for bulk changes.
+You can also use **Unlock All** in the **More** dropdown (⋯) for bulk changes.
 
 **Recommended workflow:** Run the initial optimization first. Then lock any students where you need to override the placement, and click Re-Optimize to let the optimizer work around your manual decisions.
 
@@ -154,7 +154,11 @@ Click **Constraints** on the Setup page to keep specific students together or ap
 - **Keep Apart** — select 2+ students; each pair goes in different classes
 - **Keep Together** — select 2+ students; they go in the same class
 
-Constraints are treated as high-priority requests, not absolute rules. If the optimizer can't satisfy all constraints, you'll see a **X violations** badge. Click it to see which constraints were violated and why. Common reasons:
+Constraints are treated as high-priority requests, not absolute rules. The toolbar shows a **violations badge** that always displays your constraint status:
+- **✓ All constraints met** — green checkmark when everything is satisfied
+- **⚠️ N** — red warning with violation count when constraints can't all be met
+
+Click the violations badge (when there are violations) to see which constraints were violated and why. Common reasons:
 - Conflicting constraints (e.g., A must be with B, but A must be apart from C, and B and C are together)
 - Class size limits (asking 15 students to stay together when classes max at 12)
 - Balance trade-offs where satisfying constraints would make classes extremely unbalanced
