@@ -65,7 +65,7 @@ function PrintReportView() {
           </div>
         </div>
 
-        {/* Assessment Section */}
+        {/* Quality Assessment Section */}
         {assessment && assessment.ready && (
           <>
             <h3 className="print-section-heading">Quality Assessment</h3>
