@@ -492,6 +492,8 @@ function OptimizePage({ onBack }) {
           }}
         />
       )}
+
+      <PrintReportView />
     </div>
   );
 }
