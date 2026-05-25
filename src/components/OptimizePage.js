@@ -20,6 +20,10 @@ function OptimizePage({ onBack }) {
     setAssignment,
     locked,
     setLocked,
+    assessment,
+    setAssessment,
+    isAssessing,
+    setIsAssessing,
     addKeepApart,
     removeKeepApart,
     addKeepTogether,
@@ -44,8 +48,6 @@ function OptimizePage({ onBack }) {
   const [showClassFilter, setShowClassFilter] = useState(false);
   const [visibleClasses, setVisibleClasses] = useState(new Set());
   const [showAssessment, setShowAssessment] = useState(false);
-  const [assessment, setAssessment] = useState(null);
-  const [isAssessing, setIsAssessing] = useState(false);
 
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
