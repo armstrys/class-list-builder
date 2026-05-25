@@ -109,6 +109,94 @@ describe('Optimizer', () => {
       expect(seed1).toBe(seed2);
     });
 
+    test('computeSeed default seedSalt is backward-compatible', () => {
+      // Arrange — explicit seedSalt=0 must match the no-argument call so
+      // existing seeds, saved projects, and snapshots stay stable.
+      const students = createMockStudents(10);
+      const numClasses = 2;
+
+      // Act
+      const seedNoArg = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria);
+      const seedZero = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], [], 0);
+
+      // Assert
+      expect(seedZero).toBe(seedNoArg);
+    });
+
+    test('computeSeed varies the seed when seedSalt changes', () => {
+      // Arrange
+      const students = createMockStudents(10);
+      const numClasses = 2;
+
+      // Act — collect seeds for salts 0..9
+      const seeds = new Set();
+      for (let salt = 0; salt < 10; salt++) {
+        seeds.add(computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], [], salt));
+      }
+
+      // Assert — expect at least 8 distinct values out of 10 (FNV mixing
+      // shouldn't produce wholesale collisions for small consecutive ints).
+      expect(seeds.size).toBeGreaterThanOrEqual(8);
+    });
+
+    test('computeSeed is deterministic for a given salt', () => {
+      // Arrange
+      const students = createMockStudents(10);
+      const numClasses = 2;
+
+      // Act
+      const seedA = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], [], 7);
+      const seedB = computeSeed(students, numClasses, {}, numericCriteria, flagCriteria, [], [], [], 7);
+
+      // Assert
+      expect(seedA).toBe(seedB);
+    });
+
+    test('optimize with default salt matches optimize with explicit salt=0', () => {
+      // Arrange — backward-compat guarantee for the user-facing path.
+      const students = createMockStudents(20);
+      const numClasses = 3;
+
+      // Act
+      const a1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria);
+      const a2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], [], 0);
+
+      // Assert
+      expect(a1).toEqual(a2);
+    });
+
+    test('optimize with the same salt is deterministic', () => {
+      // Arrange
+      const students = createMockStudents(20);
+      const numClasses = 3;
+
+      // Act
+      const a1 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], [], 3);
+      const a2 = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], [], 3);
+
+      // Assert
+      expect(a1).toEqual(a2);
+    });
+
+    test('optimize with different salts can produce different assignments', () => {
+      // Arrange — with enough students/classes, the SA trajectory really
+      // does depend on the RNG, so most salts should land on a different
+      // assignment. We don't require every pair to differ (some collisions
+      // are fine), just that the set has variety.
+      const students = createMockStudents(30);
+      const numClasses = 4;
+
+      // Act
+      const distinct = new Set();
+      for (let salt = 0; salt < 6; salt++) {
+        const a = optimize(students, numClasses, {}, numericCriteria, flagCriteria, [], [], [], salt);
+        distinct.add(JSON.stringify(a));
+      }
+
+      // Assert — expect at least 3 distinct assignments out of 6 trajectories.
+      expect(distinct.size).toBeGreaterThanOrEqual(3);
+    });
+
     test('createSeededRNG produces deterministic sequence', () => {
       // Arrange
       const seed = 12345;

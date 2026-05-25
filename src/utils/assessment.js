@@ -71,30 +71,41 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
 
 /**
  * Compute the unconstrained optimal baseline.
- * Runs the optimizer with no constraints and no locked students.
+ *
+ * Runs the optimizer N times with different seed salts and returns the lowest
+ * cost found. A single SA run can land at a worse local minimum than the
+ * user's constrained assignment by chance, which would produce a score of 100
+ * for assignments that aren't actually optimal. Multi-start tightens the
+ * baseline by exploring N independent trajectories.
  *
  * @param {Array<Object>} students - All student objects
  * @param {number} numClasses - Total number of classes
  * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric criteria with weights
  * @param {Array<{key: string, weight: number}>} flagCriteria - Flag criteria with weights
- * @returns {number} Cost of the unconstrained optimal assignment
+ * @param {number} [restarts=5] - Number of independent SA runs; lowest cost wins
+ * @returns {number} Lowest cost across all restarts
  */
-function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria) {
+function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria, restarts = 5) {
   if (!students.length || !numClasses) return 0;
 
-  // Run optimizer with zero constraints
-  const assignment = optimizeRef(
-    students,
-    numClasses,
-    {}, // no locked assignments
-    numericCriteria,
-    flagCriteria,
-    [], // keepApart
-    [], // keepTogether
-    []  // keepOutOfClass
-  );
+  let bestCost = Infinity;
+  for (let salt = 0; salt < restarts; salt++) {
+    const assignment = optimizeRef(
+      students,
+      numClasses,
+      {}, // no locked assignments
+      numericCriteria,
+      flagCriteria,
+      [], // keepApart
+      [], // keepTogether
+      [], // keepOutOfClass
+      salt
+    );
+    const cost = computeCostRef(students, assignment, numClasses, numericCriteria, flagCriteria, [], [], []);
+    if (cost < bestCost) bestCost = cost;
+  }
 
-  return computeCostRef(students, assignment, numClasses, numericCriteria, flagCriteria, [], [], []);
+  return bestCost;
 }
 
 /**
@@ -277,40 +288,74 @@ async function runFullAssessment({
 
   reportProgress(100, 'Assessment complete');
 
-  // Normalize score: 100 = as good as balanced, 0 = as good as random
-  // Lower cost is better. If balanced >= random, the optimizer isn't working.
-  const range = randomCost - balancedCost;
-  let score = 0;
-  if (range > 0) {
-    // currentCost should be between balancedCost (best) and randomCost (worst)
-    // Use non-linear transform: small deviations from optimal cause big score drops
-    // Power law with p=0.35: being 1% worse than optimal → score ~80 (not ~99)
-    const d = currentCost - balancedCost; // distance from optimal
-    const maxD = range; // max distance = randomCost - balancedCost
-    // Clamp normalized to [0, 1] to protect against edge cases
-    const normalized = Math.max(0, Math.min(1, d / maxD));
-    const p = 0.35; // power law exponent (lower = more sensitive near optimal)
-    score = (1 - Math.pow(normalized, p)) * 100;
-  } else if (range < 0) {
-    // Balanced is worse than random — this shouldn't happen
-    console.warn('Assessment: balanced cost is worse than random cost', { balancedCost, randomCost });
-    score = 100; // Assume perfect
-  }
-
-  // Clamp to 0-100
-  score = Math.max(0, Math.min(100, score));
+  const { score, effectiveBalancedCost } = normalizeBalanceScore({
+    currentCost,
+    balancedCost,
+    randomCost,
+  });
 
   return {
     score: Math.round(score * 10) / 10,
     currentCost: Math.round(currentCost * 100000) / 100000,
-    balancedCost: Math.round(balancedCost * 100000) / 100000,
+    balancedCost: Math.round(effectiveBalancedCost * 100000) / 100000,
     randomCost: Math.round(randomCost * 100000) / 100000,
     classStats,
     ready: true,
   };
 }
 
+/**
+ * Pure score-normalization helper. Maps the cost trio onto a 0–100 score
+ * using a power-law transform, with a defensive floor that prevents a
+ * stochastically-bad baseline from inflating the score above 100.
+ *
+ * If `currentCost < balancedCost` (the SA baseline got unlucky and landed
+ * at a worse local minimum than the constrained user assignment), the
+ * baseline is floored to `currentCost` and the score caps at 100. Without
+ * the floor, the table would show "balanced 0.007 > current 0.005" with a
+ * score of 100 — internally inconsistent.
+ *
+ * @param {Object} params
+ * @param {number} params.currentCost
+ * @param {number} params.balancedCost
+ * @param {number} params.randomCost
+ * @returns {{ score: number, effectiveBalancedCost: number }}
+ */
+function normalizeBalanceScore({ currentCost, balancedCost, randomCost }) {
+  let effectiveBalancedCost = balancedCost;
+  if (currentCost < balancedCost) {
+    console.warn(
+      'Assessment: current cost beat the baseline — applying defensive floor. ' +
+      'The unconstrained SA run likely got stuck at a worse local minimum. ' +
+      'Consider increasing baseline restarts.',
+      { currentCost, balancedCost }
+    );
+    effectiveBalancedCost = currentCost;
+  }
+
+  const range = randomCost - effectiveBalancedCost;
+  let score = 0;
+
+  if (range > 0) {
+    // Power law with p=0.35: 1% worse than optimal → score ~80 (not ~99).
+    const d = currentCost - effectiveBalancedCost;
+    const normalized = Math.max(0, Math.min(1, d / range));
+    const p = 0.35;
+    score = (1 - Math.pow(normalized, p)) * 100;
+  } else if (range < 0) {
+    // Balanced is worse than random — shouldn't happen.
+    console.warn('Assessment: balanced cost is worse than random cost', {
+      balancedCost: effectiveBalancedCost,
+      randomCost,
+    });
+    score = 100;
+  }
+
+  score = Math.max(0, Math.min(100, score));
+  return { score, effectiveBalancedCost };
+}
+
 // Export for Node.js testing (conditional to not break browser)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { computeClassStats, computeBaselineBalanced, computeBaselineRandom, runFullAssessment };
+  module.exports = { computeClassStats, computeBaselineBalanced, computeBaselineRandom, runFullAssessment, normalizeBalanceScore };
 }

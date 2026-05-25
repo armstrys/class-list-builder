@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { computeClassStats, computeBaselineBalanced, computeBaselineRandom, runFullAssessment } from '../src/utils/assessment.js';
+import { computeClassStats, computeBaselineBalanced, computeBaselineRandom, runFullAssessment, normalizeBalanceScore } from '../src/utils/assessment.js';
 import { computeCost, optimize } from '../src/optimizer.js';
 
 // Test helpers
@@ -166,6 +166,176 @@ describe('Assessment Engine', () => {
     test('returns 0 for empty students', () => {
       const cost = computeBaselineBalanced([], 3, numericCriteria, flagCriteria);
       expect(cost).toBe(0);
+    });
+
+    test('is deterministic across calls with the same inputs', () => {
+      // Arrange — the multi-restart loop walks salts 0..N-1 in order, so two
+      // calls with identical inputs must produce byte-identical cost.
+      const students = [];
+      for (let i = 0; i < 30; i++) {
+        students.push({
+          id: uid(),
+          name: `S${i}`,
+          gender: i % 2 === 0 ? 'F' : 'M',
+          readingScore: 50 + (i % 10) * 20,
+          mathScore: 2000 + (i % 10) * 100,
+          behavior: i % 5 === 0,
+          sped: i % 7 === 0,
+        });
+      }
+
+      // Act
+      const a = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria);
+      const b = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria);
+
+      // Assert
+      expect(a).toBe(b);
+    });
+
+    test('multi-restart cost is no worse than single-restart cost', () => {
+      // Arrange — the whole point of multi-restart is that taking the min
+      // across N independent SA trajectories produces a baseline ≤ any
+      // individual run. We assert restarts=5 is ≤ restarts=1.
+      const students = [];
+      for (let i = 0; i < 30; i++) {
+        students.push({
+          id: uid(),
+          name: `S${i}`,
+          gender: i % 2 === 0 ? 'F' : 'M',
+          readingScore: 50 + (i % 10) * 20,
+          mathScore: 2000 + (i % 10) * 100,
+          behavior: i % 5 === 0,
+          sped: i % 7 === 0,
+        });
+      }
+
+      // Act
+      const single = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria, 1);
+      const multi = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria, 5);
+
+      // Assert
+      expect(multi).toBeLessThanOrEqual(single);
+    });
+
+    test('restarts=1 with default salt matches the legacy single-run behavior', () => {
+      // Arrange — backward-compat: a 1-restart baseline (salt=0) should
+      // match a direct optimize() + computeCost() call with no salt.
+      const students = [];
+      for (let i = 0; i < 20; i++) {
+        students.push({
+          id: uid(),
+          name: `S${i}`,
+          gender: i % 2 === 0 ? 'F' : 'M',
+          readingScore: 50 + (i % 10) * 20,
+          mathScore: 2000 + (i % 10) * 100,
+          behavior: i % 5 === 0,
+          sped: i % 7 === 0,
+        });
+      }
+
+      // Act
+      const baseline = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria, 1);
+      const a = optimize(students, 3, {}, numericCriteria, flagCriteria, [], [], []);
+      const directCost = computeCost(students, a, 3, numericCriteria, flagCriteria, [], [], []);
+
+      // Assert
+      expect(baseline).toBeCloseTo(directCost, 10);
+    });
+  });
+
+  describe('normalizeBalanceScore', () => {
+    let warnSpy;
+
+    beforeEach(() => {
+      warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    test('returns 100 when current equals balanced', () => {
+      const { score, effectiveBalancedCost } = normalizeBalanceScore({
+        currentCost: 0.01,
+        balancedCost: 0.01,
+        randomCost: 1.0,
+      });
+
+      expect(score).toBe(100);
+      expect(effectiveBalancedCost).toBe(0.01);
+    });
+
+    test('returns 0 when current equals random', () => {
+      const { score } = normalizeBalanceScore({
+        currentCost: 1.0,
+        balancedCost: 0.0,
+        randomCost: 1.0,
+      });
+
+      expect(score).toBe(0);
+    });
+
+    test('produces intermediate scores between the two extremes', () => {
+      const { score } = normalizeBalanceScore({
+        currentCost: 0.5,
+        balancedCost: 0.0,
+        randomCost: 1.0,
+      });
+
+      // Power-law p=0.35: normalized=0.5 → 1 - 0.5^0.35 ≈ 0.215, score ≈ 21.5
+      expect(score).toBeGreaterThan(15);
+      expect(score).toBeLessThan(30);
+    });
+
+    test('defensive floor: applies when current < balanced', () => {
+      // Arrange — simulates the SA baseline getting stuck at a worse local
+      // minimum than the user's constrained current assignment.
+      const { score, effectiveBalancedCost } = normalizeBalanceScore({
+        currentCost: 0.005,
+        balancedCost: 0.007,
+        randomCost: 1.0,
+      });
+
+      // Assert — baseline floored to current, score caps at 100.
+      expect(effectiveBalancedCost).toBe(0.005);
+      expect(score).toBe(100);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/beat the baseline/);
+    });
+
+    test('defensive floor: does NOT trigger when current == balanced', () => {
+      // Arrange — equality is the boundary; the floor is only meaningful
+      // when current is strictly less than balanced.
+      normalizeBalanceScore({
+        currentCost: 0.01,
+        balancedCost: 0.01,
+        randomCost: 1.0,
+      });
+
+      // Assert — no warning issued.
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    test('defensive floor: does NOT trigger when current > balanced (normal case)', () => {
+      // Arrange
+      const { score, effectiveBalancedCost } = normalizeBalanceScore({
+        currentCost: 0.02,
+        balancedCost: 0.01,
+        randomCost: 1.0,
+      });
+
+      // Assert — baseline unchanged, score computed normally.
+      expect(effectiveBalancedCost).toBe(0.01);
+      expect(score).toBeLessThan(100);
+      expect(score).toBeGreaterThan(0);
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    test('warns and returns 100 when balanced >= random (degenerate)', () => {
+      const { score } = normalizeBalanceScore({
+        currentCost: 0.5,
+        balancedCost: 0.4,
+        randomCost: 0.3, // intentionally lower than balanced
+      });
+
+      expect(score).toBe(100);
+      expect(warnSpy).toHaveBeenCalled();
     });
   });
 

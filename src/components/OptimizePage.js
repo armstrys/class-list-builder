@@ -42,7 +42,6 @@ function OptimizePage({ onBack }) {
   const [showHelp, setShowHelp] = useState(false);
   const [showConstraints, setShowConstraints] = useState(false);
   const [showViolations, setShowViolations] = useState(false);
-  const [cost, setCost] = useState(null);
   const [optimizing, setOptimizing] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [showClassFilter, setShowClassFilter] = useState(false);
@@ -85,7 +84,6 @@ function OptimizePage({ onBack }) {
       lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
       const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
       setAssignment(result);
-      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
       setOptimizing(false);
     }, 30);
   }, [students, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, setAssignment]);
@@ -96,13 +94,6 @@ function OptimizePage({ onBack }) {
       runOptimize(new Map());
     }
   }, [assignment, runOptimize]);
-
-  // Recompute cost when criteria change (to reflect new weights in display)
-  useEffect(() => {
-    if (assignment && Object.keys(assignment).length > 0) {
-      setCost(computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
-    }
-  }, [numericCriteria, flagCriteria, students, assignment, numClasses, keepApart, keepTogether, keepOutOfClass]);
 
   // Auto-run assessment when assignment changes
   useEffect(() => {
@@ -187,7 +178,6 @@ function OptimizePage({ onBack }) {
     if (!sid) return;
     const newAssignment = { ...assignment, [sid]: classIdx };
     setAssignment(newAssignment);
-    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
     setDraggingId(null);
   }
 
@@ -238,10 +228,6 @@ function OptimizePage({ onBack }) {
     [students, assignment, locked, numClasses]
   );
 
-  const costColor = cost !== null
-    ? (cost < 0.05 ? 'var(--accent)' : cost < 0.15 ? 'var(--amber)' : 'var(--danger)')
-    : 'var(--text3)';
-
   return (
     <div className="optimize-layout" style={fullscreen ? { position: 'fixed', inset: 0, zIndex: 500, background: 'var(--bg)' } : {}}>
       {!fullscreen && <div className="optimize-toolbar">
@@ -291,7 +277,7 @@ function OptimizePage({ onBack }) {
             style={{ cursor: 'pointer' }}
             title="Click to view detailed assessment"
           >
-            <span className="label">Quality</span>
+            <span className="label">Balance</span>
             <span
               className="value"
               style={{
@@ -304,7 +290,7 @@ function OptimizePage({ onBack }) {
         )}
         {isAssessing && (
           <div className="score-badge">
-            <span className="label">Quality</span>
+            <span className="label">Balance</span>
             <span className="value" style={{ color: 'var(--text3)' }}>…</span>
           </div>
         )}

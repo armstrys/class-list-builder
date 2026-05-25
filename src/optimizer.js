@@ -170,8 +170,13 @@ function createSeededRNG(seed) {
   };
 }
 
-// Compute deterministic seed from input data
-function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
+// Compute deterministic seed from input data.
+// `seedSalt` lets callers (like the baseline assessment) request distinct
+// SA trajectories from identical inputs by mixing an extra integer into the
+// hash. Gated on `seedSalt !== 0` so the default behaves byte-identically to
+// the pre-salt implementation — existing seeds, saved projects, and test
+// snapshots are unaffected.
+function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], seedSalt = 0) {
   let hash = 2166136261;
   const fnv = (h, v) => Math.imul(h ^ v, 16777619);
 
@@ -229,6 +234,12 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
     hash = fnv(hash, constraint.classIndex);
   }
 
+  // Only mix the salt when non-zero so that callers using the default get
+  // the exact same hash as before this parameter existed.
+  if (seedSalt !== 0) {
+    hash = fnv(hash, seedSalt);
+  }
+
   return hash >>> 0;
 }
 
@@ -252,11 +263,11 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
  * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Blocked class assignments
  * @returns {Object<string, number>} Final assignment (studentId -> classIndex)
  */
-function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
+function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], seedSalt = 0) {
   if (!students.length || !numClasses) return {};
   const unlocked = students.filter(s => lockedAssignments[s.id] === undefined);
 
-  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
+  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, seedSalt);
   const rand = createSeededRNG(seed);
 
   // ── Build keep-together group membership map ────────────────

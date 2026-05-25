@@ -107,25 +107,30 @@ Click **Optimize Classes** at the bottom of the screen. The optimizer runs autom
 
 ### Balance Score
 
-The **Balance score** in the toolbar tells you how evenly your classes are distributed across all criteria. Lower is better.
+The **Balance** badge in the toolbar gives your class lists a single 0–100 grade. **Higher is better.** It updates live as you drag students, re-optimize, or change constraints.
 
 | Score | Color | What it means |
 |-------|-------|---------------|
-| < 0.05 | 🟢 Green | Excellent — classes are very evenly balanced |
-| 0.05–0.15 | 🟡 Amber | Good — minor imbalances remain |
-| > 0.15 | 🔴 Red | Notable imbalance — consider re-optimizing or reviewing manually |
+| 80–100 | 🟢 Green | Excellent — classes are well-distributed across every criterion |
+| 50–79 | 🟡 Amber | Good — some criteria show moderate variation between classes |
+| 0–49 | 🔴 Red | Fair — significant variation; consider re-optimizing or relaxing constraints |
 
-With a typical roster, the optimizer usually reaches green.
+**How the score is calculated.** The tool compares your current assignment against two reference points:
+
+- **Balanced (Optimal)** — the lowest cost the optimizer can reach with *no* constraints or locks. The theoretical ceiling.
+- **Random** — the average cost across 1,000 fully-random assignments. The floor.
+
+A score of **100** means you're as balanced as theoretically possible. **0** means no better than random. Because the score uses a non-linear curve, it's sensitive near the top — small imbalances cause a noticeable drop, so it's a real signal even when classes look fine at a glance.
+
+**What pulls your score down.** Constraints, locked students, and conflicting requirements all limit how balanced the classes can be. A score of 75 with heavy constraints can be just as good as a 95 with none — the score reflects the trade-off you've chosen.
+
+Click the Balance badge to open the **Balance Assessment** dialog, which shows the raw costs for all three scenarios plus per-class statistics for every criterion.
 
 ### Per-Class Stats
 
 At the bottom of each class column:
 - **Score bars:** each bar shows how that class's average compares across all classes. All bars at the same height means perfect balance.
 - **Flag badges:** a count of students with each active flag (e.g., "ExtL 3", "SPED 2")
-
-### Stats Strip
-
-The strip at the bottom of the screen shows a mini bar chart for every criterion across all classes. The **CV%** number under each chart measures how spread out the classes are. Lower is better. Green means you're in good shape.
 
 ---
 
