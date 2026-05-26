@@ -22,6 +22,8 @@
     const [assignment, setAssignment] = useState({});
     const [locked, setLocked] = useState(new Set());
     const [optimizationResults, setOptimizationResults] = useState(null);
+    const [assessment, setAssessment] = useState(null);
+    const [isAssessing, setIsAssessing] = useState(false);
 
     // Undo stack - ring buffer of last 20 snapshots
     const UNDO_LIMIT = 20;
@@ -291,6 +293,10 @@
       setLocked: setLockedWithUndo,
       optimizationResults,
       setOptimizationResults,
+      assessment,
+      setAssessment,
+      isAssessing,
+      setIsAssessing,
       addKeepApart,
       removeKeepApart,
       addKeepTogether,

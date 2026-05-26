@@ -20,6 +20,10 @@ function OptimizePage({ onBack }) {
     setAssignment,
     locked,
     setLocked,
+    assessment,
+    setAssessment,
+    isAssessing,
+    setIsAssessing,
     addKeepApart,
     removeKeepApart,
     addKeepTogether,
@@ -38,11 +42,11 @@ function OptimizePage({ onBack }) {
   const [showHelp, setShowHelp] = useState(false);
   const [showConstraints, setShowConstraints] = useState(false);
   const [showViolations, setShowViolations] = useState(false);
-  const [cost, setCost] = useState(null);
   const [optimizing, setOptimizing] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [showClassFilter, setShowClassFilter] = useState(false);
   const [visibleClasses, setVisibleClasses] = useState(new Set());
+  const [showAssessment, setShowAssessment] = useState(false);
 
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
@@ -80,7 +84,6 @@ function OptimizePage({ onBack }) {
       lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
       const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
       setAssignment(result);
-      setCost(computeCost(students, result, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
       setOptimizing(false);
     }, 30);
   }, [students, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, setAssignment]);
@@ -92,12 +95,46 @@ function OptimizePage({ onBack }) {
     }
   }, [assignment, runOptimize]);
 
-  // Recompute cost when criteria change (to reflect new weights in display)
+  // Auto-run assessment when assignment changes
   useEffect(() => {
-    if (assignment && Object.keys(assignment).length > 0) {
-      setCost(computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
+    if (!students.length || !Object.keys(assignment).length) {
+      setAssessment(null);
+      return;
     }
-  }, [numericCriteria, flagCriteria, students, assignment, numClasses, keepApart, keepTogether, keepOutOfClass]);
+
+    let cancelled = false;
+
+    async function runAssessment() {
+      setIsAssessing(true);
+      try {
+        const result = await runFullAssessment({
+          students,
+          assignment,
+          numClasses,
+          numericCriteria,
+          flagCriteria,
+          keepApart,
+          keepTogether,
+          keepOutOfClass,
+        });
+        if (!cancelled) {
+          setAssessment(result);
+        }
+      } catch (e) {
+        console.error('Assessment failed:', e);
+      } finally {
+        if (!cancelled) {
+          setIsAssessing(false);
+        }
+      }
+    }
+
+    runAssessment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [students, assignment, numClasses, numericCriteria, flagCriteria]);
 
   const handleReoptimize = useCallback(() => {
     const lockedObj = new Map();
@@ -141,7 +178,6 @@ function OptimizePage({ onBack }) {
     if (!sid) return;
     const newAssignment = { ...assignment, [sid]: classIdx };
     setAssignment(newAssignment);
-    setCost(computeCost(students, newAssignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass));
     setDraggingId(null);
   }
 
@@ -192,10 +228,6 @@ function OptimizePage({ onBack }) {
     [students, assignment, locked, numClasses]
   );
 
-  const costColor = cost !== null
-    ? (cost < 0.05 ? 'var(--accent)' : cost < 0.15 ? 'var(--amber)' : 'var(--danger)')
-    : 'var(--text3)';
-
   return (
     <div className="optimize-layout" style={fullscreen ? { position: 'fixed', inset: 0, zIndex: 500, background: 'var(--bg)' } : {}}>
       {!fullscreen && <div className="optimize-toolbar">
@@ -237,11 +269,29 @@ function OptimizePage({ onBack }) {
           </button>
         </div>
 
-        {/* Score badge */}
-        {cost !== null && (
+        {/* Assessment score badge */}
+        {assessment && assessment.ready && (
+          <div
+            className="score-badge"
+            onClick={() => setShowAssessment(true)}
+            style={{ cursor: 'pointer' }}
+            title="Click to view detailed assessment"
+          >
+            <span className="label">Balance</span>
+            <span
+              className="value"
+              style={{
+                color: assessment.score >= 80 ? 'var(--accent)' : assessment.score >= 50 ? 'var(--amber)' : 'var(--danger)',
+              }}
+            >
+              {assessment.score}
+            </span>
+          </div>
+        )}
+        {isAssessing && (
           <div className="score-badge">
             <span className="label">Balance</span>
-            <span className="value" style={{ color: costColor }}>{cost.toFixed(4)}</span>
+            <span className="value" style={{ color: 'var(--text3)' }}>…</span>
           </div>
         )}
 
@@ -400,9 +450,13 @@ function OptimizePage({ onBack }) {
         </button>
       )}
 
-      {!fullscreen && <StatsStrip numClasses={numClasses} />}
-
-      <PrintReportView />
+      {showAssessment && (
+        <AssessmentModal
+          onClose={() => setShowAssessment(false)}
+          assessment={assessment}
+          isAssessing={isAssessing}
+        />
+      )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
@@ -424,6 +478,8 @@ function OptimizePage({ onBack }) {
           }}
         />
       )}
+
+      <PrintReportView />
     </div>
   );
 }

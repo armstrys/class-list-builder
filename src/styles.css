@@ -301,25 +301,6 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .score-chip span { color: var(--text3); }
 .student-badges { display: flex; flex-wrap: nowrap; gap: 2px; flex-shrink: 0; }
 
-/* ── Stats Strip ── */
-.stats-strip {
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-  padding: 12px 20px;
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  flex-shrink: 0;
-}
-.stat-item { display: flex; flex-direction: column; gap: 4px; min-width: 90px; }
-.stat-item-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text3); }
-.stat-mini-bars { display: flex; gap: 3px; align-items: flex-end; height: 24px; }
-.mini-bar { width: 14px; border-radius: 2px 2px 0 0; transition: height .3s; }
-.stat-variance { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text2); }
-.stat-variance.good { color: var(--accent); }
-.stat-variance.warn { color: var(--amber); }
-.stat-variance.bad { color: var(--danger); }
-
 /* ── Modal ── */
 .modal-overlay {
   position: fixed; inset: 0; background: var(--modal-scrim);
@@ -834,6 +815,15 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 
   .print-student-table tr:nth-child(even) {
     background: #fafaf8;
+  }
+
+  .print-student-table tfoot .print-mean-row {
+    background: #f5f5f0;
+    font-weight: 600;
+  }
+  .print-student-table tfoot .print-mean-row td {
+    border-top: 2px solid #ddd;
+    border-bottom: none;
   }
 
   .print-summary-page h1 {

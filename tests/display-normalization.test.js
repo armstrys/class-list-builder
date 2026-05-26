@@ -12,7 +12,7 @@ function resetIdCounter() {
   idCounter = 0;
 }
 
-// Simulate the normalization logic from ClassColumn and StatsStrip
+// Simulate the normalization logic from ClassColumn
 // This mirrors the logic used in the React components
 
 function calculateClassColumnStats(students, allStudents, numericCriteria) {
@@ -36,32 +36,6 @@ function calculateClassColumnStats(students, allStudents, numericCriteria) {
       raw: classAvg,
       min: mn,
       max: mx,
-      range,
-    };
-  });
-}
-
-function calculateStatsStripNormalization(students, assignment, numClasses, numericCriteria) {
-  // From StatsStrip.js lines 30-45
-  const classes = Array.from({ length: numClasses }, (_, i) =>
-    students.filter(s => assignment[s.id] === i)
-  );
-
-  return numericCriteria.map(m => {
-    const allVals = students.map(s => s[m.key] || 0);
-    const popMin = Math.min(...allVals);
-    const popMax = Math.max(...allVals);
-    const range = popMax - popMin || 1;
-    const vals = classes.map(cls =>
-      cls.length ? cls.reduce((s, st) => s + (st[m.key] || 0), 0) / cls.length : popMin
-    );
-    const normVals = vals.map(v => Math.max(0, (v - popMin) / range));
-
-    return {
-      label: m.label,
-      vals: normVals,
-      popMin,
-      popMax,
       range,
     };
   });
@@ -208,134 +182,6 @@ describe('Display Normalization with Mixed Score Ranges', () => {
       expect(stats1.find(s => s.label === 'Reading Score').raw).toBeLessThan(
         stats2.find(s => s.label === 'Reading Score').raw
       );
-    });
-  });
-
-  describe('StatsStrip Normalization', () => {
-    test('normalizes class means to 0-1 scale for display bars', () => {
-      // Arrange - 3 classes with varying math scores
-      const students = [];
-      const assignment = {};
-
-      // Class 0: low scores
-      for (let i = 0; i < 5; i++) {
-        const id = uid();
-        students.push({
-          id,
-          name: `Low${i}`,
-          gender: 'F',
-          readingScore: 50,
-          mathScore: 2100,
-          languageScore: 2200,
-        });
-        assignment[id] = 0;
-      }
-
-      // Class 1: medium scores
-      for (let i = 0; i < 5; i++) {
-        const id = uid();
-        students.push({
-          id,
-          name: `Med${i}`,
-          gender: 'F',
-          readingScore: 100,
-          mathScore: 2500,
-          languageScore: 2450,
-        });
-        assignment[id] = 1;
-      }
-
-      // Class 2: high scores
-      for (let i = 0; i < 5; i++) {
-        const id = uid();
-        students.push({
-          id,
-          name: `High${i}`,
-          gender: 'F',
-          readingScore: 200,
-          mathScore: 2900,
-          languageScore: 2800,
-        });
-        assignment[id] = 2;
-      }
-
-      // Act
-      const normalized = calculateStatsStripNormalization(students, assignment, 3, mixedRangeCriteria);
-      const mathNorm = normalized.find(n => n.label === 'Math Score');
-
-      // Assert
-      expect(mathNorm.popMin).toBe(2100);
-      expect(mathNorm.popMax).toBe(2900);
-      expect(mathNorm.range).toBe(800);
-
-      // Values should be normalized to 0-1
-      expect(mathNorm.vals[0]).toBeCloseTo(0, 1); // Class 0 (lowest)
-      expect(mathNorm.vals[2]).toBeCloseTo(1, 1); // Class 2 (highest)
-      expect(mathNorm.vals[1]).toBeGreaterThan(0);
-      expect(mathNorm.vals[1]).toBeLessThan(1);
-    });
-
-    test('handles empty classes gracefully', () => {
-      // Arrange - one class is empty
-      const students = [
-        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2500, languageScore: 2200 },
-        { id: uid(), name: 'Bob', gender: 'M', readingScore: 150, mathScore: 2600, languageScore: 2300 },
-      ];
-      const assignment = {
-        [students[0].id]: 0,
-        [students[1].id]: 1,
-        // Class 2 is empty
-      };
-
-      // Act
-      const normalized = calculateStatsStripNormalization(students, assignment, 3, mixedRangeCriteria);
-
-      // Assert - should not throw
-      normalized.forEach(n => {
-        expect(n.vals).toHaveLength(3);
-        expect(n.range).toBeGreaterThan(0);
-      });
-    });
-
-    test('handles mixed ranges in same visualization', () => {
-      // Arrange - students with mixed ranges
-      const students = [];
-      for (let i = 0; i < 12; i++) {
-        students.push({
-          id: uid(),
-          name: `Student ${i + 1}`,
-          gender: 'F',
-          readingScore: i * 18, // 0-198
-          mathScore: 2000 + i * 75, // 2000-2825
-          languageScore: 2000 + i * 80, // 2000-2880
-        });
-      }
-
-      const assignment = {};
-      students.forEach((s, i) => {
-        assignment[s.id] = i % 3; // Distribute across 3 classes
-      });
-
-      // Act
-      const normalized = calculateStatsStripNormalization(students, assignment, 3, mixedRangeCriteria);
-
-      // Assert - each criterion should be normalized independently
-      normalized.forEach(n => {
-        expect(n.range).toBeGreaterThan(0);
-        n.vals.forEach(v => {
-          expect(v).toBeGreaterThanOrEqual(0);
-          expect(v).toBeLessThanOrEqual(1);
-        });
-      });
-
-      // Verify ranges are different
-      const reading = normalized.find(n => n.label === 'Reading Score');
-      const math = normalized.find(n => n.label === 'Math Score');
-      const language = normalized.find(n => n.label === 'Language Score');
-
-      expect(reading.range).toBe(198);
-      expect(math.range).toBe(825);
-      expect(language.range).toBe(880);
     });
   });
 

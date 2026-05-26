@@ -1,7 +1,7 @@
 const { useState, useEffect, useRef, useCallback, useMemo, useId } = React;
 
 // App version for save/load compatibility checking
-const APP_VERSION = "2.2.3";
+const APP_VERSION = "2.3.0";
 
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'englishlanguageartsscore', label: 'English Language Arts Score', weight: 1.0 },
@@ -29,9 +29,9 @@ const STORAGE_KEYS = {
 // These control the severity of constraint violations and balance metrics
 const PENALTY_WEIGHTS = {
   // Constraint penalties (higher = stricter enforcement)
-  KEEP_APART: 100.0, // Weight for keep-apart constraint violations
-  KEEP_TOGETHER: 200.0, // Weight for keep-together constraint violations
-  KEEP_OUT_OF_CLASS: 150.0, // Weight for keep-out-of-class constraint violations
+  KEEP_APART: 1000.0, // Weight for keep-apart constraint violations
+  KEEP_TOGETHER: 2000.0, // Weight for keep-together constraint violations
+  KEEP_OUT_OF_CLASS: 1500.0, // Weight for keep-out-of-class constraint violations
 
   // Balance metric weights
   TOTAL_FLAGS: 2.0, // Weight for total flags balance variance
@@ -165,6 +165,32 @@ function buildPrintReportData(
     })),
   };
 
+  // Grade-wide totals/means across all assigned students. Computed from the
+  // raw student values (not from rounded per-class avgs) so the row is exact.
+  const assignedStudents = students.filter(s => assignment[s.id] !== undefined);
+  const gradeNumericStats = numericCriteria.map(c => {
+    const values = assignedStudents.map(s => s[c.key] || 0);
+    const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+    return { key: c.key, label: c.label, avg: Math.round(avg * 10) / 10 };
+  });
+  const gradeFlagStats = flagCriteria.map(c => ({
+    key: c.key,
+    label: c.label,
+    count: assignedStudents.filter(s => s[c.key]).length,
+  }));
+  const gradeStats = {
+    studentCount: assignedStudents.length,
+    mCount: assignedStudents.filter(s => s.gender === 'M').length,
+    fCount: assignedStudents.filter(s => s.gender === 'F').length,
+    uCount: assignedStudents.filter(s => s.gender === 'U' || !s.gender).length,
+    numericStats: gradeNumericStats,
+    flagStats: gradeFlagStats,
+    totalFlagsCount: assignedStudents.reduce(
+      (sum, s) => sum + flagCriteria.reduce((fs, { key }) => fs + (s[key] ? 1 : 0), 0),
+      0
+    ),
+  };
+
   return {
     generatedAt: new Date().toLocaleString(),
     totalStudents: students.length,
@@ -172,6 +198,7 @@ function buildPrintReportData(
     numClasses,
     classPages,
     constraintSummary,
+    gradeStats,
   };
 }
 

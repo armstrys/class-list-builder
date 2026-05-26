@@ -33,3 +33,4 @@ coverage/
 # Cache directories
 .cache/
 *.tsbuildinfo
+*.pdf

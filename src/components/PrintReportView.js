@@ -5,7 +5,7 @@
  * Hidden on screen by CSS; shown only in @media print.
  */
 function PrintReportView() {
-  const { students, assignment, locked, keepApart, keepTogether, keepOutOfClass } =
+  const { students, assignment, locked, keepApart, keepTogether, keepOutOfClass, assessment } =
     useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
   const { teachers } = useAppStateExport();
@@ -36,7 +36,7 @@ function PrintReportView() {
     ]
   );
 
-  const { generatedAt, totalStudents, totalAssigned, numClasses, classPages, constraintSummary } =
+  const { generatedAt, totalStudents, totalAssigned, numClasses, classPages, constraintSummary, gradeStats } =
     reportData;
   const hasConstraints =
     constraintSummary.keepTogether.length > 0 ||
@@ -64,6 +64,49 @@ function PrintReportView() {
             <strong>Classes:</strong> {numClasses}
           </div>
         </div>
+
+        {/* Balance Assessment Section */}
+        {assessment && assessment.ready && (
+          <>
+            <h3 className="print-section-heading">Balance Assessment</h3>
+            <div style={{ marginBottom: 16, padding: 12, background: '#f8f9fa', borderRadius: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 36, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>
+                  {assessment.score}
+                </span>
+                <span style={{ fontSize: 14, color: '#666' }}>out of 100</span>
+              </div>
+              <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #ddd' }}>
+                    <th style={{ textAlign: 'left', padding: '4px 0' }}>Scenario</th>
+                    <th style={{ textAlign: 'right', padding: '4px 0' }}>Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '4px 0' }}>Current Assignment</td>
+                    <td style={{ textAlign: 'right', fontFamily: "'DM Mono', monospace" }}>
+                      {assessment.currentCost.toFixed(5)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', color: '#1a7a5e' }}>Balanced (Optimal)</td>
+                    <td style={{ textAlign: 'right', fontFamily: "'DM Mono', monospace", color: '#1a7a5e' }}>
+                      {assessment.balancedCost.toFixed(5)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', color: '#dc2626' }}>Random</td>
+                    <td style={{ textAlign: 'right', fontFamily: "'DM Mono', monospace", color: '#dc2626' }}>
+                      {assessment.randomCost.toFixed(5)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         <h3 className="print-section-heading">Class Overview</h3>
         <table className="print-student-table print-overview-table">
@@ -102,48 +145,67 @@ function PrintReportView() {
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr className="print-mean-row">
+              <td><strong>Grade Mean</strong></td>
+              <td>{gradeStats.studentCount}</td>
+              <td>{gradeStats.mCount}</td>
+              <td>{gradeStats.fCount}</td>
+              {classPages.some(p => p.uCount > 0) && <td>{gradeStats.uCount}</td>}
+              {gradeStats.numericStats.map(s => (
+                <td key={s.key}>{s.avg}</td>
+              ))}
+              {gradeStats.flagStats.map(s => (
+                <td key={s.key}>{s.count}</td>
+              ))}
+              {flagCriteria.length > 0 && <td>{gradeStats.totalFlagsCount}</td>}
+            </tr>
+          </tfoot>
         </table>
 
-        {hasConstraints && (
-          <>
-            <h3 className="print-section-heading">Constraints</h3>
-            <div className="print-constraints">
-              {constraintSummary.keepTogether.length > 0 && (
-                <div className="print-constraint-group">
-                  <h4>Keep Together</h4>
-                  <ul>
-                    {constraintSummary.keepTogether.map((group, i) => (
-                      <li key={i}>{group.join(', ')}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {constraintSummary.keepApart.length > 0 && (
-                <div className="print-constraint-group">
-                  <h4>Keep Apart</h4>
-                  <ul>
-                    {constraintSummary.keepApart.map(([a, b], i) => (
-                      <li key={i}>{a} ↔ {b}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {constraintSummary.keepOutOfClass.length > 0 && (
-                <div className="print-constraint-group">
-                  <h4>Keep Out of Class</h4>
-                  <ul>
-                    {constraintSummary.keepOutOfClass.map((c, i) => (
-                      <li key={i}>
-                        {c.name} — not in {c.teacherName}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </>
-        )}
       </div>
+
+      {/* Constraints get their own page so the summary table doesn't get
+          pushed mid-section and the constraint list has room to breathe. */}
+      {hasConstraints && (
+        <div className="print-page print-constraints-page">
+          <h2 className="print-section-heading">Constraints</h2>
+          <div className="print-constraints">
+            {constraintSummary.keepTogether.length > 0 && (
+              <div className="print-constraint-group">
+                <h4>Keep Together</h4>
+                <ul>
+                  {constraintSummary.keepTogether.map((group, i) => (
+                    <li key={i}>{group.join(', ')}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {constraintSummary.keepApart.length > 0 && (
+              <div className="print-constraint-group">
+                <h4>Keep Apart</h4>
+                <ul>
+                  {constraintSummary.keepApart.map(([a, b], i) => (
+                    <li key={i}>{a} ↔ {b}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {constraintSummary.keepOutOfClass.length > 0 && (
+              <div className="print-constraint-group">
+                <h4>Keep Out of Class</h4>
+                <ul>
+                  {constraintSummary.keepOutOfClass.map((c, i) => (
+                    <li key={i}>
+                      {c.name} — not in {c.teacherName}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* One page per class. We pick a density class based on student count
           and let CSS tighten font-size/padding so even large classes fit on
@@ -230,6 +292,19 @@ function PrintReportView() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="print-mean-row">
+                <td></td>
+                <td><strong>Mean</strong></td>
+                <td></td>
+                {page.numericStats.map(stat => (
+                  <td key={stat.key}>{stat.avg}</td>
+                ))}
+                {page.flagStats.map(stat => (
+                  <td key={stat.key}>{stat.count}</td>
+                ))}
+              </tr>
+            </tfoot>
           </table>
 
           <div className="print-page-footer">
