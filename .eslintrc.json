@@ -59,7 +59,12 @@
     "Modal": "readonly",
     "ViolationsModal": "readonly",
     "ClassFilterDropdown": "readonly",
-    "PrintReportView": "readonly"
+    "PrintReportView": "readonly",
+    "runFullAssessment": "readonly",
+    "computeClassStats": "readonly",
+    "computeBaselineBalanced": "readonly",
+    "computeBaselineRandom": "readonly",
+    "normalizeBalanceScore": "readonly"
   },
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
