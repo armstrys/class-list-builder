@@ -477,6 +477,18 @@ describe('Print Report CSS', () => {
       /\.print-page\s*\+\s*\.print-page\s*\{[^}]*(break-before:\s*page|page-break-before:\s*always)/
     );
 
+    // Grid lines: flag columns are unlabelled dots, so the tables need
+    // vertical rules for a reader to tell which flag a dot belongs to.
+    const tableRule = block.match(/\.print-student-table\s*\{[^}]*\}/);
+    expect(tableRule, '.print-student-table rule must exist').toBeTruthy();
+    expect(tableRule[0]).toMatch(/border:\s*1px solid/);
+    for (const cell of ['th', 'td']) {
+      const cellRule = block.match(new RegExp(`\\.print-student-table ${cell}\\s*\\{[^}]*\\}`));
+      expect(cellRule, `.print-student-table ${cell} rule must exist`).toBeTruthy();
+      expect(cellRule[0]).toMatch(/border-left:\s*1px solid/);
+      expect(cellRule[0]).toMatch(/border-right:\s*1px solid/);
+    }
+
     // Broken patterns from prior fix attempts must not return.
     expect(block).not.toMatch(/#root\s*>\s*\*:not\(#print-report\)/);
     expect(block).not.toMatch(/#print-report\s*\{[^}]*position:\s*absolute/);
