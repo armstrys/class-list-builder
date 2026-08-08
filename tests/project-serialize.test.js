@@ -116,7 +116,7 @@ describe('Project save/load round-trip', () => {
     expect(result.data.assignment).toEqual({ s1: 0, s3: 2 });
   });
 
-  test('migrates optimizationResults.assignments to flat assignment (pre-v2.2.0 compat)', () => {
+  test('refuses to load a v2.x project under a v3 app (major version gate)', () => {
     const oldFormatProject = {
       metadata: { appVersion: '2.1.0', formatVersion: 1 },
       data: {
@@ -124,23 +124,26 @@ describe('Project save/load round-trip', () => {
         teachers,
         numericCriteria,
         flagCriteria,
-        assignment: {}, // empty — old projects didn't populate this
+        assignment: {},
         locked: [],
         optimizationResults: {
           score: 0.123,
           iterations: 100,
-          assignments: { s1: 0, s2: 1, s3: 2, s4: 2 }, // old format
+          assignments: { s1: 0, s2: 1, s3: 2, s4: 2 },
         },
       },
     };
 
     const result = deserializeProject(oldFormatProject, {
-      currentVersion: '2.2.0',
+      currentVersion: '3.0.0',
       currentNumCriteria: numericCriteria,
       currentFlagCriteria: flagCriteria,
     });
 
-    expect(result.canLoad).toBe(true);
-    expect(result.data.assignment).toEqual({ s1: 0, s2: 1, s3: 2, s4: 2 });
+    // v3.0.0 drops pre-v2.2.0 assignment migration. That is safe precisely
+    // because the major-version gate refuses these files outright, so the
+    // migration path was unreachable rather than merely unused.
+    expect(result.canLoad).toBe(false);
+    expect(result.errors.join(' ')).toMatch(/Major version mismatch/);
   });
 });

@@ -89,9 +89,6 @@ function AppContent() {
         setLocked(new Set(data.locked));
       }
 
-      // `data` always comes from deserializeProject(), which already migrates
-      // pre-v2.2.0 optimizationResults.assignments into the flat assignment
-      // object, so checking data.assignment here covers both formats.
       if (data.assignment && Object.keys(data.assignment).length > 0) {
         navigateToOptimize();
       } else if (data.students?.length > 0) {
