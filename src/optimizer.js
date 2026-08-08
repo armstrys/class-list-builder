@@ -760,6 +760,88 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
 }
 
 /**
+ * Number of independent SA trajectories run by optimizeMultiStart and by the
+ * assessment's balanced baseline. Both must use the same value: the baseline
+ * scores the user's assignment against its own best-of-N search, so if the
+ * app searched less thoroughly than the baseline, a freshly optimized
+ * unconstrained assignment could never score 100. Each restart costs ~20ms
+ * even at 1000 students, so N=5 is cheap insurance against a bad trajectory.
+ */
+const OPTIMIZE_RESTARTS = 5;
+
+/**
+ * Run several independent SA trajectories and return the lowest-cost result.
+ *
+ * A single annealing run is one sample from a stochastic process; it routinely
+ * lands 0.1-0.5% above the best of a handful of runs. Salts are 0..restarts-1,
+ * matching computeBaselineBalanced, so an unconstrained run here reproduces
+ * the baseline's search exactly.
+ *
+ * Selection uses the full cost function including constraint penalties, so
+ * with constraints in play this picks the run that best satisfies them.
+ *
+ * Deterministic: same inputs always produce the same output.
+ *
+ * @param {Array<Object>} students - Array of student objects
+ * @param {number} numClasses - Total number of classes
+ * @param {Object<string, number>} lockedAssignments - Pre-assigned students (studentId -> classIndex)
+ * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric score criteria
+ * @param {Array<{key: string, weight: number}>} flagCriteria - Boolean flag criteria
+ * @param {Array<[string, string]>} keepApart - Pairs of students to keep apart
+ * @param {Array<string[]>} keepTogether - Groups of students to keep together
+ * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Blocked class assignments
+ * @param {number} [restarts=OPTIMIZE_RESTARTS] - Number of trajectories; lowest cost wins
+ * @returns {Object<string, number>} Best assignment found (studentId -> classIndex)
+ */
+function optimizeMultiStart(
+  students,
+  numClasses,
+  lockedAssignments = {},
+  numericCriteria,
+  flagCriteria,
+  keepApart = [],
+  keepTogether = [],
+  keepOutOfClass = [],
+  restarts = OPTIMIZE_RESTARTS
+) {
+  if (!students.length || !numClasses) return {};
+
+  const runs = Math.max(1, Math.floor(restarts) || 1);
+  let best = null;
+  let bestCost = Infinity;
+
+  for (let salt = 0; salt < runs; salt++) {
+    const assignment = optimize(
+      students,
+      numClasses,
+      lockedAssignments,
+      numericCriteria,
+      flagCriteria,
+      keepApart,
+      keepTogether,
+      keepOutOfClass,
+      salt
+    );
+    const cost = computeCost(
+      students,
+      assignment,
+      numClasses,
+      numericCriteria,
+      flagCriteria,
+      keepApart,
+      keepTogether,
+      keepOutOfClass
+    );
+    if (cost < bestCost) {
+      bestCost = cost;
+      best = assignment;
+    }
+  }
+
+  return best;
+}
+
+/**
  * Compute adaptive annealing parameters based on problem size.
  * 
  * Scaling strategy:
@@ -809,5 +891,5 @@ function computeAdaptiveAnnealingParams(numStudents, numClasses) {
 
 // Export for Node.js testing (conditional to not break browser)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { optimize, computeCost, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams };
+  module.exports = { optimize, optimizeMultiStart, OPTIMIZE_RESTARTS, computeCost, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams };
 }

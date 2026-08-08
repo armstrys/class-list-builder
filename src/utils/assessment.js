@@ -9,16 +9,21 @@
  */
 
 // Node.js imports for testing
-let _computeCost, _optimize;
+let _computeCost, _optimize, _restarts;
 if (typeof module !== 'undefined' && module.exports) {
   const optimizer = require('../optimizer.js');
   _computeCost = optimizer.computeCost;
   _optimize = optimizer.optimize;
+  _restarts = optimizer.OPTIMIZE_RESTARTS;
 }
 
 // Use global functions in browser, imported functions in Node
 const computeCostRef = typeof computeCost !== 'undefined' ? computeCost : _computeCost;
 const optimizeRef = typeof optimize !== 'undefined' ? optimize : _optimize;
+// Shared with optimizeMultiStart so the baseline and the app's own optimize
+// run the identical search. If these drift, an unconstrained assignment can
+// no longer score 100.
+const RESTARTS_REF = typeof OPTIMIZE_RESTARTS !== 'undefined' ? OPTIMIZE_RESTARTS : _restarts;
 
 /**
  * Compute per-class aggregate statistics.
@@ -82,10 +87,10 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
  * @param {number} numClasses - Total number of classes
  * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric criteria with weights
  * @param {Array<{key: string, weight: number}>} flagCriteria - Flag criteria with weights
- * @param {number} [restarts=5] - Number of independent SA runs; lowest cost wins
+ * @param {number} [restarts=OPTIMIZE_RESTARTS] - Number of independent SA runs; lowest cost wins
  * @returns {number} Lowest cost across all restarts
  */
-function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria, restarts = 5) {
+function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria, restarts = RESTARTS_REF) {
   if (!students.length || !numClasses) return 0;
 
   let bestCost = Infinity;
@@ -305,6 +310,13 @@ async function runFullAssessment({
 }
 
 /**
+ * Costs below this gap are treated as equal. Typical costs are ~1e-3, so
+ * 1e-9 is ~6 orders of magnitude below the values being compared — it
+ * absorbs float rounding without swallowing a genuine difference.
+ */
+const COST_EQUALITY_EPSILON = 1e-9;
+
+/**
  * Pure score-normalization helper. Maps the cost trio onto a 0–100 score
  * using a power-law transform, with a defensive floor that prevents a
  * stochastically-bad baseline from inflating the score above 100.
@@ -324,12 +336,17 @@ async function runFullAssessment({
 function normalizeBalanceScore({ currentCost, balancedCost, randomCost }) {
   let effectiveBalancedCost = balancedCost;
   if (currentCost < balancedCost) {
-    console.warn(
-      'Assessment: current cost beat the baseline — applying defensive floor. ' +
-      'The unconstrained SA run likely got stuck at a worse local minimum. ' +
-      'Consider increasing baseline restarts.',
-      { currentCost, balancedCost }
-    );
+    // Only a gap larger than float noise is worth reporting; an exact-tie
+    // assignment (optimizeMultiStart running the same search as the
+    // baseline) can land a few ULPs either side of the baseline.
+    if (balancedCost - currentCost > COST_EQUALITY_EPSILON) {
+      console.warn(
+        'Assessment: current cost beat the baseline — applying defensive floor. ' +
+        'The unconstrained SA run likely got stuck at a worse local minimum. ' +
+        'Consider increasing baseline restarts.',
+        { currentCost, balancedCost }
+      );
+    }
     effectiveBalancedCost = currentCost;
   }
 
@@ -338,7 +355,11 @@ function normalizeBalanceScore({ currentCost, balancedCost, randomCost }) {
 
   if (range > 0) {
     // Power law with p=0.35: 1% worse than optimal → score ~80 (not ~99).
-    const d = currentCost - effectiveBalancedCost;
+    // The p<1 curve is steep near zero, so sub-ULP float noise between two
+    // arithmetically identical costs would otherwise cost several points.
+    // Collapse only that noise — the tolerance is far below any real gap.
+    const rawGap = currentCost - effectiveBalancedCost;
+    const d = rawGap <= COST_EQUALITY_EPSILON ? 0 : rawGap;
     const normalized = Math.max(0, Math.min(1, d / range));
     const p = 0.35;
     score = (1 - Math.pow(normalized, p)) * 100;

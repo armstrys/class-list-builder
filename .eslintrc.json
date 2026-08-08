@@ -29,6 +29,8 @@
     "useId": "readonly",
     "ExcelJS": "readonly",
     "optimize": "readonly",
+    "optimizeMultiStart": "readonly",
+    "OPTIMIZE_RESTARTS": "readonly",
     "computeCost": "readonly",
     "exportStudentsToCSV": "readonly",
     "exportClassListsToCSV": "readonly",

@@ -82,7 +82,10 @@ function OptimizePage({ onBack }) {
     setTimeout(() => {
       const lockedObj = {};
       lockedAssignments.forEach((classIdx, sid) => { lockedObj[sid] = classIdx; });
-      const result = optimize(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
+      // Multi-start: the balance assessment scores against a best-of-N
+      // baseline, so a single trajectory would leave points on the table
+      // even with no constraints. Restarts are cheap (~20ms each).
+      const result = optimizeMultiStart(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
       setAssignment(result);
       setOptimizing(false);
     }, 30);
