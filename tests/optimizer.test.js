@@ -872,7 +872,13 @@ describe('Optimizer', () => {
       });
       const avgSize = 100000 / 5000;
       console.log(`Absurd test completed in ${duration}ms, avg class size: ${avgSize}`);
-    });
+      // 100k students × 5k classes lands within a second or two of vitest's
+      // 5s default, so runner speed alone decides pass/fail: this timed out
+      // at 5710ms on one CI run having taken 4097ms on the previous one,
+      // with no code change between them. The explicit timeout removes the
+      // coin-flip without weakening any assertion. It is not a budget — if
+      // this ever approaches 30s, the optimizer has regressed badly.
+    }, 30000);
 
     test('comprehensive absurd stress test: all constraint types with 10000 students', () => {
       // Arrange - test all constraint types at scale
