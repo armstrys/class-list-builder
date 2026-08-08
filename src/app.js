@@ -85,27 +85,11 @@ function AppContent() {
       if (data.assignment && Object.keys(data.assignment).length > 0) {
         setAssignment(data.assignment);
       }
-      // TEMPORARY (v2.2.0 backward compatibility):
-      // Pre-v2.2.0 projects stored assignments in optimizationResults.assignments (Map).
-      // New projects use a flat assignment object. If no flat assignment exists,
-      // migrate from the old format so printing and optimization work.
-      // TODO: Remove this fallback in v3.0.0 once all active projects are v2.2.0+.
-      if ((!data.assignment || Object.keys(data.assignment).length === 0) &&
-          data.optimizationResults?.assignments) {
-        const migrated = {};
-        for (const [sid, idx] of data.optimizationResults.assignments) {
-          migrated[sid] = idx;
-        }
-        setAssignment(migrated);
-      }
       if (data.locked?.length > 0) {
         setLocked(new Set(data.locked));
       }
 
-      // Navigate to optimize if we have assignments (either from new format or migrated old format)
-      const hasAssignments = (data.assignment && Object.keys(data.assignment).length > 0) ||
-        (data.optimizationResults?.assignments && Object.keys(data.optimizationResults.assignments).length > 0);
-      if (hasAssignments) {
+      if (data.assignment && Object.keys(data.assignment).length > 0) {
         navigateToOptimize();
       } else if (data.students?.length > 0) {
         navigateToSetup();
