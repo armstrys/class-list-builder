@@ -675,6 +675,31 @@ describe('Assessment Engine', () => {
       }
     });
 
+    // F-005 (v3.1.0 audit): an unresolvable OPTIMIZE_RESTARTS made the
+    // restart loop run zero iterations, so the baseline returned its
+    // `Infinity` initializer; the defensive floor then reported a perfect
+    // 100 for an arbitrary assignment. The baseline must fail closed.
+    test('unusable restart counts throw instead of returning Infinity', () => {
+      const students = cohort(20, 5);
+      // Note: an explicit `undefined` resolves to the default parameter
+      // (RESTARTS_REF), so it is not in this list. The guard's real job is
+      // catching the case where RESTARTS_REF *itself* is undefined, which
+      // arrives here as `restarts === undefined` via that same default.
+      for (const bad of [NaN, 0, -1, Infinity, null, 'five']) {
+        expect(() =>
+          computeBaselineBalanced(students, 3, numericCriteria, flagCriteria, bad)
+        ).toThrow(/positive finite number/);
+      }
+    });
+
+    test('the baseline never returns a non-finite cost', () => {
+      // Guards the consequence, not just the mechanism: Infinity is what the
+      // defensive floor converted into a perfect score.
+      const students = cohort(20, 6);
+      const baseline = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria);
+      expect(Number.isFinite(baseline)).toBe(true);
+    });
+
     test('baseline default restart count matches the optimizer constant', () => {
       const students = cohort(40, 99);
       const viaDefault = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria);

@@ -93,6 +93,21 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
 function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria, restarts = RESTARTS_REF) {
   if (!students.length || !numClasses) return 0;
 
+  // Fail closed. An unresolvable restart count (OPTIMIZE_RESTARTS not visible
+  // across the script boundary) used to fall straight through the loop and
+  // return the `Infinity` initializer. normalizeBalanceScore's defensive floor
+  // then clamped the baseline to the current cost and reported a perfect 100
+  // for an arbitrary assignment — a silent "everything is balanced" from a
+  // baseline that never ran. Throwing surfaces the wiring error instead; the
+  // caller's catch leaves the score simply absent rather than wrong.
+  if (!Number.isFinite(restarts) || restarts < 1) {
+    throw new Error(
+      `computeBaselineBalanced: restarts must be a positive finite number, got ${restarts}. ` +
+      'This usually means OPTIMIZE_RESTARTS was not resolvable — check that optimizer.js is ' +
+      'evaluated before assessment.js.'
+    );
+  }
+
   let bestCost = Infinity;
   for (let salt = 0; salt < restarts; salt++) {
     const assignment = optimizeRef(

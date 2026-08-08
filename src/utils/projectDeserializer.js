@@ -67,7 +67,9 @@ function checkVersionCompatibility(savedVersion, currentVersion) {
     errors.push(
       `Major version mismatch: Project was saved with v${savedVersion}, ` +
       `but this app is v${currentVersion}. Major version changes may break compatibility. ` +
-      `Please use the same major version to load this project.`
+      `Your file is unchanged — to open it, use a v${saved.major}.x build. Every previous ` +
+      `release stays available as a self-contained file at ` +
+      `https://github.com/armstrys/class-list-builder/releases and works offline.`
     );
     return { compatible: false, warnings, errors };
   }

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { serializeProject } from '../src/utils/projectSerializer.js';
-import { deserializeProject } from '../src/utils/projectDeserializer.js';
+import { deserializeProject, checkVersionCompatibility } from '../src/utils/projectDeserializer.js';
 
 const numericCriteria = [
   { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
@@ -145,5 +145,17 @@ describe('Project save/load round-trip', () => {
     // migration path was unreachable rather than merely unused.
     expect(result.canLoad).toBe(false);
     expect(result.errors.join(' ')).toMatch(/Major version mismatch/);
+  });
+
+  // F-004 (v3.0.0 audit): a flat refusal that told users to "use the same
+  // major version" without saying where to get one. The file is the user's
+  // only copy of FERPA-regulated records, so the refusal must name the
+  // recovery path.
+  test('major-version refusal states the recovery path', () => {
+    const { errors } = checkVersionCompatibility('2.3.0', '3.1.0');
+    const text = errors.join(' ');
+    expect(text).toMatch(/unchanged/i);
+    expect(text).toMatch(/v2\.x/);
+    expect(text).toMatch(/releases/);
   });
 });
