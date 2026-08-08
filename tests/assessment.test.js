@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { computeClassStats, computeBaselineBalanced, computeBaselineRandom, runFullAssessment, normalizeBalanceScore } from '../src/utils/assessment.js';
-import { computeCost, optimize } from '../src/optimizer.js';
+import { computeCost, optimize, optimizeMultiStart, OPTIMIZE_RESTARTS } from '../src/optimizer.js';
 
 // Test helpers
 let idCounter = 0;
@@ -622,6 +622,141 @@ describe('Assessment Engine', () => {
 
       expect(progressCalls.length).toBeGreaterThan(0);
       expect(progressCalls[progressCalls.length - 1].pct).toBe(100);
+    });
+  });
+
+  // Regression guard for the v2.3.0 scoring bug: the balanced baseline runs
+  // best-of-N restarts, but the app's Optimize button ran a single SA
+  // trajectory (salt 0) — which the baseline also runs, plus N-1 more
+  // chances to beat it. So `balancedCost <= currentCost` held by
+  // construction, and with the p=0.35 power law a sub-1% gap cost 5-16
+  // points. A freshly optimized, unconstrained assignment could only reach
+  // 100 when salt 0 happened to win the restart lottery (~3 of 10 cohorts).
+  // Fix: the app now runs the same best-of-N search via optimizeMultiStart.
+  describe('Unconstrained optimize scores 100', () => {
+    function cohort(n, seed) {
+      const rnd = createSeededRandom(seed);
+      return Array.from({ length: n }, (_, i) => ({
+        id: `s-${seed}-${i}`,
+        name: `Student ${i}`,
+        gender: rnd() < 0.5 ? 'M' : 'F',
+        readingScore: Math.round(40 + rnd() * 60),
+        mathScore: Math.round(40 + rnd() * 60),
+        behavior: rnd() < 0.15,
+        sped: rnd() < 0.1,
+      }));
+    }
+
+    test('multi-start assignment exactly ties the balanced baseline', () => {
+      // Several cohorts: the single-run bug only surfaced on cohorts where
+      // salt 0 lost the restart lottery, so one sample could pass by luck.
+      for (const seed of [11, 22, 33, 44, 55]) {
+        const students = cohort(60, seed);
+        const numClasses = 3;
+
+        const assignment = optimizeMultiStart(
+          students, numClasses, {}, numericCriteria, flagCriteria
+        );
+        const currentCost = computeCost(
+          students, assignment, numClasses, numericCriteria, flagCriteria, [], [], []
+        );
+        const balancedCost = computeBaselineBalanced(
+          students, numClasses, numericCriteria, flagCriteria
+        );
+
+        expect(currentCost).toBeCloseTo(balancedCost, 12);
+
+        const { score } = normalizeBalanceScore({
+          currentCost,
+          balancedCost,
+          randomCost: balancedCost + 1, // any strictly positive range
+        });
+        expect(score).toBe(100);
+      }
+    });
+
+    // F-005 (v3.1.0 audit): an unresolvable OPTIMIZE_RESTARTS made the
+    // restart loop run zero iterations, so the baseline returned its
+    // `Infinity` initializer; the defensive floor then reported a perfect
+    // 100 for an arbitrary assignment. The baseline must fail closed.
+    test('unusable restart counts throw instead of returning Infinity', () => {
+      const students = cohort(20, 5);
+      // Note: an explicit `undefined` resolves to the default parameter
+      // (RESTARTS_REF), so it is not in this list. The guard's real job is
+      // catching the case where RESTARTS_REF *itself* is undefined, which
+      // arrives here as `restarts === undefined` via that same default.
+      for (const bad of [NaN, 0, -1, Infinity, null, 'five']) {
+        expect(() =>
+          computeBaselineBalanced(students, 3, numericCriteria, flagCriteria, bad)
+        ).toThrow(/positive finite number/);
+      }
+    });
+
+    test('the baseline never returns a non-finite cost', () => {
+      // Guards the consequence, not just the mechanism: Infinity is what the
+      // defensive floor converted into a perfect score.
+      const students = cohort(20, 6);
+      const baseline = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria);
+      expect(Number.isFinite(baseline)).toBe(true);
+    });
+
+    test('baseline default restart count matches the optimizer constant', () => {
+      const students = cohort(40, 99);
+      const viaDefault = computeBaselineBalanced(students, 3, numericCriteria, flagCriteria);
+      const viaExplicit = computeBaselineBalanced(
+        students, 3, numericCriteria, flagCriteria, OPTIMIZE_RESTARTS
+      );
+      expect(viaDefault).toBe(viaExplicit);
+    });
+
+    test('a hand-degraded assignment still scores below 100', () => {
+      // The fix must not flatten the scale into "always 100" — moving two
+      // students between classes has to cost points.
+      const students = cohort(60, 77);
+      const numClasses = 3;
+      const assignment = optimizeMultiStart(
+        students, numClasses, {}, numericCriteria, flagCriteria
+      );
+
+      const degraded = { ...assignment };
+      const moved = students.filter(s => degraded[s.id] !== 0).slice(0, 6);
+      moved.forEach(s => { degraded[s.id] = 0; });
+
+      const balancedCost = computeBaselineBalanced(
+        students, numClasses, numericCriteria, flagCriteria
+      );
+      const degradedCost = computeCost(
+        students, degraded, numClasses, numericCriteria, flagCriteria, [], [], []
+      );
+
+      expect(degradedCost).toBeGreaterThan(balancedCost);
+      const { score } = normalizeBalanceScore({
+        currentCost: degradedCost,
+        balancedCost,
+        randomCost: balancedCost + 1,
+      });
+      expect(score).toBeLessThan(100);
+    });
+
+    test('float noise below the equality epsilon does not deduct points', () => {
+      const { score } = normalizeBalanceScore({
+        currentCost: 0.003 + 1e-15,
+        balancedCost: 0.003,
+        randomCost: 0.5,
+      });
+      expect(score).toBe(100);
+    });
+
+    test('a real sub-1% gap still deducts meaningfully', () => {
+      const balancedCost = 0.003;
+      const randomCost = 0.5;
+      const { score } = normalizeBalanceScore({
+        currentCost: balancedCost + (randomCost - balancedCost) * 0.005,
+        balancedCost,
+        randomCost,
+      });
+      expect(score).toBeLessThan(90);
+      expect(score).toBeGreaterThan(0);
     });
   });
 });

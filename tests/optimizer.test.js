@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { optimize, computeCost, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams } from '../src/optimizer.js';
+import { optimize, optimizeMultiStart, OPTIMIZE_RESTARTS, computeCost, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams } from '../src/optimizer.js';
 
 // Test helpers - use deterministic IDs for reproducible tests
 let idCounter = 0;
@@ -872,7 +872,13 @@ describe('Optimizer', () => {
       });
       const avgSize = 100000 / 5000;
       console.log(`Absurd test completed in ${duration}ms, avg class size: ${avgSize}`);
-    });
+      // 100k students × 5k classes lands within a second or two of vitest's
+      // 5s default, so runner speed alone decides pass/fail: this timed out
+      // at 5710ms on one CI run having taken 4097ms on the previous one,
+      // with no code change between them. The explicit timeout removes the
+      // coin-flip without weakening any assertion. It is not a budget — if
+      // this ever approaches 30s, the optimizer has regressed badly.
+    }, 30000);
 
     test('comprehensive absurd stress test: all constraint types with 10000 students', () => {
       // Arrange - test all constraint types at scale
@@ -1387,6 +1393,97 @@ describe('Optimizer', () => {
       // (ignoring other balance metrics like gender/class size)
       expect(cost).toBeGreaterThanOrEqual(0);
       expect(Number.isFinite(cost)).toBe(true);
+    });
+  });
+
+  describe('Multi-Start Optimization', () => {
+    test('never returns a worse assignment than a single run', () => {
+      const students = createMockStudents(60);
+      const numClasses = 3;
+
+      const single = optimize(students, numClasses, {}, numericCriteria, flagCriteria);
+      const multi = optimizeMultiStart(students, numClasses, {}, numericCriteria, flagCriteria);
+
+      const singleCost = computeCost(students, single, numClasses, numericCriteria, flagCriteria);
+      const multiCost = computeCost(students, multi, numClasses, numericCriteria, flagCriteria);
+
+      // Salt 0 is the single run and is included in the restart set, so the
+      // best-of-N can only tie or beat it.
+      expect(multiCost).toBeLessThanOrEqual(singleCost);
+    });
+
+    test('is deterministic across calls', () => {
+      const students = createMockStudents(40);
+      const a = optimizeMultiStart(students, 3, {}, numericCriteria, flagCriteria);
+      const b = optimizeMultiStart(students, 3, {}, numericCriteria, flagCriteria);
+      expect(a).toEqual(b);
+    });
+
+    test('assigns every student to a valid class', () => {
+      const students = createMockStudents(37);
+      const numClasses = 4;
+      const assignment = optimizeMultiStart(students, numClasses, {}, numericCriteria, flagCriteria);
+
+      expect(Object.keys(assignment)).toHaveLength(students.length);
+      for (const s of students) {
+        expect(assignment[s.id]).toBeGreaterThanOrEqual(0);
+        expect(assignment[s.id]).toBeLessThan(numClasses);
+      }
+    });
+
+    test('preserves locked assignments', () => {
+      const students = createMockStudents(30);
+      const locked = { [students[0].id]: 2, [students[1].id]: 0 };
+      const assignment = optimizeMultiStart(students, 3, locked, numericCriteria, flagCriteria);
+
+      expect(assignment[students[0].id]).toBe(2);
+      expect(assignment[students[1].id]).toBe(0);
+    });
+
+    test('selection accounts for constraint penalties', () => {
+      const students = createMockStudents(30);
+      const keepApart = [[students[0].id, students[1].id]];
+      const numClasses = 3;
+
+      const assignment = optimizeMultiStart(
+        students, numClasses, {}, numericCriteria, flagCriteria, keepApart, [], []
+      );
+
+      // The winning run is chosen by the constrained cost, so a run that
+      // violates keep-apart loses to one that doesn't.
+      expect(assignment[students[0].id]).not.toBe(assignment[students[1].id]);
+    });
+
+    test('restarts=1 matches a plain single optimize', () => {
+      const students = createMockStudents(25);
+      const single = optimize(students, 3, {}, numericCriteria, flagCriteria);
+      const multi = optimizeMultiStart(students, 3, {}, numericCriteria, flagCriteria, [], [], [], 1);
+      expect(multi).toEqual(single);
+    });
+
+    test('handles degenerate restart counts without returning null', () => {
+      const students = createMockStudents(12);
+      for (const restarts of [0, -3, NaN, undefined]) {
+        const assignment = optimizeMultiStart(
+          students, 2, {}, numericCriteria, flagCriteria, [], [], [], restarts
+        );
+        expect(Object.keys(assignment)).toHaveLength(students.length);
+      }
+    });
+
+    test('defaults to the shared OPTIMIZE_RESTARTS count', () => {
+      const students = createMockStudents(30);
+      const byDefault = optimizeMultiStart(students, 3, {}, numericCriteria, flagCriteria);
+      const explicit = optimizeMultiStart(
+        students, 3, {}, numericCriteria, flagCriteria, [], [], [], OPTIMIZE_RESTARTS
+      );
+      expect(byDefault).toEqual(explicit);
+      expect(OPTIMIZE_RESTARTS).toBeGreaterThan(1);
+    });
+
+    test('returns {} for empty input', () => {
+      expect(optimizeMultiStart([], 3, {}, numericCriteria, flagCriteria)).toEqual({});
+      expect(optimizeMultiStart(createMockStudents(5), 0, {}, numericCriteria, flagCriteria)).toEqual({});
     });
   });
 });

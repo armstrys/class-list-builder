@@ -762,23 +762,32 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
     background: #f5f5f0;
   }
 
+  /* Full grid lines (vertical rules + outer border). Flag columns render as
+     small unlabelled dots, so on a wide table it's hard to trace a dot back
+     up to its header without column separators. Rules are kept light so the
+     grid reads as scaffolding, not as the content. */
   .print-student-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 7.5pt;
     table-layout: auto;
+    border: 1px solid #ccc;
   }
 
   .print-student-table th {
     background: #f5f5f0;
     border-bottom: 2px solid #ddd;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
     padding: 4px 6px;
     text-align: left;
     font-weight: 600;
   }
 
   .print-student-table td {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
     padding: 3px 6px;
   }
 
