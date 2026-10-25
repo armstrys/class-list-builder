@@ -229,6 +229,11 @@ function SetupPage({ onOptimize }) {
                           {c.label}
                         </th>
                       ))}
+                      {categoryCriteria.map(c => (
+                        <th key={c.key} className="col-name" title={c.label}>
+                          {c.label}
+                        </th>
+                      ))}
                       <th></th>
                     </tr>
                   </thead>
@@ -248,6 +253,11 @@ function SetupPage({ onOptimize }) {
                         {numericCriteria.map(c => (
                           <td key={c.key} className="col-num">
                             {s[c.key] || 0}
+                          </td>
+                        ))}
+                        {categoryCriteria.map(c => (
+                          <td key={c.key} className="col-name" style={{ color: 'var(--text2)' }}>
+                            {s[c.key] || ''}
                           </td>
                         ))}
                         {flagCriteria.map((c, i) => (
@@ -330,7 +340,7 @@ function SetupPage({ onOptimize }) {
           defaultCount={sampleCount}
           onGenerate={n => {
             setSampleCount(n);
-            const newStudents = generateSampleStudents(n, numericCriteria, flagCriteria);
+            const newStudents = generateSampleStudents(n, numericCriteria, flagCriteria, categoryCriteria);
             replaceAllStudents(newStudents);
             // Generate random constraints
             const numClasses = teachers.length;

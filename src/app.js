@@ -220,7 +220,7 @@ function AppContent() {
 
       <WelcomeModal
         onLoadDemo={() => {
-          const demoStudents = generateSampleStudents(100, numericCriteria, flagCriteria);
+          const demoStudents = generateSampleStudents(100, numericCriteria, flagCriteria, categoryCriteria);
           replaceAllStudents(demoStudents);
           // Generate random constraints after students are created
           const numClasses = teachers.length;

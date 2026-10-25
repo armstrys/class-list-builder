@@ -455,3 +455,51 @@ describe('consumer shape safety', () => {
     expect(fn(undefined)).toBe(false);
   });
 });
+
+describe('sample data and roster table surface categories', () => {
+  test('sample students carry a category value for each category criterion', async () => {
+    // generateSampleStudents is a browser global; evaluate the source in a
+    // sandbox with just what it needs.
+    const { readFileSync } = await import('node:fs');
+    const vm = await import('node:vm');
+    const code = readFileSync(new URL('../src/sample-data.js', import.meta.url), 'utf8');
+    const ctx = vm.createContext({ Math, console });
+    vm.runInContext(code, ctx);
+    const cats = [{ key: 'currentclass', label: 'Current Class', weight: 1.5 }];
+    const students = ctx.generateSampleStudents(9, [], [], cats);
+    expect(students).toHaveLength(9);
+    for (const s of students) {
+      expect(typeof s.currentclass).toBe('string');
+      expect(s.currentclass.length).toBeGreaterThan(0);
+    }
+    // More than one value, or there is nothing to balance.
+    expect(new Set(students.map(s => s.currentclass)).size).toBeGreaterThan(1);
+  });
+
+  test('sample students get no category key when there are no category criteria', async () => {
+    const { readFileSync } = await import('node:fs');
+    const vm = await import('node:vm');
+    const code = readFileSync(new URL('../src/sample-data.js', import.meta.url), 'utf8');
+    const ctx = vm.createContext({ Math, console });
+    vm.runInContext(code, ctx);
+    const students = ctx.generateSampleStudents(5, [], [], []);
+    expect(students[0]).not.toHaveProperty('currentclass');
+  });
+
+  test('the roster table renders a column per category criterion', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../src/components/SetupPage.js', import.meta.url), 'utf8');
+    // Header and body must both map over categoryCriteria, or the column is
+    // either missing or misaligned with its data.
+    expect(src).toMatch(/\{categoryCriteria\.map\(c => \([\s\S]{0,200}?<th/);
+    expect(src).toMatch(/\{categoryCriteria\.map\(c => \([\s\S]{0,200}?<td/);
+  });
+
+  test('sample generation is wired to the category criteria', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const rel of ['../src/components/SetupPage.js', '../src/app.js']) {
+      const src = readFileSync(new URL(rel, import.meta.url), 'utf8');
+      expect(src).toMatch(/generateSampleStudents\([^)]*categoryCriteria/);
+    }
+  });
+});
