@@ -373,15 +373,33 @@ function LoadProjectModal({
     );
   }
 
+  // closeOnOverlayClick is gated below so an accidental click can't dismiss
+  // the modal while the overwrite confirmation is on screen.
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 560 }}>
-        <div className="modal-header">
-          <div className="modal-title">Load Project</div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
-        </div>
-        
-        <div className="modal-body">
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Load Project"
+      size="lg"
+      style={{ maxWidth: 560 }}
+      closeOnOverlayClick={!showOverwriteConfirm}
+      footer={
+        <>
+          <button className="btn btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          {validationResult?.canLoad && !showOverwriteConfirm && (
+            <button 
+              className="btn btn-primary" 
+              onClick={handleLoad}
+              disabled={loadMode === null}
+            >
+              Load Project
+            </button>
+          )}
+        </>
+      }
+    >
           {!file && (
             <div
               className={`drop-zone ${dragOver ? 'drag-over' : ''} ${isLoading ? 'loading' : ''}`}
@@ -461,23 +479,6 @@ function LoadProjectModal({
           {validationResult && renderInvalidItems()}
           {validationResult && renderLoadOptions()}
           {showOverwriteConfirm && renderOverwriteConfirm()}
-        </div>
-        
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          {validationResult?.canLoad && !showOverwriteConfirm && (
-            <button 
-              className="btn btn-primary" 
-              onClick={handleLoad}
-              disabled={loadMode === null}
-            >
-              Load Project
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

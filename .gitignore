@@ -34,3 +34,6 @@ coverage/
 .cache/
 *.tsbuildinfo
 *.pdf
+
+# Impeccable per-run critique snapshots (DESIGN.md + .impeccable/design.json are committed)
+.impeccable/critique/

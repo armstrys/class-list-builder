@@ -1,5 +1,7 @@
 function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
   const { teachers } = useAppStateExport();
+  const { assignment, setAssignment } = useStudentsExport();
+  const currentClass = assignment[student.id];
   const indexedFlags = flagCriteria.map((c, idx) => ({ ...c, idx }));
   const activeFlags = indexedFlags.filter(c => student[c.key]);
   const inactiveFlags = indexedFlags.filter(c => !student[c.key]);
@@ -47,7 +49,30 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
             style={{ fontSize: 18, marginLeft: 'auto' }}
             onClick={() => onToggleLock(student.id)}
             title={locked ? 'Unlock student' : 'Lock to this class'}
+            aria-label={locked ? `Unlock ${student.name}` : `Lock ${student.name} to this class`}
           >{locked ? '🔒' : '🔓'}</button>
+        </div>
+
+        {/* The board moves students by drag-and-drop only. This picker is the
+            keyboard- and touch-accessible equivalent. */}
+        <div>
+          <label className="panel-title" htmlFor={`move-${student.id}`}>Class</label>
+          <select
+            id={`move-${student.id}`}
+            className="form-select"
+            value={currentClass ?? ''}
+            onChange={e => {
+              // Guard the empty value: Number('') is 0, so without this a
+              // placeholder selection would silently assign class 1.
+              if (e.target.value === '') return;
+              setAssignment({ ...assignment, [student.id]: Number(e.target.value) });
+            }}
+          >
+            {currentClass === undefined && <option value="" disabled>Not yet assigned</option>}
+            {teachers.map((t, i) => (
+              <option key={i} value={i}>{t.name || `Class ${i + 1}`}</option>
+            ))}
+          </select>
         </div>
 
           {numericCriteria.length > 0 && (

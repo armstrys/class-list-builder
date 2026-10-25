@@ -67,6 +67,19 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [students.length, openSaveProject, openLoadProject]);
 
+  // Students and assignments live only in memory, so an accidental reload or
+  // tab close destroys the whole session. Browsers ignore custom copy here.
+  const hasWorkInProgress = students.length > 0;
+  useEffect(() => {
+    if (!hasWorkInProgress) return;
+    function handleBeforeUnload(e) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasWorkInProgress]);
+
   // Handle project loading
   const handleLoadProject = useCallback(
     data => {

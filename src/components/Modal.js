@@ -14,7 +14,9 @@
  * @param {string} props.title - Modal title (for aria-labelledby)
  * @param {React.ReactNode} props.children - Modal content
  * @param {string} [props.size='md'] - Modal size: 'sm', 'md', 'lg', 'xl'
- * @param {boolean} [props.closeOnOverlayClick=true] - Close when clicking overlay
+ * @param {boolean} [props.closeOnOverlayClick=true] - Close on overlay click or
+ *   Escape. Pass false when a dialog must be answered explicitly, e.g. a
+ *   destructive confirmation.
  * @param {boolean} [props.showCloseButton=true] - Show X button in header
  * @param {React.ReactNode} [props.footer] - Optional footer content
  * @param {Object} [props.style] - Additional styles for modal container
@@ -54,8 +56,10 @@ function Modal({
         modalRef.current.focus();
       }
 
-      // Add aria-hidden to main content
-      const mainContent = document.getElementById('root') || document.body;
+      // Hide the app from screen readers while the dialog is open. The dialog
+      // itself is portalled to <body> (see render), so it is NOT inside this
+      // subtree — hiding #root cannot silence it.
+      const mainContent = document.getElementById('root');
       if (mainContent) {
         mainContent.setAttribute('aria-hidden', 'true');
       }
@@ -65,8 +69,7 @@ function Modal({
         previouslyFocusedRef.current.focus();
       }
 
-      // Remove aria-hidden from main content
-      const mainContent = document.getElementById('root') || document.body;
+      const mainContent = document.getElementById('root');
       if (mainContent) {
         mainContent.removeAttribute('aria-hidden');
       }
@@ -74,7 +77,7 @@ function Modal({
 
     return () => {
       // Cleanup: ensure aria-hidden is removed if component unmounts while open
-      const mainContent = document.getElementById('root') || document.body;
+      const mainContent = document.getElementById('root');
       if (mainContent) {
         mainContent.removeAttribute('aria-hidden');
       }
@@ -86,7 +89,9 @@ function Modal({
     if (!isOpen) return;
 
     function handleKeyDown(e) {
-      if (e.key === 'Escape') {
+      // Same gate as the overlay: a dialog that must be answered explicitly
+      // should not be dismissable with a keystroke either.
+      if (e.key === 'Escape' && closeOnOverlayClick) {
         onClose();
         return;
       }
@@ -120,7 +125,7 @@ function Modal({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeOnOverlayClick]);
 
   // Handle overlay click
   function handleOverlayClick(e) {
@@ -131,7 +136,9 @@ function Modal({
 
   if (!isOpen) return null;
 
-  return (
+  // Portal to <body>: the effect above sets aria-hidden on #root, and a dialog
+  // rendered inside #root would be hidden from assistive tech along with it.
+  return ReactDOM.createPortal(
     <div
       ref={overlayRef}
       className="modal-overlay"
@@ -170,6 +177,7 @@ function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

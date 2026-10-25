@@ -16,12 +16,12 @@
  * @param {string|null} props.draggingId - Currently dragging student ID
  * @param {Array} props.allStudents - All students for population stats
  * @param {boolean} props.fullscreen - Whether in fullscreen mode
+ *
+ * Locked state, criteria and constraints come from context, not props.
  */
 function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen }) {
-  // Get criteria and locked state from contexts
   const { locked, keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
   const { numericCriteria, flagCriteria } = useCriteriaExport();
-  const { teachers } = useAppStateExport();
   
   const [dragOver, setDragOver] = useState(false);
 
@@ -55,6 +55,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
   );
 
   const mCount = students.filter(s => s.gender === 'M').length;
+
   const fCount = students.filter(s => s.gender === 'F').length;
   const uCount = students.filter(s => !s.gender || s.gender === 'U').length;
 
@@ -64,6 +65,9 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); onDrop(e, classIdx); }}
+      onDragEnd={() => setDragOver(false)}
+      aria-label={`${name}, ${students.length} students`}
+      role="group"
     >
       <div className="class-col-header">
         <div className="teacher-num">{classIdx + 1}</div>
@@ -73,7 +77,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
           onChange={e => onNameChange(classIdx, e.target.value)}
           aria-label={`Class ${classIdx + 1} name`}
         />
-        <span className="class-count">{students.length}</span>
+        <span className="class-count" aria-label={`${students.length} students`}>{students.length}</span>
       </div>
 
       <div className="class-col-cards">
@@ -123,7 +127,7 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
           <div key={stat.label} className="class-stat-row">
             <span className="class-stat-label">{stat.label}</span>
             <div className="class-stat-bar-wrap">
-              <div className="class-stat-bar" style={{ width: stat.pct + '%' }} />
+              <div className="class-stat-bar" style={{ transform: `scaleX(${stat.pct / 100})` }} />
             </div>
             <span className="class-stat-val">{stat.val}</span>
           </div>

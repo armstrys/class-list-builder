@@ -176,12 +176,14 @@ function OptimizePage({ onBack }) {
     e.dataTransfer.setData('text/plain', sid);
   }
 
-  function handleDrop(e, classIdx) {
-    const sid = e.dataTransfer.getData('text/plain') || draggingId;
+  function moveStudent(sid, classIdx) {
     if (!sid) return;
-    const newAssignment = { ...assignment, [sid]: classIdx };
-    setAssignment(newAssignment);
+    setAssignment({ ...assignment, [sid]: classIdx });
     setDraggingId(null);
+  }
+
+  function handleDrop(e, classIdx) {
+    moveStudent(e.dataTransfer.getData('text/plain') || draggingId, classIdx);
   }
 
   // Memoize violation calculations to prevent re-computation on every render
@@ -412,6 +414,16 @@ function OptimizePage({ onBack }) {
         </div>
       </div>}
 
+      {/* Announce status changes: without this, optimizing, the balance score
+          and violation counts all change silently for screen-reader users. */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {optimizing ? 'Optimizing class lists.' : ''}
+        {totalViolations > 0
+          ? `${totalViolations} constraint violation${totalViolations === 1 ? '' : 's'}.`
+          : 'All constraints met.'}
+        {assessment && assessment.ready ? ` Balance score ${assessment.score} out of 100.` : ''}
+      </div>
+
       <div className="classes-area" style={{ flex: 1 }}>
         {classesByIdx.map((classStudents, i) => (
           visibleClasses.has(i) && (
@@ -421,17 +433,12 @@ function OptimizePage({ onBack }) {
             name={teachers[i]?.name || `Class ${i + 1}`}
             onNameChange={(idx, val) => setTeachers(prev => prev.map((t, j) => j === idx ? { ...t, name: val } : t))}
             students={classStudents}
-            locked={locked}
             onToggleLock={handleToggleLock}
             onDragStart={handleDragStart}
             onDrop={handleDrop}
             draggingId={draggingId}
             allStudents={students}
             fullscreen={fullscreen}
-            numericCriteria={numericCriteria}
-            flagCriteria={flagCriteria}
-            keepApart={keepApart}
-            keepTogether={keepTogether}
           />
           )
         ))}
