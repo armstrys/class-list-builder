@@ -40,9 +40,20 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
       <div
         className={`student-card${locked ? ' locked' : ''}${dragging ? ' dragging' : ''}`}
         draggable
+        role="button"
+        tabIndex={0}
+        aria-label={`${student.name}, ${student.gender}. Open details to move between classes.`}
         onDragStart={e => { didDrag.current = true; onDragStart(e, student.id); }}
         onDragEnd={() => { setTimeout(() => { didDrag.current = false; }, 100); }}
         onClick={() => { if (!didDrag.current) setShowDetail(true); }}
+        onKeyDown={e => {
+          // Drag-and-drop is the only mouse path between classes; keyboard and
+          // touch users open the detail modal, which carries a class picker.
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setShowDetail(true);
+          }
+        }}
         style={{ cursor: 'grab' }}
       >
         <div className="student-card-top">
@@ -71,7 +82,9 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
           <button
             className={`lock-btn${locked ? ' locked' : ''}`}
             onClick={e => { e.stopPropagation(); onToggleLock(student.id); }}
+            onKeyDown={e => e.stopPropagation()}
             title={locked ? 'Unlock student' : 'Lock to this class'}
+            aria-label={locked ? `Unlock ${student.name}` : `Lock ${student.name} to this class`}
           >
             {locked ? '🔒' : '🔓'}
           </button>

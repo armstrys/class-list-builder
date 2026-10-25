@@ -1,0 +1,623 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-25T19:45:05.392Z",
+  "title": "Design System: Class List Builder",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#F7F6F2",
+        "tonalRamp": [
+          "#2B2A25",
+          "#45433B",
+          "#605D53",
+          "#7C7870",
+          "#98948C",
+          "#B5B1A9",
+          "#D2CEC6",
+          "#EFEBE3"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Sheet White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#2B2A25",
+          "#45433B",
+          "#605D53",
+          "#7C7870",
+          "#98948C",
+          "#B5B1A9",
+          "#D2CEC6",
+          "#EFEBE3"
+        ]
+      },
+      "surface-sunk": {
+        "role": "neutral",
+        "displayName": "Surface Sunk",
+        "canonical": "#F0EFE9",
+        "tonalRamp": [
+          "#2B2A25",
+          "#45433B",
+          "#605D53",
+          "#7C7870",
+          "#98948C",
+          "#B5B1A9",
+          "#D2CEC6",
+          "#EFEBE3"
+        ]
+      },
+      "border-hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#E2E0D8",
+        "tonalRamp": [
+          "#2B2A25",
+          "#45433B",
+          "#605D53",
+          "#7C7870",
+          "#98948C",
+          "#B5B1A9",
+          "#D2CEC6",
+          "#EFEBE3"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1C1B18",
+        "tonalRamp": [
+          "#2B2A25",
+          "#45433B",
+          "#605D53",
+          "#7C7870",
+          "#98948C",
+          "#B5B1A9",
+          "#D2CEC6",
+          "#EFEBE3"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "#57544E",
+        "tonalRamp": [
+          "#2B2A25",
+          "#45433B",
+          "#605D53",
+          "#7C7870",
+          "#98948C",
+          "#B5B1A9",
+          "#D2CEC6",
+          "#EFEBE3"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "#6B6860",
+        "tonalRamp": [
+          "#2B2A25",
+          "#45433B",
+          "#605D53",
+          "#7C7870",
+          "#98948C",
+          "#B5B1A9",
+          "#D2CEC6",
+          "#EFEBE3"
+        ]
+      },
+      "chalkboard-teal": {
+        "role": "primary",
+        "displayName": "Chalkboard Teal",
+        "canonical": "oklch(48% 0.13 168)",
+        "tonalRamp": [
+          "oklch(15% 0.13 168)",
+          "oklch(26% 0.13 168)",
+          "oklch(38% 0.13 168)",
+          "oklch(49% 0.13 168)",
+          "oklch(61% 0.13 168)",
+          "oklch(72% 0.13 168)",
+          "oklch(84% 0.13 168)",
+          "oklch(95% 0.13 168)"
+        ]
+      },
+      "chalkboard-teal-wash": {
+        "role": "primary",
+        "displayName": "Chalkboard Teal Wash",
+        "canonical": "oklch(93% 0.04 168)",
+        "tonalRamp": [
+          "oklch(15% 0.04 168)",
+          "oklch(26% 0.04 168)",
+          "oklch(38% 0.04 168)",
+          "oklch(49% 0.04 168)",
+          "oklch(61% 0.04 168)",
+          "oklch(72% 0.04 168)",
+          "oklch(84% 0.04 168)",
+          "oklch(95% 0.04 168)"
+        ]
+      },
+      "alert-clay": {
+        "role": "secondary",
+        "displayName": "Alert Clay",
+        "canonical": "oklch(50% 0.14 22)",
+        "tonalRamp": [
+          "oklch(15% 0.14 22)",
+          "oklch(26% 0.14 22)",
+          "oklch(38% 0.14 22)",
+          "oklch(49% 0.14 22)",
+          "oklch(61% 0.14 22)",
+          "oklch(72% 0.14 22)",
+          "oklch(84% 0.14 22)",
+          "oklch(95% 0.14 22)"
+        ]
+      },
+      "alert-clay-wash": {
+        "role": "secondary",
+        "displayName": "Alert Clay Wash",
+        "canonical": "oklch(94% 0.04 22)",
+        "tonalRamp": [
+          "oklch(15% 0.04 22)",
+          "oklch(26% 0.04 22)",
+          "oklch(38% 0.04 22)",
+          "oklch(49% 0.04 22)",
+          "oklch(61% 0.04 22)",
+          "oklch(72% 0.04 22)",
+          "oklch(84% 0.04 22)",
+          "oklch(95% 0.04 22)"
+        ]
+      },
+      "caution-amber": {
+        "role": "secondary",
+        "displayName": "Caution Amber",
+        "canonical": "oklch(62% 0.14 78)",
+        "tonalRamp": [
+          "oklch(15% 0.14 78)",
+          "oklch(26% 0.14 78)",
+          "oklch(38% 0.14 78)",
+          "oklch(49% 0.14 78)",
+          "oklch(61% 0.14 78)",
+          "oklch(72% 0.14 78)",
+          "oklch(84% 0.14 78)",
+          "oklch(95% 0.14 78)"
+        ]
+      },
+      "caution-amber-wash": {
+        "role": "secondary",
+        "displayName": "Caution Amber Wash",
+        "canonical": "oklch(94% 0.04 78)",
+        "tonalRamp": [
+          "oklch(15% 0.04 78)",
+          "oklch(26% 0.04 78)",
+          "oklch(38% 0.04 78)",
+          "oklch(49% 0.04 78)",
+          "oklch(61% 0.04 78)",
+          "oklch(72% 0.04 78)",
+          "oklch(84% 0.04 78)",
+          "oklch(95% 0.04 78)"
+        ]
+      },
+      "roster-purple": {
+        "role": "tertiary",
+        "displayName": "Roster Purple",
+        "canonical": "oklch(52% 0.14 295)",
+        "tonalRamp": [
+          "oklch(15% 0.14 295)",
+          "oklch(26% 0.14 295)",
+          "oklch(38% 0.14 295)",
+          "oklch(49% 0.14 295)",
+          "oklch(61% 0.14 295)",
+          "oklch(72% 0.14 295)",
+          "oklch(84% 0.14 295)",
+          "oklch(95% 0.14 295)"
+        ]
+      },
+      "roster-purple-wash": {
+        "role": "tertiary",
+        "displayName": "Roster Purple Wash",
+        "canonical": "oklch(93% 0.04 295)",
+        "tonalRamp": [
+          "oklch(15% 0.04 295)",
+          "oklch(26% 0.04 295)",
+          "oklch(38% 0.04 295)",
+          "oklch(49% 0.04 295)",
+          "oklch(61% 0.04 295)",
+          "oklch(72% 0.04 295)",
+          "oklch(84% 0.04 295)",
+          "oklch(95% 0.04 295)"
+        ]
+      },
+      "roster-blue": {
+        "role": "tertiary",
+        "displayName": "Roster Blue",
+        "canonical": "oklch(52% 0.14 245)",
+        "tonalRamp": [
+          "oklch(15% 0.14 245)",
+          "oklch(26% 0.14 245)",
+          "oklch(38% 0.14 245)",
+          "oklch(49% 0.14 245)",
+          "oklch(61% 0.14 245)",
+          "oklch(72% 0.14 245)",
+          "oklch(84% 0.14 245)",
+          "oklch(95% 0.14 245)"
+        ]
+      },
+      "roster-blue-wash": {
+        "role": "tertiary",
+        "displayName": "Roster Blue Wash",
+        "canonical": "oklch(93% 0.04 245)",
+        "tonalRamp": [
+          "oklch(15% 0.04 245)",
+          "oklch(26% 0.04 245)",
+          "oklch(38% 0.04 245)",
+          "oklch(49% 0.04 245)",
+          "oklch(61% 0.04 245)",
+          "oklch(72% 0.04 245)",
+          "oklch(84% 0.04 245)",
+          "oklch(95% 0.04 245)"
+        ]
+      },
+      "print-heading": {
+        "role": "neutral",
+        "displayName": "Print Heading Green",
+        "canonical": "#1a7a5e"
+      },
+      "print-secondary": {
+        "role": "neutral",
+        "displayName": "Print Secondary Grey",
+        "canonical": "#555"
+      },
+      "print-body": {
+        "role": "neutral",
+        "displayName": "Print Body Grey",
+        "canonical": "#333"
+      },
+      "print-table-fill": {
+        "role": "neutral",
+        "displayName": "Print Table Fill",
+        "canonical": "#f5f5f0"
+      },
+      "print-table-alt": {
+        "role": "neutral",
+        "displayName": "Print Table Alternate",
+        "canonical": "#f8f9fa"
+      },
+      "print-bubble": {
+        "role": "secondary",
+        "displayName": "Print Bubble Red",
+        "canonical": "#dc2626"
+      },
+      "print-rule": {
+        "role": "neutral",
+        "displayName": "Print Rule",
+        "canonical": "#ddd"
+      },
+      "print-rule-strong": {
+        "role": "neutral",
+        "displayName": "Print Rule Strong",
+        "canonical": "#ccc"
+      },
+      "warning-tint": {
+        "role": "secondary",
+        "displayName": "Warning Tint",
+        "canonical": "rgba(234, 179, 8, 0.1)"
+      },
+      "error-tint": {
+        "role": "secondary",
+        "displayName": "Error Tint",
+        "canonical": "rgba(239, 68, 68, 0.1)"
+      },
+      "focus-tint": {
+        "role": "primary",
+        "displayName": "Focus Tint",
+        "canonical": "rgba(59, 130, 246, 0.1)"
+      },
+      "success-tint": {
+        "role": "primary",
+        "displayName": "Success Tint",
+        "canonical": "rgba(34, 197, 94, 0.1)"
+      },
+      "hover-teal": {
+        "role": "primary",
+        "displayName": "Hover Teal",
+        "canonical": "oklch(70% 0.08 168)"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Balance Figure",
+        "purpose": "The single balance score in the assessment dialog. Nothing else uses this size."
+      },
+      "heading": {
+        "displayName": "Page Heading",
+        "purpose": "First-run welcome modal headings only (28-32px)."
+      },
+      "title": {
+        "displayName": "Modal Title",
+        "purpose": "Dialog headings (16px)."
+      },
+      "logo": {
+        "displayName": "App Wordmark",
+        "purpose": "The product name in the header; last word in accent teal."
+      },
+      "section": {
+        "displayName": "Section Heading",
+        "purpose": "Headings inside long-form modals: help sections, assessment verdicts (20px)."
+      },
+      "eyebrow": {
+        "displayName": "Panel Eyebrow",
+        "purpose": "Uppercase card section headings (13px)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Prose, help text, form labels. 14px default, 13px dense variant."
+      },
+      "table": {
+        "displayName": "Table / Card Text",
+        "purpose": "Roster rows and student cards (12-12.5px)."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Scores, IDs, counts. Mono so digits align in columns (10-12px)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "hairline-lift",
+        "value": "0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04)",
+        "purpose": "Small raised elements: dropdown items, floating chips."
+      },
+      {
+        "name": "sheet-lift",
+        "value": "0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04)",
+        "purpose": "Dialogs and dropdown menus leaving the page plane."
+      },
+      {
+        "name": "modal-edge",
+        "value": "0 0 0 1px var(--border)",
+        "purpose": "Border ring on dialog sheets so the edge survives low-DPI rendering."
+      },
+      {
+        "name": "locked-marker",
+        "value": "inset 2px 0 0 var(--accent)",
+        "purpose": "Locked student card marker. Inset so the card box does not shift."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-standard",
+        "value": ".15s",
+        "purpose": "Border, background and color changes on hover/focus."
+      },
+      {
+        "name": "dialog-enter",
+        "value": "slideUp .18s ease-out",
+        "purpose": "Dialog sheet entering."
+      },
+      {
+        "name": "scrim-fade",
+        "value": "fadeIn .15s",
+        "purpose": "Modal scrim opacity."
+      },
+      {
+        "name": "stat-bar",
+        "value": "transform .3s",
+        "purpose": "Stat bar fill growth, via scaleX from a left origin."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "board-collapse",
+        "value": "900px"
+      },
+      {
+        "name": "phone",
+        "value": "640px"
+      },
+      {
+        "name": "print",
+        "value": "@media print"
+      }
+    ],
+    "radii": [
+      {
+        "name": "fill",
+        "value": "3px",
+        "purpose": "Inner fills: stat bars and scrollbar thumbs."
+      },
+      {
+        "name": "badge",
+        "value": "4px",
+        "purpose": "Badges, tags and small inline chips."
+      },
+      {
+        "name": "sm",
+        "value": "6px",
+        "purpose": "Buttons, inputs, selects, student cards."
+      },
+      {
+        "name": "md",
+        "value": "8px",
+        "purpose": "Inline callout panels."
+      },
+      {
+        "name": "lg",
+        "value": "10px",
+        "purpose": "Cards and class columns."
+      },
+      {
+        "name": "modal",
+        "value": "14px",
+        "purpose": "Dialog sheets only."
+      },
+      {
+        "name": "pill",
+        "value": "20px",
+        "purpose": "Workflow step pills and class-count chip. Navigation and counts only."
+      }
+    ],
+    "printPalette": {
+      "note": "The print report forces its own light palette inside #print-report. It is exempt from the on-screen token system because paper has no theme and no oklch support to rely on.",
+      "values": {
+        "print-heading": "#1a7a5e",
+        "print-secondary": "#555",
+        "print-body": "#333",
+        "print-table-fill": "#f5f5f0",
+        "print-table-alt": "#f8f9fa",
+        "print-bubble": "#dc2626",
+        "print-rule": "#ddd",
+        "print-rule-strong": "#ccc"
+      }
+    },
+    "legacyTints": {
+      "note": "Callout panels use 5-10% rgba tints of the semantic hue instead of a wash token. Pre-existing inconsistency: prefer the wash token when touching one, and do not add a new literal tint.",
+      "values": {
+        "warning-tint": "rgba(234, 179, 8, 0.1)",
+        "error-tint": "rgba(239, 68, 68, 0.1)",
+        "focus-tint": "rgba(59, 130, 246, 0.1)",
+        "success-tint": "rgba(34, 197, 94, 0.1)",
+        "hover-teal": "oklch(70% 0.08 168)"
+      }
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single committed action in a dialog or toolbar.",
+      "html": "<button class=\"ds-btn-primary\">Re-Optimize</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-fg);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:filter .15s;} .ds-btn-primary:hover{filter:brightness(1.08);} .ds-btn-primary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default action: neutral, hairline bordered.",
+      "html": "<button class=\"ds-btn-secondary\">Save Lists</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,border-color .15s;} .ds-btn-secondary:hover{background:var(--surface2);} .ds-btn-secondary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Ghost Icon Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Toolbar icon control. Always carries aria-label and title.",
+      "html": "<button class=\"ds-btn-ghost\" aria-label=\"Undo\">Undo</button>",
+      "css": ".ds-btn-ghost{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:6px;border:1.5px solid transparent;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:background .15s,color .15s;} .ds-btn-ghost:hover{background:var(--surface2);color:var(--text);} .ds-btn-ghost:disabled{opacity:.45;cursor:not-allowed;} .ds-btn-ghost:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive action, wash fill that inverts on hover.",
+      "html": "<button class=\"ds-btn-danger\">Clear All</button>",
+      "css": ".ds-btn-danger{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1.5px solid transparent;background:var(--danger-light);color:var(--danger);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,color .15s;} .ds-btn-danger:hover{background:var(--danger);color:#fff;} .ds-btn-danger:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Student Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The dense unit of the board. Focusable, opens details on Enter/Space.",
+      "html": "<div class=\"ds-student-card\" role=\"button\" tabindex=\"0\"><span class=\"ds-badge\">F</span><span class=\"ds-sid\">S0142</span><span class=\"ds-name\">Amara Okafor</span><span class=\"ds-lock\">Locked</span></div>",
+      "css": ".ds-student-card{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface);font-family:'DM Sans',sans-serif;font-size:12px;cursor:grab;box-shadow:inset 2px 0 0 var(--accent);} .ds-student-card:hover{border-color:oklch(70% 0.08 168);} .ds-student-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px;} .ds-badge{display:inline-flex;align-items:center;justify-content:center;padding:1px 6px;border-radius:4px;background:var(--purple-light);color:var(--purple);font-size:10.5px;font-weight:600;} .ds-sid{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);} .ds-name{font-weight:500;flex:1;} .ds-lock{font-size:11px;color:var(--accent);font-weight:600;}"
+    },
+    {
+      "name": "Class Column",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "One class: fixed header, scrolling cards, fixed stat footer.",
+      "html": "<div class=\"ds-class-col\"><div class=\"ds-col-head\"><span class=\"ds-num\">1</span><span class=\"ds-col-name\">Ms. Rivera</span><span class=\"ds-count\">24</span></div><div class=\"ds-col-body\"><div class=\"ds-stub\">Drop students here</div></div><div class=\"ds-col-foot\"><span class=\"ds-badge\">M 12</span><span class=\"ds-badge ds-f\">F 12</span></div></div>",
+      "css": ".ds-class-col{width:340px;display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;} .ds-col-head{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;border-bottom:1px solid var(--border);} .ds-num{width:22px;height:22px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;} .ds-col-name{font-weight:600;font-size:14px;flex:1;} .ds-count{font-size:11px;color:var(--text3);background:var(--surface2);padding:2px 7px;border-radius:10px;} .ds-col-body{padding:6px;min-height:60px;} .ds-stub{text-align:center;padding:20px 0;color:var(--text3);font-size:12px;} .ds-col-foot{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:4px;} .ds-badge{display:inline-flex;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:600;background:var(--blue-light);color:var(--blue);} .ds-f{background:var(--purple-light);color:var(--purple);}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard field. Teal border on focus, plus the global focus ring.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-label\">Filter students by name</span><input class=\"ds-input\" placeholder=\"Filter by name...\" /></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:5px;} .ds-label{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--text2);} .ds-input{padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;transition:border-color .15s;} .ds-input:focus{border-color:var(--accent);} .ds-input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Step Pills",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "The two-step workflow in the header. Pill radius is reserved for this and counts.",
+      "html": "<nav class=\"ds-steps\"><button class=\"ds-step ds-step-done\">1 - Setup</button><button class=\"ds-step ds-step-active\">2 - Optimize</button></nav>",
+      "css": ".ds-steps{display:flex;gap:4px;} .ds-step{padding:3px 12px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;border:1.5px solid transparent;background:var(--surface2);color:var(--text3);cursor:pointer;transition:all .15s;} .ds-step-done{color:var(--text2);} .ds-step-active{color:var(--accent);background:var(--accent-light);border-color:var(--accent);} .ds-step:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}"
+    },
+    {
+      "name": "Stat Bar",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Per-class criterion distribution. Fill animates via scaleX, not width.",
+      "html": "<div class=\"ds-stat\"><span class=\"ds-stat-label\">Math</span><div class=\"ds-track\"><div class=\"ds-fill\" style=\"transform:scaleX(.68)\"></div></div><span class=\"ds-val\">68</span></div>",
+      "css": ".ds-stat{display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;} .ds-stat-label{color:var(--text3);width:60px;} .ds-track{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;} .ds-fill{height:100%;width:100%;border-radius:3px;background:var(--accent);transform-origin:left;transition:transform .3s;} .ds-val{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text2);width:30px;text-align:right;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Rostering Desk",
+    "overview": "This is a work surface, not a product page. The visual world is a well-lit desk at the end of a term: warm paper underneath, a crisp white sheet on top, one confident green ink for the things that matter, and everything else in a measured grey hierarchy so that a hundred student names can be scanned without fatigue. Nothing glows, nothing bounces, nothing celebrates. The interface is quiet because the data is loud.\n\nThe one moment of visual emphasis is reserved for decisions the teacher must defend: the balance score, the constraint verdict, the locked students. That is deliberate scarcity. When teal appears, it means this is the thing a principal will ask you about.\n\nThe chrome is a two-step workflow, Setup then Optimize, stated in the header rather than hidden in navigation. There is no dashboard, no sidebar tree, no settings labyrinth.\n\nThe print report is a deliberate exception: it forces its own light palette and point-based scale because paper has no theme. Treat it as a separate contract, not as drift.",
+    "keyCharacteristics": [
+      "Warm off-white ground (#F7F6F2), pure-white surfaces, ink-black text.",
+      "One saturated accent (teal) used for state and selection, never decoration.",
+      "A three-value grey ramp carries all secondary information.",
+      "Monospace is reserved exclusively for numbers.",
+      "Flat at rest; depth is a hairline border, not a shadow.",
+      "Density is the default; the layout tightens for print."
+    ],
+    "rules": [
+      {
+        "name": "The One Voice Rule",
+        "body": "The accent appears on 10% or less of any screen. Its rarity is what makes satisfied, locked, and selected readable at a glance.",
+        "section": "colors"
+      },
+      {
+        "name": "The Semantic Pair Rule",
+        "body": "A semantic hue is only ever used as a solid on its own wash, or as text on a neutral surface.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numbers Are Mono Rule",
+        "body": "Any value a user might compare down a column is DM Mono. Any word is DM Sans. There are no exceptions.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tight Ramp Rule",
+        "body": "Working UI lives in a 10-16px band, in half-pixel steps. Three sizes sit above it and are each single-purpose: 20px section headings, 28-32px welcome headings, and the 56px balance figure. A fourth large size would flatten that hierarchy.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "A surface is flat unless it floats. Cards, columns and panels never take a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Locked-Shadow Rule",
+        "body": "State markers are inset shadows so the element box does not change size.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the accent scarce; teal marks state, selection, and the one most important number.",
+      "Do set every number in DM Mono and every word in DM Sans.",
+      "Do use the surface ramp for depth and reserve shadows for floating layers.",
+      "Do express state markers as inset shadows.",
+      "Do keep ink-faint at or above 4.5:1 against surface-sunk at 10-12px.",
+      "Do give every icon-only control an aria-label and a title.",
+      "Do announce async status in the live region.",
+      "Do preserve the print report's forced light palette."
+    ],
+    "donts": [
+      "Don't add a shadow to a static card, panel, or class column.",
+      "Don't add a working-UI type size outside the 10-16px band, or a heading size beyond the three sanctioned ones.",
+      "Don't use pill radius for actions; pills are for steps and counts.",
+      "Don't render a dialog inside the aria-hidden app root.",
+      "Don't animate width, height, top, or left; transform and opacity only.",
+      "Don't use a semantic hue as a solid behind white text at small sizes.",
+      "Don't add a hex value or an icon library.",
+      "Don't define a design token name and reference a different one."
+    ]
+  }
+}

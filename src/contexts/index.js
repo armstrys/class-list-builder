@@ -262,20 +262,20 @@
       numClasses => {
         if (numClasses <= 0) return;
 
-        // Check if any assignments would become invalid
+        // Only clear what the new class count actually invalidates. This used
+        // to wipe every assignment whenever any existed, so editing the class
+        // count field (which fires per keystroke) destroyed the board.
         const hasInvalidAssignments = Object.values(assignment).some(
           classIdx => classIdx < 0 || classIdx >= numClasses
         );
+        if (!hasInvalidAssignments) return;
 
-        // If we have invalid assignments or if any assignments exist,
-        // clear them so the optimizer starts fresh
-        if (hasInvalidAssignments || Object.keys(assignment).length > 0) {
-          setAssignment({});
-          // Also clear locked status since assignments are being reset
-          setLocked(new Set());
-        }
+        // Snapshot first so the reset is undoable.
+        pushSnapshot();
+        setAssignment({});
+        setLocked(new Set());
       },
-      [assignment, setAssignment, setLocked]
+      [assignment, setAssignment, setLocked, pushSnapshot]
     );
 
     const value = {

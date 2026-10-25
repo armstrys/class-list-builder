@@ -109,8 +109,9 @@ function SetupPage({ onOptimize }) {
           <div className="card" style={{ alignSelf: 'start' }}>
             <div className="panel-title">Teachers / Classes</div>
             <div className="form-group" style={{ marginBottom: 16 }}>
-              <label className="form-label">Number of classes</label>
+              <label className="form-label" htmlFor="num-classes">Number of classes</label>
               <input
+                id="num-classes"
                 className="form-input"
                 type="number"
                 min="2"
@@ -128,6 +129,7 @@ function SetupPage({ onOptimize }) {
                     style={{ flex: 1 }}
                     value={t.name}
                     placeholder={getDefaultClassName(i)}
+                    aria-label={`Class ${i + 1} name`}
                     onChange={e =>
                       setTeachers(prev =>
                         prev.map((x, j) => (j === i ? { ...x, name: e.target.value } : x))
@@ -146,7 +148,7 @@ function SetupPage({ onOptimize }) {
                 Students
               </div>
               <span className="tag">{students.length}</span>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <div className="students-header-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
                   ⬆ Import Students
                 </button>
@@ -191,6 +193,7 @@ function SetupPage({ onOptimize }) {
                     type="text"
                     className="form-input"
                     placeholder="Filter by ID..."
+                    aria-label="Filter students by ID"
                     value={idFilter}
                     onChange={e => setIdFilter(e.target.value)}
                     style={{ flex: 1, maxWidth: 200 }}
@@ -199,6 +202,7 @@ function SetupPage({ onOptimize }) {
                     type="text"
                     className="form-input"
                     placeholder="Filter by name..."
+                    aria-label="Filter students by name"
                     value={nameFilter}
                     onChange={e => setNameFilter(e.target.value)}
                     style={{ flex: 2 }}
