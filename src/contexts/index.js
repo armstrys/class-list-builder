@@ -343,11 +343,17 @@
     try {
       const savedNumeric = localStorage.getItem(STORAGE_KEY_NUMERIC);
       const savedFlag = localStorage.getItem(STORAGE_KEY_FLAG);
+      const savedCategory = localStorage.getItem(STORAGE_KEY_CATEGORY);
       const numeric = savedNumeric ? JSON.parse(savedNumeric) : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c }));
       const flag = savedFlag ? JSON.parse(savedFlag) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c }));
+      const category = savedCategory ? JSON.parse(savedCategory) : DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c }));
+      // Every key must be present on the success path too. Omitting one here
+      // leaves criteria.category undefined, and consumers that call
+      // .some()/.map() on it crash the whole tree.
       return {
         numeric: validateCriteriaArray(numeric, 'numeric') ? numeric : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
         flag: validateCriteriaArray(flag, 'flag') ? flag : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
+        category: validateCriteriaArray(category, 'category') ? category : DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })),
       };
     } catch (e) {
       return {

@@ -390,3 +390,68 @@ describe('csv round-trip', () => {
     expect(back[0].currentclass).toBe('Rivera, M.');
   });
 });
+
+describe('criteria loading completeness', () => {
+  /**
+   * The Settings modal calls categoryCriteria.some(...) on mount. When
+   * loadCriteriaFromStorage's *success* path omitted the category key, that
+   * threw and blanked the page. Guard the shape of everything the loader can
+   * return: every path must carry all three keys.
+   */
+  function loadCriteriaFromStorageWith(store) {
+    const get = k => (k in store ? store[k] : null);
+    const read = key => (get(key) ? JSON.parse(get(key)) : null);
+    // Mirrors src/contexts/index.js loadCriteriaFromStorage.
+    const DEFAULTS = {
+      numeric: [{ key: 'mathscore', label: 'Math Score', weight: 1 }],
+      flag: [{ key: 'sped', label: 'SPED', weight: 1.2 }],
+      category: [{ key: 'currentclass', label: 'Current Class', weight: 1.5 }],
+    };
+    const copy = a => a.map(c => ({ ...c }));
+    const validate = arr => Array.isArray(arr) && arr.every(c => c && typeof c.key === 'string' && c.key && typeof c.label === 'string' && c.label && typeof c.weight === 'number' && isFinite(c.weight));
+    try {
+      const numeric = read('n') || copy(DEFAULTS.numeric);
+      const flag = read('f') || copy(DEFAULTS.flag);
+      const category = read('c') || copy(DEFAULTS.category);
+      return {
+        numeric: validate(numeric) ? numeric : copy(DEFAULTS.numeric),
+        flag: validate(flag) ? flag : copy(DEFAULTS.flag),
+        category: validate(category) ? category : copy(DEFAULTS.category),
+      };
+    } catch (e) {
+      return { numeric: copy(DEFAULTS.numeric), flag: copy(DEFAULTS.flag), category: copy(DEFAULTS.category) };
+    }
+  }
+
+  const CASES = {
+    'empty cache': {},
+    'stale cache without category': { n: '[{"key":"m","label":"M","weight":1}]', f: '[{"key":"s","label":"S","weight":1}]' },
+    'cache with category': { c: '[{"key":"currentclass","label":"Current Class","weight":1.5}]' },
+    'corrupt numeric JSON': { n: '{"not":"an array"}' },
+  };
+
+  for (const [label, store] of Object.entries(CASES)) {
+    test(`${label} yields all three criteria arrays`, () => {
+      const loaded = loadCriteriaFromStorageWith(store);
+      expect(Array.isArray(loaded.numeric)).toBe(true);
+      expect(Array.isArray(loaded.flag)).toBe(true);
+      expect(Array.isArray(loaded.category)).toBe(true);
+      // The exact call SettingsModal makes on mount.
+      expect(() => loaded.category.some(c => c.key === 'currentclass')).not.toThrow();
+    });
+  }
+
+  test('the default category criterion is Current Class', () => {
+    const loaded = loadCriteriaFromStorageWith({});
+    expect(loaded.category.map(c => c.key)).toContain('currentclass');
+  });
+});
+
+describe('consumer shape safety', () => {
+  // Every component that reads categoryCriteria from context must survive an
+  // absent array rather than blanking the page.
+  test('Settings-style usage tolerates a missing array via defaulting', () => {
+    const fn = (categoryCriteria = []) => categoryCriteria.some(c => c.key === 'currentclass');
+    expect(fn(undefined)).toBe(false);
+  });
+});

@@ -65,7 +65,8 @@ function SettingsModal({
   const [activeTab, setActiveTab] = useState('numeric');
   const [numCriteria, setNumCriteria] = useState(numericCriteria);
   const [flagCriteriaState, setFlagCriteriaState] = useState(flagCriteria);
-  const [catCriteria, setCatCriteria] = useState(categoryCriteria);
+  // Default to [] so a missing array can never blank the modal.
+  const [catCriteria, setCatCriteria] = useState(categoryCriteria || []);
   const [error, setError] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
