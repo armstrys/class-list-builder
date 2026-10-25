@@ -337,6 +337,7 @@
   const CriteriaContext = React.createContext(null);
   const STORAGE_KEY_NUMERIC = 'classOptimizer_numericCriteria_v2';
   const STORAGE_KEY_FLAG = 'classOptimizer_flagCriteria_v2';
+  const STORAGE_KEY_CATEGORY = STORAGE_KEYS.CATEGORY_CRITERIA;
 
   function loadCriteriaFromStorage() {
     try {
@@ -352,6 +353,7 @@
       return {
         numeric: DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
         flag: DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
+        category: DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })),
       };
     }
   }
@@ -381,6 +383,7 @@
       try {
         localStorage.setItem(STORAGE_KEY_NUMERIC, JSON.stringify(criteria.numeric));
         localStorage.setItem(STORAGE_KEY_FLAG, JSON.stringify(criteria.flag));
+        localStorage.setItem(STORAGE_KEY_CATEGORY, JSON.stringify(criteria.category));
       } catch (e) {
         console.error('Failed to save criteria:', e);
       }
@@ -430,10 +433,33 @@
       setCriteria(prev => ({ ...prev, flag: prev.flag.filter((_, i) => i !== index) }));
     }, []);
 
+    const setCategoryCriteria = useCallback(newCriteria => {
+      setCriteria(prev => ({ ...prev, category: newCriteria }));
+    }, []);
+
+    const updateCategoryCriterion = useCallback((index, field, value) => {
+      setCriteria(prev => ({
+        ...prev,
+        category: prev.category.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
+      }));
+    }, []);
+
+    const addCategoryCriterion = useCallback(
+      (criterion = { key: '', label: '', weight: 1.5 }) => {
+        setCriteria(prev => ({ ...prev, category: [...prev.category, criterion] }));
+      },
+      []
+    );
+
+    const removeCategoryCriterion = useCallback(index => {
+      setCriteria(prev => ({ ...prev, category: prev.category.filter((_, i) => i !== index) }));
+    }, []);
+
     const resetToDefaults = useCallback(() => {
       setCriteria({
         numeric: DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
         flag: DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
+        category: DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })),
       });
     }, []);
 
@@ -441,14 +467,24 @@
       setCriteria({
         numeric: newCriteria.numeric.map(c => ({ ...c })),
         flag: newCriteria.flag.map(c => ({ ...c })),
+        // Older configs and project files have no category section; fall back to
+        // defaults rather than dropping the array entirely.
+        category: Array.isArray(newCriteria.category)
+          ? newCriteria.category.map(c => ({ ...c }))
+          : DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })),
       });
     }, []);
 
     const value = {
       numericCriteria: criteria.numeric,
       flagCriteria: criteria.flag,
+      categoryCriteria: criteria.category,
       setNumericCriteria,
       setFlagCriteria,
+      setCategoryCriteria,
+      updateCategoryCriterion,
+      addCategoryCriterion,
+      removeCategoryCriterion,
       updateNumericCriterion,
       updateFlagCriterion,
       addNumericCriterion,

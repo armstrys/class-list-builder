@@ -47,8 +47,14 @@ function AppContent() {
     setAssignment,
     setLocked,
   } = useStudentsExport();
-  const { numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria } =
-    useCriteriaExport();
+  const {
+    numericCriteria,
+    flagCriteria,
+    categoryCriteria,
+    setNumericCriteria,
+    setFlagCriteria,
+    setCategoryCriteria,
+  } = useCriteriaExport();
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -90,6 +96,7 @@ function AppContent() {
       if (data.teachers) setTeachers(data.teachers);
       if (data.numericCriteria) setNumericCriteria(data.numericCriteria);
       if (data.flagCriteria) setFlagCriteria(data.flagCriteria);
+      if (data.categoryCriteria) setCategoryCriteria(data.categoryCriteria);
       // replaceAllStudents reset constraints/assignment/locked to empty;
       // restore them from the project payload if present.
       if (data.keepApart?.length > 0) setKeepApart(data.keepApart);
@@ -125,21 +132,25 @@ function AppContent() {
 
   // Handle settings save
   const handleSaveSettings = useCallback(
-    (newNumCriteria, newFlagCriteria) => {
+    (newNumCriteria, newFlagCriteria, newCategoryCriteria) => {
       const oldNumKeys = new Set(numericCriteria.map(c => c.key));
       const newNumKeys = new Set(newNumCriteria.map(c => c.key));
       const oldFlagKeys = new Set(flagCriteria.map(c => c.key));
       const newFlagKeys = new Set(newFlagCriteria.map(c => c.key));
+      const oldCatKeys = new Set(categoryCriteria.map(c => c.key));
+      const newCatKeys = new Set((newCategoryCriteria || []).map(c => c.key));
 
       const removedNum = [...oldNumKeys].filter(k => !newNumKeys.has(k));
       const removedFlag = [...oldFlagKeys].filter(k => !newFlagKeys.has(k));
+      const removedCat = [...oldCatKeys].filter(k => !newCatKeys.has(k));
 
-      if (removedNum.length > 0 || removedFlag.length > 0) {
+      if (removedNum.length > 0 || removedFlag.length > 0 || removedCat.length > 0) {
         setStudents(prev =>
           prev.map(s => {
             const updated = { ...s };
             removedNum.forEach(k => delete updated[k]);
             removedFlag.forEach(k => delete updated[k]);
+            removedCat.forEach(k => delete updated[k]);
             return updated;
           })
         );
@@ -147,8 +158,9 @@ function AppContent() {
 
       setNumericCriteria(newNumCriteria);
       setFlagCriteria(newFlagCriteria);
+      if (newCategoryCriteria) setCategoryCriteria(newCategoryCriteria);
     },
-    [numericCriteria, flagCriteria, setNumericCriteria, setFlagCriteria, setStudents]
+    [numericCriteria, flagCriteria, categoryCriteria, setNumericCriteria, setFlagCriteria, setCategoryCriteria, setStudents]
   );
 
   // Export students helper
@@ -156,7 +168,8 @@ function AppContent() {
     const csv = exportStudentsToCSV(
       students,
       numericCriteria,
-      flagCriteria
+      flagCriteria,
+      categoryCriteria
     );
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -167,7 +180,7 @@ function AppContent() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [students, numericCriteria, flagCriteria]);
+  }, [students, numericCriteria, flagCriteria, categoryCriteria]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>

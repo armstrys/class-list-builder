@@ -22,7 +22,7 @@ function SetupPage({ onOptimize }) {
     setKeepTogether,
     setKeepOutOfClass,
   } = useStudentsExport();
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   const { openSettings, teachers, setTeachers } = useAppStateExport();
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -312,6 +312,7 @@ function SetupPage({ onOptimize }) {
           onClose={() => setShowForm(false)}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          categoryCriteria={categoryCriteria}
         />
       )}
       {editingStudent && (
@@ -321,6 +322,7 @@ function SetupPage({ onOptimize }) {
           onClose={() => setEditingStudent(null)}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          categoryCriteria={categoryCriteria}
         />
       )}
       {showSampleDialog && (
@@ -371,7 +373,7 @@ function ConstraintButton({ onClick }) {
  */
 function ImportModalWrapper({ onClose, onClearAll }) {
   const { students, setStudents } = useStudentsExport();
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
 
   const handleImport = useCallback(
     ss => {
@@ -386,6 +388,7 @@ function ImportModalWrapper({ onClose, onClearAll }) {
       onClose={onClose}
       numericCriteria={numericCriteria}
       flagCriteria={flagCriteria}
+      categoryCriteria={categoryCriteria}
       students={students}
       onClearAll={onClearAll}
     />

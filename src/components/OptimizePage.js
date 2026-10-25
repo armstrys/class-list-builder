@@ -36,7 +36,7 @@ function OptimizePage({ onBack }) {
     canRedo,
   } = useStudentsExport();
 
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   const { teachers, setTeachers } = useAppStateExport();
   const [draggingId, setDraggingId] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -85,11 +85,11 @@ function OptimizePage({ onBack }) {
       // Multi-start: the balance assessment scores against a best-of-N
       // baseline, so a single trajectory would leave points on the table
       // even with no constraints. Restarts are cheap (~20ms each).
-      const result = optimizeMultiStart(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass);
+      const result = optimizeMultiStart(students, numClasses, lockedObj, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, undefined, categoryCriteria);
       setAssignment(result);
       setOptimizing(false);
     }, 30);
-  }, [students, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, setAssignment]);
+  }, [students, numClasses, numericCriteria, flagCriteria, categoryCriteria, keepApart, keepTogether, keepOutOfClass, setAssignment]);
 
   useEffect(() => {
     // Only run initial optimization if we don't have an assignment yet
@@ -116,6 +116,7 @@ function OptimizePage({ onBack }) {
           numClasses,
           numericCriteria,
           flagCriteria,
+          categoryCriteria,
           keepApart,
           keepTogether,
           keepOutOfClass,
@@ -137,7 +138,7 @@ function OptimizePage({ onBack }) {
     return () => {
       cancelled = true;
     };
-  }, [students, assignment, numClasses, numericCriteria, flagCriteria]);
+  }, [students, assignment, numClasses, numericCriteria, flagCriteria, categoryCriteria]);
 
   const handleReoptimize = useCallback(() => {
     const lockedObj = new Map();
@@ -357,7 +358,7 @@ function OptimizePage({ onBack }) {
           </button>
           <button
             className="btn btn-secondary btn-sm"
-            onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria), 'class-lists.csv', 'text/csv')}
+            onClick={() => triggerDownload(exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria, categoryCriteria), 'class-lists.csv', 'text/csv')}
             title="Save class lists as CSV"
           >
             ⬇ Save Lists

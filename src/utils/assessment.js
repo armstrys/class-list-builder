@@ -90,7 +90,7 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
  * @param {number} [restarts=OPTIMIZE_RESTARTS] - Number of independent SA runs; lowest cost wins
  * @returns {number} Lowest cost across all restarts
  */
-function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria, restarts = RESTARTS_REF) {
+function computeBaselineBalanced(students, numClasses, numericCriteria, flagCriteria, restarts = RESTARTS_REF, categoryCriteria = []) {
   if (!students.length || !numClasses) return 0;
 
   // Fail closed. An unresolvable restart count (OPTIMIZE_RESTARTS not visible
@@ -119,9 +119,10 @@ function computeBaselineBalanced(students, numClasses, numericCriteria, flagCrit
       [], // keepApart
       [], // keepTogether
       [], // keepOutOfClass
-      salt
+      salt,
+      categoryCriteria
     );
-    const cost = computeCostRef(students, assignment, numClasses, numericCriteria, flagCriteria, [], [], []);
+    const cost = computeCostRef(students, assignment, numClasses, numericCriteria, flagCriteria, [], [], [], categoryCriteria);
     if (cost < bestCost) bestCost = cost;
   }
 
@@ -140,7 +141,7 @@ function computeBaselineBalanced(students, numClasses, numericCriteria, flagCrit
  * @param {number} numTrials - Number of random trials
  * @returns {number} Mean cost across all random assignments
  */
-function computeBaselineRandom(students, numClasses, numericCriteria, flagCriteria, numTrials) {
+function computeBaselineRandom(students, numClasses, numericCriteria, flagCriteria, numTrials, categoryCriteria = []) {
   if (!students.length || !numClasses) return 0;
 
   let totalCost = 0;
@@ -158,7 +159,7 @@ function computeBaselineRandom(students, numClasses, numericCriteria, flagCriter
       numClasses,
       numericCriteria,
       flagCriteria,
-      [], [], []
+      [], [], [], categoryCriteria
     );
   }
 
@@ -177,7 +178,7 @@ function computeBaselineRandom(students, numClasses, numericCriteria, flagCriter
  * @param {Function} onProgress - Optional callback(completed, total)
  * @returns {Promise<number>} Mean cost across all random assignments
  */
-async function computeBaselineRandomAsync(students, numClasses, numericCriteria, flagCriteria, numTrials, onProgress) {
+async function computeBaselineRandomAsync(students, numClasses, numericCriteria, flagCriteria, numTrials, onProgress, categoryCriteria = []) {
   if (!students.length || !numClasses) return 0;
 
   const BATCH_SIZE = 50; // Process 50 trials before yielding
@@ -199,7 +200,7 @@ async function computeBaselineRandomAsync(students, numClasses, numericCriteria,
         numClasses,
         numericCriteria,
         flagCriteria,
-        [], [], []
+        [], [], [], categoryCriteria
       );
     }
 
@@ -240,6 +241,7 @@ async function runFullAssessment({
   keepApart = [],
   keepTogether = [],
   keepOutOfClass = [],
+  categoryCriteria = [],
   onProgress,
 }) {
   if (!students.length || !numClasses) {
@@ -267,7 +269,8 @@ async function runFullAssessment({
     flagCriteria,
     keepApart,
     keepTogether,
-    keepOutOfClass
+    keepOutOfClass,
+    categoryCriteria
   );
 
   // Step 2: Compute class stats
@@ -282,11 +285,16 @@ async function runFullAssessment({
 
   // Step 3: Compute balanced baseline (unconstrained optimal)
   reportProgress(20, 'Computing balanced baseline...');
+  // The baseline must score with the same criteria set as the current
+  // assignment; otherwise a category term inflates currentCost while the
+  // ceiling ignores it, and an optimal result stops scoring 100.
   const balancedCost = computeBaselineBalanced(
     students,
     numClasses,
     numericCriteria,
-    flagCriteria
+    flagCriteria,
+    undefined,
+    categoryCriteria
   );
 
   // Step 4: Compute random baseline (async, batched)
@@ -303,7 +311,8 @@ async function runFullAssessment({
     (completed, total) => {
       const pct = 40 + Math.floor((completed / total) * 50);
       reportProgress(pct, `Computing random baseline... ${completed}/${total}`);
-    }
+    },
+    categoryCriteria
   );
 
   reportProgress(100, 'Assessment complete');

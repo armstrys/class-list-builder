@@ -74,6 +74,11 @@ function HelpModal({ onClose }) {
         <p>
           <strong>How it works:</strong> Scores use class averages (e.g., each class has a similar average reading score). Flags use percentages (e.g., if 20% of students have a behavior flag, each class gets close to 20%). Total flags and scores act as safety nets to catch overall imbalances.
         </p>
+        <p>
+          <strong>Category fields</strong> work like flags, but for values that are labels instead of yes/no — above all <strong>Current Class</strong>, the teacher or room each
+          student was in last year. Every distinct value is spread evenly across the new classes, so last year's groupings are not recreated. A blank cell is ignored. Category
+          fields do nothing until your roster has a matching column, so leaving <strong>Current Class</strong> switched on is free.
+        </p>
       </div>
 
       <div className="help-section">

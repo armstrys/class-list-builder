@@ -7,7 +7,7 @@
 function PrintReportView() {
   const { students, assignment, locked, keepApart, keepTogether, keepOutOfClass, assessment } =
     useStudentsExport();
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   const { teachers } = useAppStateExport();
 
   const reportData = useMemo(
@@ -21,7 +21,8 @@ function PrintReportView() {
         keepOutOfClass,
         teachers,
         numericCriteria,
-        flagCriteria
+        flagCriteria,
+        categoryCriteria
       ),
     [
       students,
@@ -33,6 +34,7 @@ function PrintReportView() {
       teachers,
       numericCriteria,
       flagCriteria,
+      categoryCriteria,
     ]
   );
 

@@ -38,6 +38,7 @@
     "STORAGE_KEYS": "readonly",
     "DEFAULT_NUMERIC_CRITERIA": "readonly",
     "DEFAULT_FLAG_CRITERIA": "readonly",
+    "DEFAULT_CATEGORY_CRITERIA": "readonly",
     "APP_VERSION": "readonly",
     "uid": "readonly",
     "generateColor": "readonly",

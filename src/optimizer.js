@@ -16,6 +16,16 @@
  * @returns {number} The total cost (lower is better)
  */
 
+// Coerce a categorical cell to a comparable value, or null when unspecified.
+// Blank / null cells are "no value" rather than a bucket: a student with no
+// previous class must not be treated as a category of their own, or the
+// optimizer would spread the unknowns as if they were a group.
+function normalizeCategoryValue(v) {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s === '' ? null : s;
+}
+
 // Penalty weights reference - points to global PENALTY_WEIGHTS or uses inline defaults
 // Check for global first (set by defaults.js), fall back to inline defaults
 const PW = (typeof PENALTY_WEIGHTS !== 'undefined') ? PENALTY_WEIGHTS : {
@@ -26,9 +36,11 @@ const PW = (typeof PENALTY_WEIGHTS !== 'undefined') ? PENALTY_WEIGHTS : {
   TOTAL_SCORE: 1.5,
   CLASS_SIZE: 3.0,
   GENDER: 1.0,
+  // Category criteria carry their own per-criterion weight, like flags, so no
+  // default entry is needed here. The interface exists for parity.
 };
 
-function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = []) {
+function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], categoryCriteria = []) {
   if (!students.length || !numClasses) return 0;
   const classes = Array.from({ length: numClasses }, () => []);
   students.forEach(s => {
@@ -59,6 +71,41 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     );
     const variance = props.reduce((s, p) => s + (p - overall) ** 2, 0) / numClasses;
     cost += weight * variance;
+  });
+
+  // Categorical metrics: for each distinct value v of the criterion, variance of
+  // the proportion of v across classes, averaged over the values present.
+  //
+  // A boolean flag is the |V| = 2 case of exactly this formula (one value's
+  // proportion is 1 minus the other's), which is why the loop below is shaped
+  // the same as the flag loop above rather than getting its own machinery.
+  // Dividing by the value count keeps magnitudes comparable with a flag: a
+  // two-valued category contributes the same cost a flag does.
+  categoryCriteria.forEach(({ key, weight }) => {
+    const counts = new Map();
+    students.forEach(s => {
+      const v = normalizeCategoryValue(s[key]);
+      if (v === null) return;
+      counts.set(v, (counts.get(v) || 0) + 1);
+    });
+    const valueCount = counts.size;
+    // A single value cannot be "spread": its population proportion is 1.0, so
+    // every class holding it is already representative. This matches flag
+    // semantics (a flag that is true for everyone is inert). A *subset* group
+    // such as 8 of 96 students is a flag's job, not a category's.
+    if (valueCount < 2) return;
+    let valueCost = 0;
+    for (const [value, overallCount] of counts) {
+      const overall = overallCount / students.length;
+      const props = classes.map(cls => {
+        if (!cls.length) return overall;
+        let n = 0;
+        for (const s of cls) if (normalizeCategoryValue(s[key]) === value) n++;
+        return n / cls.length;
+      });
+      valueCost += props.reduce((s, p) => s + (p - overall) ** 2, 0) / numClasses;
+    }
+    cost += weight * valueCost / valueCount;
   });
 
   // Gender balance: variance of female proportion
@@ -176,7 +223,7 @@ function createSeededRNG(seed) {
 // hash. Gated on `seedSalt !== 0` so the default behaves byte-identically to
 // the pre-salt implementation — existing seeds, saved projects, and test
 // snapshots are unaffected.
-function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], seedSalt = 0) {
+function computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], seedSalt = 0, categoryCriteria = []) {
   let hash = 2166136261;
   const fnv = (h, v) => Math.imul(h ^ v, 16777619);
 
@@ -193,6 +240,19 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
     flagCriteria.forEach(({ key, weight }) => {
       hash = fnv(hash, s[key] ? 1 : 0);
       hash = fnv(hash, Math.floor((weight || 1) * 1000)); // Include weight in seed
+    });
+    // Category values must enter the seed too, or two rosters that differ only
+    // in prior-class data would produce the same trajectory and reproducibility
+    // would be a lie. Weight is included for the same reason as above.
+    categoryCriteria.forEach(({ key, weight }) => {
+      const v = normalizeCategoryValue(s[key]);
+      if (v === null) {
+        hash = fnv(hash, 0);
+      } else {
+        hash = fnv(hash, 1);
+        for (let i = 0; i < v.length; i++) hash = fnv(hash, v.charCodeAt(i));
+      }
+      hash = fnv(hash, Math.floor((weight || 1) * 1000));
     });
   }
 
@@ -234,6 +294,13 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
     hash = fnv(hash, constraint.classIndex);
   }
 
+  // Hash the category criteria *definitions* as well as their values, so that
+  // adding a category criterion alone changes the trajectory.
+  categoryCriteria.forEach(({ key, weight }) => {
+    hash = fnv(hash, key.split('').reduce((h, c) => fnv(h, c.charCodeAt(0)), hash));
+    hash = fnv(hash, Math.floor((weight || 1) * 1000));
+  });
+
   // Only mix the salt when non-zero so that callers using the default get
   // the exact same hash as before this parameter existed.
   if (seedSalt !== 0) {
@@ -263,11 +330,11 @@ function computeSeed(students, numClasses, lockedAssignments, numericCriteria, f
  * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Blocked class assignments
  * @returns {Object<string, number>} Final assignment (studentId -> classIndex)
  */
-function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], seedSalt = 0) {
+function optimize(students, numClasses, lockedAssignments = {}, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], seedSalt = 0, categoryCriteria = []) {
   if (!students.length || !numClasses) return {};
   const unlocked = students.filter(s => lockedAssignments[s.id] === undefined);
 
-  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, seedSalt);
+  const seed = computeSeed(students, numClasses, lockedAssignments, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, seedSalt, categoryCriteria);
   const rand = createSeededRNG(seed);
 
   // ── Build keep-together group membership map ────────────────
@@ -423,6 +490,33 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     key,
     overallProp: students.filter(s => s[key]).length / students.length,
   }));
+
+  // ── Category criteria setup ─────────────────────────────────────
+  // Each criterion gets a sorted value list and a per-student value index
+  // (valueIdx[criterion][studentIndex] = index into its value list, or -1 for
+  // unspecified). Running sums are Int32Array[valueCount] per class, mutated
+  // by +/-1 on a swap, so the delta stays O(values) rather than O(students).
+  const studentIndex = new Map();
+  students.forEach((s, i) => studentIndex.set(s.id, i));
+
+  const catDefs = categoryCriteria.map(({ key, weight }) => {
+    const seen = new Set();
+    students.forEach(s => {
+      const v = normalizeCategoryValue(s[key]);
+      if (v !== null) seen.add(v);
+    });
+    const values = [...seen].sort();
+    const valueIndex = new Map(values.map((v, i) => [v, i]));
+    const valIdx = new Int32Array(students.length);
+    const overallCounts = new Int32Array(values.length);
+    students.forEach((s, i) => {
+      const v = normalizeCategoryValue(s[key]);
+      const vi = v === null ? -1 : valueIndex.get(v);
+      valIdx[i] = vi;
+      if (vi >= 0) overallCounts[vi]++;
+    });
+    return { key, weight, values, valIdx, overallCounts, valueCount: values.length };
+  });
   const overallF = students.filter(s => s.gender === 'F').length / students.length;
   const meanSize = students.length / numClasses;
 
@@ -441,6 +535,9 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   const classFemale = new Int32Array(numClasses);
   const classTotalFlags = new Float64Array(numClasses);
   const classTotalScore = new Float64Array(numClasses);
+  const classCatCounts = catDefs.map(d =>
+    Array.from({ length: numClasses }, () => new Int32Array(d.valueCount))
+  );
 
   for (const s of students) {
     const c = assignment[s.id];
@@ -449,6 +546,11 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     popNumeric.forEach(({ key }, ki) => { classNumSums[c][ki] += s[key] || 0; });
     popFlag.forEach(({ key }, ki) => { if (s[key]) classFlagCounts[c][ki]++; });
     if (s.gender === 'F') classFemale[c]++;
+    const si = studentIndex.get(s.id);
+    catDefs.forEach((d, di) => {
+      const vi = d.valIdx[si];
+      if (vi >= 0) classCatCounts[di][c][vi]++;
+    });
     classTotalFlags[c] += studentTotalFlags.get(s.id);
     classTotalScore[c] += studentTotalScore.get(s.id);
   }
@@ -510,6 +612,22 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       }
       cost += weight * variance / numClasses;
     });
+    // Category criteria: per value, variance of its proportion across classes.
+    catDefs.forEach((d, di) => {
+      if (d.valueCount < 2) return;
+      let valueCost = 0;
+      for (let vi = 0; vi < d.valueCount; vi++) {
+        const overall = d.overallCounts[vi] / students.length;
+        let v = 0;
+        for (let c = 0; c < numClasses; c++) {
+          const p = classSizes[c] > 0 ? classCatCounts[di][c][vi] / classSizes[c] : overall;
+          v += (p - overall) ** 2;
+        }
+        valueCost += v / numClasses;
+      }
+      cost += d.weight * valueCost / d.valueCount;
+    });
+
     let gVar = 0;
     for (let c = 0; c < numClasses; c++) {
       const fp = classSizes[c] > 0 ? classFemale[c] / classSizes[c] : overallF;
@@ -606,6 +724,32 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       (newTS1 - overallMeanTotalScore) ** 2 + (newTS2 - overallMeanTotalScore) ** 2 -
       (oldTS1 - overallMeanTotalScore) ** 2 - (oldTS2 - overallMeanTotalScore) ** 2
     );
+    // Category delta: only the two affected classes and the values s1/s2 carry
+    // can change, so this is O(values), independent of student count.
+    catDefs.forEach((d, di) => {
+      if (d.valueCount < 2) return;
+      const vi1 = d.valIdx[studentIndex.get(s1.id)];
+      const vi2 = d.valIdx[studentIndex.get(s2.id)];
+      // Same value (or both unspecified) -> the distribution is unchanged.
+      if (vi1 === vi2) return;
+      let valueCost = 0;
+      const touched = vi1 >= 0 && vi2 >= 0 ? [vi1, vi2] : [vi1 >= 0 ? vi1 : vi2];
+      for (const vi of touched) {
+        const overall = d.overallCounts[vi] / students.length;
+        const n1 = classCatCounts[di][c1][vi];
+        const n2 = classCatCounts[di][c2][vi];
+        const d1 = (vi === vi1 ? -1 : 0) + (vi === vi2 ? +1 : 0);
+        const d2 = (vi === vi2 ? -1 : 0) + (vi === vi1 ? +1 : 0);
+        const old1 = sz1 > 0 ? n1 / sz1 : overall;
+        const old2 = sz2 > 0 ? n2 / sz2 : overall;
+        const new1 = (n1 + d1) / sz1;
+        const new2 = (n2 + d2) / sz2;
+        valueCost += ((new1 - overall) ** 2 + (new2 - overall) ** 2
+                    - (old1 - overall) ** 2 - (old2 - overall) ** 2) / numClasses;
+      }
+      delta += d.weight * valueCost / d.valueCount;
+    });
+
     // Keep Apart delta: only changes if s1 or s2 is part of a constrained pair
     // Calculate change in penalty count after swap
     let keepApartDelta = 0;
@@ -696,6 +840,13 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
     const ts2 = studentTotalScore.get(s2.id);
     classTotalScore[c1] += ts2 - ts1;
     classTotalScore[c2] += ts1 - ts2;
+    const si1 = studentIndex.get(s1.id), si2 = studentIndex.get(s2.id);
+    catDefs.forEach((d, di) => {
+      const vi1 = d.valIdx[si1], vi2 = d.valIdx[si2];
+      if (vi1 === vi2) return;
+      if (vi1 >= 0) { classCatCounts[di][c1][vi1]--; classCatCounts[di][c2][vi1]++; }
+      if (vi2 >= 0) { classCatCounts[di][c2][vi2]--; classCatCounts[di][c1][vi2]++; }
+    });
     assignment[s1.id] = c2;
     assignment[s2.id] = c1;
   }
@@ -802,7 +953,8 @@ function optimizeMultiStart(
   keepApart = [],
   keepTogether = [],
   keepOutOfClass = [],
-  restarts = OPTIMIZE_RESTARTS
+  restarts = OPTIMIZE_RESTARTS,
+  categoryCriteria = []
 ) {
   if (!students.length || !numClasses) return {};
 
@@ -820,7 +972,8 @@ function optimizeMultiStart(
       keepApart,
       keepTogether,
       keepOutOfClass,
-      salt
+      salt,
+      categoryCriteria
     );
     const cost = computeCost(
       students,
@@ -830,7 +983,8 @@ function optimizeMultiStart(
       flagCriteria,
       keepApart,
       keepTogether,
-      keepOutOfClass
+      keepOutOfClass,
+      categoryCriteria
     );
     if (cost < bestCost) {
       bestCost = cost;

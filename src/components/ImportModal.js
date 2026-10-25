@@ -45,7 +45,7 @@ async function xlsxBufferToCsv(buffer) {
   return lines.join('\n');
 }
 
-function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, students, onClearAll }) {
+function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, categoryCriteria = [], students, onClearAll }) {
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
@@ -56,9 +56,11 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
   const [showPaste, setShowPaste] = useState(false);
   const fileInputRef = useRef(null);
 
-  const csvTemplate = 'id,' + generateCSVHeaders(numericCriteria, flagCriteria).join(',') + '\n' +
-    'stu001,Emma Smith,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') + '\n' +
-    'stu002,Liam Johnson,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',');
+  const csvTemplate = 'id,' + generateCSVHeaders(numericCriteria, flagCriteria, categoryCriteria).join(',') + '\n' +
+    'stu001,Emma Smith,F,' + numericCriteria.map(() => '75').join(',') + ',' + flagCriteria.map(() => '0').join(',') +
+    (categoryCriteria.length ? ',' + categoryCriteria.map(() => 'Ms. Rivera').join(',') : '') + '\n' +
+    'stu002,Liam Johnson,M,' + numericCriteria.map(() => '82').join(',') + ',' + flagCriteria.map(() => '1').join(',') +
+    (categoryCriteria.length ? ',' + categoryCriteria.map(() => 'Mr. Okafor').join(',') : '');
 
   function processFile(file) {
     if (!file) return;
@@ -162,7 +164,7 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
       return;
     }
     
-    const { students: importedStudents, errors } = parseCSV(text, numericCriteria, flagCriteria);
+    const { students: importedStudents, errors } = parseCSV(text, numericCriteria, flagCriteria, categoryCriteria);
     if (!importedStudents.length) {
       setError(errors.length ? errors.join('; ') : 'No valid students found. Check your CSV format.');
       return;
@@ -286,7 +288,7 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, student
               />
               <p className="csv-hint">
                 <strong>Required:</strong> name, gender | 
-                <strong> Optional:</strong> id, {generateCSVHeaders(numericCriteria, flagCriteria).slice(2).join(', ')}
+                <strong> Optional:</strong> id, {generateCSVHeaders(numericCriteria, flagCriteria, categoryCriteria).slice(2).join(', ')}
               </p>
               <p className="csv-hint" style={{ marginTop: 6, fontSize: 11 }}>
                 <strong>Tip:</strong> Include an <code>id</code> column to use your own student IDs. Otherwise, IDs are auto-generated.

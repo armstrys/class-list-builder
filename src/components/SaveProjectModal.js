@@ -20,7 +20,7 @@ function SaveProjectModal({ onClose }) {
     locked,
     optimizationResults,
   } = useStudentsExport();
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   const { teachers } = useAppStateExport();
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -35,6 +35,7 @@ function SaveProjectModal({ onClose }) {
         teachers,
         numericCriteria,
         flagCriteria,
+        categoryCriteria,
         keepApart,
         keepTogether,
         keepOutOfClass,
@@ -67,6 +68,7 @@ function SaveProjectModal({ onClose }) {
     teachers,
     numericCriteria,
     flagCriteria,
+    categoryCriteria,
     keepApart,
     keepTogether,
     assignment,

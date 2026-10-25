@@ -1,7 +1,7 @@
 const { useState, useEffect, useRef, useCallback, useMemo, useId } = React;
 
 // App version for save/load compatibility checking
-const APP_VERSION = "3.2.0";
+const APP_VERSION = "3.3.0";
 
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'englishlanguageartsscore', label: 'English Language Arts Score', weight: 1.0 },
@@ -20,9 +20,23 @@ const DEFAULT_FLAG_CRITERIA = [
   { key: 'medicalplan', label: 'Medical Plan', weight: 0.8 },
 ];
 
+// Category criteria: a per-student text value, balanced by spreading each
+// distinct value evenly across classes. Unlike a flag (yes/no), a category can
+// have any number of values, and a blank cell means "no value" rather than a
+// bucket of its own.
+//
+// "Current Class" ships enabled by default. It reads the prior/current teacher
+// or room from a `Current Class` CSV column and is the supported way to avoid
+// recreating last year's grouping: spreading each prior class evenly across the
+// new ones. Cost is 0 until data exists, so it is inert for rosters without it.
+const DEFAULT_CATEGORY_CRITERIA = [
+  { key: 'currentclass', label: 'Current Class', weight: 1.5 },
+];
+
 const STORAGE_KEYS = {
   NUMERIC_CRITERIA: 'classOptimizer_numericCriteria_v2',
   FLAG_CRITERIA: 'classOptimizer_flagCriteria_v2',
+  CATEGORY_CRITERIA: 'classOptimizer_categoryCriteria_v1',
 };
 
 // Optimization penalty weights
@@ -99,7 +113,8 @@ function buildPrintReportData(
   keepOutOfClass,
   teachers,
   numericCriteria,
-  flagCriteria
+  flagCriteria,
+  categoryCriteria = []
 ) {
   const numClasses = teachers.length;
   const classes = Array.from({ length: numClasses }, (_, i) =>
@@ -138,6 +153,7 @@ function buildPrintReportData(
       return {
         ...s,
         index: idx + 1,
+        categoryValues: categoryCriteria.map(c => ({ label: c.label, value: s[c.key] || '' })),
         isLocked,
         hasConstraints: hasKeepApart || hasKeepTogether || hasKeepOutOfClass,
       };

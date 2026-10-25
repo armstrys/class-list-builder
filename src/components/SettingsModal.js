@@ -61,10 +61,11 @@ function SettingsModal({
   onClearStudents
 }) {
   // Get criteria from context
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   const [activeTab, setActiveTab] = useState('numeric');
   const [numCriteria, setNumCriteria] = useState(numericCriteria);
   const [flagCriteriaState, setFlagCriteriaState] = useState(flagCriteria);
+  const [catCriteria, setCatCriteria] = useState(categoryCriteria);
   const [error, setError] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -89,6 +90,37 @@ function SettingsModal({
       next[index] = { ...next[index], [field]: value };
       return next;
     });
+  }
+
+  function updateCatCriteria(index, field, value) {
+    setCatCriteria(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  }
+
+  // The shipped default. Adding it back is one click; it is inert until a
+  // roster carries a matching column, so there is no cost to leaving it on.
+  const hasCurrentClass = catCriteria.some(c => c.key === 'currentclass');
+
+  function addCurrentClassCriterion() {
+    if (hasCurrentClass) return;
+    setCatCriteria(prev => [...prev, { key: 'currentclass', label: 'Current Class', weight: 1.5 }]);
+  }
+
+  function addCatCriterion() {
+    setCatCriteria(prev => [...prev, { key: '', label: '', weight: 1.5 }]);
+  }
+
+  function removeCatCriterion(index) {
+    setCatCriteria(prev => prev.filter((_, i) => i !== index));
+    setConfirmRemove(null);
+  }
+
+  function requestRemoveCat(index) {
+    if (hasStudentData) setConfirmRemove({ type: 'category', index, label: catCriteria[index].label });
+    else removeCatCriterion(index);
   }
 
   function addNumericCriterion() {
@@ -160,10 +192,21 @@ function SettingsModal({
       }
     }
 
+    let weightError = '';
+    catCriteria.forEach(c => {
+      if (!weightError && (!c.label.trim() || !validateWeight(c.weight))) {
+        weightError = !c.label.trim()
+          ? 'All criteria must have a label'
+          : `Invalid weight for "${c.label}". Weight must be a positive number.`;
+      }
+    });
+    if (weightError) { setError(weightError); return; }
+
     // Check for duplicate labels (label is the user-facing identity)
     const allLabels = [
       ...numCriteria.map(c => c.label.trim().toLowerCase()),
       ...flagCriteriaState.map(c => c.label.trim().toLowerCase()),
+      ...catCriteria.map(c => c.label.trim().toLowerCase()),
     ];
     if (new Set(allLabels).size !== allLabels.length) {
       setError('Duplicate field labels are not allowed. Labels must be unique.');
@@ -184,7 +227,13 @@ function SettingsModal({
       weight: parseFloat(c.weight),
     }));
 
-    onSave(finalNumCriteria, finalFlagCriteria);
+    const finalCatCriteria = catCriteria.map(c => ({
+      ...c,
+      key: c.key || generateKeyFromLabel(c.label),
+      weight: parseFloat(c.weight),
+    }));
+
+    onSave(finalNumCriteria, finalFlagCriteria, finalCatCriteria);
     onClose();
   }
 
@@ -193,6 +242,7 @@ function SettingsModal({
       version: 1,
       numericCriteria: numCriteria.map(c => ({ ...c, key: generateKeyFromLabel(c.label) })),
       flagCriteria: flagCriteriaState.map(c => ({ ...c, key: generateKeyFromLabel(c.label) })),
+      categoryCriteria: catCriteria.map(c => ({ ...c, key: generateKeyFromLabel(c.label) })),
     };
     triggerDownload(JSON.stringify(config, null, 2), 'class-optimizer-config.json', 'application/json');
   }
@@ -211,11 +261,15 @@ function SettingsModal({
           const existingFlagKeys = new Set(flagCriteria.map(c => c.key));
           const newNumKeys = new Set(config.numericCriteria.map(c => c.key));
           const newFlagKeys = new Set(config.flagCriteria.map(c => c.key));
+          const oldCatKeys = new Set(categoryCriteria.map(c => c.key));
+          const newCatKeys = new Set((config.categoryCriteria || []).map(c => c.key));
           const keysChanged =
             [...existingNumKeys].some(k => !newNumKeys.has(k)) ||
             [...newNumKeys].some(k => !existingNumKeys.has(k)) ||
             [...existingFlagKeys].some(k => !newFlagKeys.has(k)) ||
-            [...newFlagKeys].some(k => !existingFlagKeys.has(k));
+            [...newFlagKeys].some(k => !existingFlagKeys.has(k)) ||
+            [...oldCatKeys].some(k => !newCatKeys.has(k)) ||
+            [...newCatKeys].some(k => !oldCatKeys.has(k));
           if (keysChanged) {
             // Show helpful modal instead of just an error
             setConfigConflict({
@@ -227,6 +281,7 @@ function SettingsModal({
         }
         setNumCriteria(config.numericCriteria);
         setFlagCriteriaState(config.flagCriteria);
+        setCatCriteria(config.categoryCriteria || []);
       } catch (err) {
         setError('Invalid JSON file');
       }
@@ -252,13 +307,16 @@ function SettingsModal({
   function resetToDefaults() {
     setNumCriteria(DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })));
     setFlagCriteriaState(DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })));
+    setCatCriteria(DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })));
   }
 
   function clearSavedSettings() {
     localStorage.removeItem(STORAGE_KEYS.NUMERIC_CRITERIA);
     localStorage.removeItem(STORAGE_KEYS.FLAG_CRITERIA);
+    localStorage.removeItem(STORAGE_KEYS.CATEGORY_CRITERIA);
     setNumCriteria(DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })));
     setFlagCriteriaState(DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })));
+    setCatCriteria(DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })));
     setConfirmClear(false);
   }
 
@@ -330,6 +388,12 @@ function SettingsModal({
               onClick={() => setActiveTab('flags')}
             >
               Flag Fields ({flagCriteriaState.length})
+            </button>
+            <button
+              className={`settings-tab ${activeTab === 'categories' ? 'active' : ''}`}
+              onClick={() => setActiveTab('categories')}
+            >
+              Category Fields ({catCriteria.length})
             </button>
           </div>
 
@@ -415,6 +479,76 @@ function SettingsModal({
             </div>
           )}
 
+          {activeTab === 'categories' && (
+            <div className="settings-section">
+              <div style={{
+                background: 'var(--surface2)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '10px 14px',
+                marginBottom: 16,
+                fontSize: 12.5,
+                lineHeight: 1.55,
+                color: 'var(--text2)',
+              }}>
+                A category field holds one value per student, such as the class or teacher they
+                were with last year. Each distinct value is spread evenly across the new classes,
+                which is how you avoid recreating last year's groupings. Unlike a flag, a category
+                can have any number of values, and a blank cell means "no value" rather than a
+                bucket of its own.
+              </div>
+
+              <div className="criteria-header">
+                <div>Display Name</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Weight
+                  <HelpTooltip content={WEIGHTS_HELP_TEXT} />
+                </div>
+                <div></div>
+              </div>
+              <div className="criteria-list">
+                {catCriteria.map((c, i) => (
+                  <div key={i} className="criteria-item">
+                    <input
+                      className="form-input"
+                      placeholder="Label (e.g., Current Class)"
+                      value={c.label}
+                      onChange={e => updateCatCriteria(i, 'label', e.target.value)}
+                    />
+                    <input
+                      className="form-input"
+                      placeholder="Weight"
+                      value={c.weight}
+                      onChange={e => updateCatCriteria(i, 'weight', e.target.value)}
+                    />
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => requestRemoveCat(i)}
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button className="btn btn-secondary btn-sm" onClick={addCatCriterion}>
+                  + Add Category Field
+                </button>
+                {!hasCurrentClass && (
+                  <button className="btn btn-secondary btn-sm" onClick={addCurrentClassCriterion}>
+                    + Current Class (recommended)
+                  </button>
+                )}
+              </div>
+              <p style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 10, lineHeight: 1.5 }}>
+                The roster needs a matching column (for Current Class, a header named
+                "Current Class") with the prior teacher or room per student. It has no effect on
+                rosters without that column.
+              </p>
+            </div>
+          )}
+
           {error && (
             <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12 }}>
               {error}
@@ -435,7 +569,9 @@ function SettingsModal({
               className="btn btn-danger"
               onClick={() => confirmRemove.type === 'numeric'
                 ? removeNumCriterion(confirmRemove.index)
-                : removeFlagCriterion(confirmRemove.index)
+                : confirmRemove.type === 'category'
+                  ? removeCatCriterion(confirmRemove.index)
+                  : removeFlagCriterion(confirmRemove.index)
               }
             >
               Remove Field
