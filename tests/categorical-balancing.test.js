@@ -503,3 +503,92 @@ describe('sample data and roster table surface categories', () => {
     }
   });
 });
+
+describe('countCategoryValues (shared helper)', () => {
+  // Imported from defaults.js, which is a browser script; evaluate it.
+  const load = async () => {
+    const { readFileSync } = await import('node:fs');
+    const vm = await import('node:vm');
+    const code = readFileSync(new URL('../src/defaults.js', import.meta.url), 'utf8');
+    const ctx = vm.createContext({ Math, console, React: { useState() {}, useEffect() {}, useRef() {}, useCallback() {}, useMemo() {}, useId() {} } });
+    vm.runInContext(code, ctx);
+    return ctx.countCategoryValues;
+  };
+
+  test('counts and sorts by frequency', async () => {
+    const fn = await load();
+    const students = [
+      { c: 'A' }, { c: 'B' }, { c: 'A' }, { c: 'C' }, { c: 'A' },
+    ];
+    expect(fn(students, 'c')).toEqual([['A', 3], ['B', 1], ['C', 1]]);
+  });
+
+  test('trims so trailing spaces do not create a duplicate value', async () => {
+    const fn = await load();
+    const students = [{ c: 'Ms. Rivera' }, { c: 'Ms. Rivera ' }, { c: '  Ms. Rivera' }];
+    expect(fn(students, 'c')).toEqual([['Ms. Rivera', 3]]);
+  });
+
+  test('a genuine misspelling stays a separate value so it is visible', async () => {
+    const fn = await load();
+    const students = [{ c: 'Ms. Rivera' }, { c: 'Ms Rivera' }, { c: 'Ms. Rivera' }];
+    const out = fn(students, 'c');
+    expect(out).toHaveLength(2);
+    expect(out.map(([v]) => v).sort()).toEqual(['Ms Rivera', 'Ms. Rivera']);
+  });
+
+  test('skips blank, whitespace-only, null and missing values', async () => {
+    const fn = await load();
+    const students = [{ c: 'A' }, { c: '' }, { c: '   ' }, { c: null }, { c: undefined }, {}];
+    expect(fn(students, 'c')).toEqual([['A', 1]]);
+  });
+
+  test('tolerates a missing student list', async () => {
+    const fn = await load();
+    expect(fn(undefined, 'c')).toEqual([]);
+    expect(fn(null, 'c')).toEqual([]);
+  });
+});
+
+describe('category surfaces render as text, not booleans', () => {
+  const read = async rel => {
+    const { readFileSync } = await import('node:fs');
+    return readFileSync(new URL(rel, import.meta.url), 'utf8');
+  };
+
+  test('the roster table puts category cells after flag cells (header/body order match)', async () => {
+    const src = await read('../src/components/SetupPage.js');
+    const head = src.slice(src.indexOf('<thead>'), src.indexOf('</thead>'));
+    const body = src.slice(src.indexOf('<tbody>'), src.indexOf('</tbody>'));
+    const order = s => ['numericCriteria.map', 'flagCriteria.map', 'categoryCriteria.map']
+      .map(k => [k, s.indexOf(k)]).filter(([, i]) => i !== -1);
+    const headOrder = order(head).map(([k]) => k);
+    const bodyOrder = order(body).map(([k]) => k);
+    expect(bodyOrder).toEqual(headOrder);
+    expect(bodyOrder).toEqual(['numericCriteria.map', 'flagCriteria.map', 'categoryCriteria.map']);
+  });
+
+  test('a category cell renders its text, never a check mark', async () => {
+    const src = await read('../src/components/SetupPage.js');
+    const body = src.slice(src.indexOf('<tbody>'), src.indexOf('</tbody>'));
+    const cat = body.slice(body.indexOf('categoryCriteria.map'));
+    const catCell = cat.slice(0, cat.indexOf('</td>'));
+    expect(catCell).toContain('{s[c.key]');
+    expect(catCell).not.toContain('✓');
+  });
+
+  test('the optimize board shows a per-class category breakdown', async () => {
+    expect(await read('../src/components/ClassColumn.js')).toMatch(/countCategoryValues\(students/);
+  });
+
+  test('the print report shows per-class category stats', async () => {
+    const src = await read('../src/components/PrintReportView.js');
+    expect(src).toContain('page.categoryStats');
+  });
+
+  test('settings lists observed values so a typo is visible', async () => {
+    const src = await read('../src/components/SettingsModal.js');
+    expect(src).toContain('countCategoryValues(students');
+    expect(src).toMatch(/distinct value/);
+  });
+});

@@ -21,7 +21,7 @@
  */
 function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onDragStart, onDrop, draggingId, allStudents, fullscreen }) {
   const { locked, keepApart, keepTogether, keepOutOfClass } = useStudentsExport();
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   
   const [dragOver, setDragOver] = useState(false);
 
@@ -48,6 +48,15 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
     val: students.filter(s => s[m.key]).length,
     colors: generateColor(m.key, i),
   })).filter(b => b.val > 0);
+
+  // Per-class distribution of each category value. This is the number that
+  // makes last year's grouping visible: an even spread reads as "A 8 · B 8",
+  // a recreated grouping reads as "A 16".
+  const catBreakdowns = categoryCriteria.map(m => {
+    const values = countCategoryValues(students, m.key);
+    if (values.length === 0) return null;
+    return { label: m.label, values };
+  }).filter(Boolean);
 
   const classTotalFlagsCount = students.reduce(
     (sum, s) => sum + flagCriteria.reduce((fs, { key }) => fs + (s[key] ? 1 : 0), 0),
@@ -139,6 +148,16 @@ function ClassColumn({ classIdx, name, onNameChange, students, onToggleLock, onD
             ))}
           </div>
         )}
+        {catBreakdowns.map(c => (
+          <div key={c.label} style={{ marginTop: 5, fontSize: 11, color: 'var(--text2)' }}>
+            <span title={c.label}>{c.label}:</span>{' '}
+            {c.values.map(([v, n]) => (
+              <span key={v} className="cat-chip" style={{ marginRight: 3 }}>
+                {v} <strong style={{ fontFamily: "'DM Mono', monospace" }}>{n}</strong>
+              </span>
+            ))}
+          </div>
+        ))}
         {flagCriteria.length > 0 && (
           <div style={{ marginTop: 5, fontSize: 11, color: 'var(--text2)' }}>
             Total Flags: <strong style={{ color: 'var(--text1)', fontFamily: "'DM Mono', monospace" }}>{classTotalFlagsCount}</strong>

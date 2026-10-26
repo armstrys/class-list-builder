@@ -243,6 +243,11 @@ function PrintReportView() {
                 {stat.label}: {stat.count}
               </div>
             ))}
+            {page.categoryStats.map(stat => (
+              <div key={stat.key} className="print-stat-badge">
+                {stat.label}: {stat.values.map(v => `${v.value} ${v.count}`).join(' · ')}
+              </div>
+            ))}
             {flagCriteria.length > 0 && (
               <div className="print-stat-badge">Total Flags: {page.totalFlagsCount}</div>
             )}

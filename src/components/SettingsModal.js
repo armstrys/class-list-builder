@@ -62,6 +62,7 @@ function SettingsModal({
 }) {
   // Get criteria from context
   const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
+  const { students } = useStudentsExport();
   const [activeTab, setActiveTab] = useState('numeric');
   const [numCriteria, setNumCriteria] = useState(numericCriteria);
   const [flagCriteriaState, setFlagCriteriaState] = useState(flagCriteria);
@@ -104,6 +105,14 @@ function SettingsModal({
   // The shipped default. Adding it back is one click; it is inert until a
   // roster carries a matching column, so there is no cost to leaving it on.
   const hasCurrentClass = catCriteria.some(c => c.key === 'currentclass');
+
+  // Sense check for typos: list every distinct value actually present in the
+  // roster, with counts. A misspelling shows up as an extra option because the
+  // value is stored verbatim, so a stray "Room A " or "Ms, Rivera" becomes its
+  // own category and quietly halves the spread.
+  function observedValues(key) {
+    return countCategoryValues(students, key);
+  }
 
   function addCurrentClassCriterion() {
     if (hasCurrentClass) return;
@@ -532,6 +541,40 @@ function SettingsModal({
                   </div>
                 ))}
               </div>
+
+              {/* Distinct values actually found in the roster. */}
+              {catCriteria.some(c => c.key) && (
+                <div style={{ marginTop: 14 }}>
+                  {catCriteria.filter(c => c.key).map(c => {
+                    const values = observedValues(c.key);
+                    return (
+                      <div key={c.key} style={{ marginBottom: 10, fontSize: 12 }}>
+                        <div style={{ color: 'var(--text2)', marginBottom: 4 }}>
+                          <strong>{c.label}</strong>
+                          {' — '}
+                          {values.length === 0
+                            ? 'no values found in the current roster'
+                            : `${values.length} distinct value${values.length === 1 ? '' : 's'}:`}
+                        </div>
+                        {values.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {values.map(([value, count]) => (
+                              <span key={value} className="cat-chip">
+                                {value} <strong style={{ fontFamily: "'DM Mono', monospace" }}>{count}</strong>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {values.length > 1 && (
+                          <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text3)' }}>
+                            Check for near-duplicates — a misspelling becomes its own category.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                 <button className="btn btn-secondary btn-sm" onClick={addCatCriterion}>
                   + Add Category Field

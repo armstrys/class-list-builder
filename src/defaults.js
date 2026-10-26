@@ -97,6 +97,29 @@ function generateColor(key, index, theme) {
   };
 }
 
+/**
+ * Count the distinct values of a category criterion across a set of students.
+ *
+ * Values are compared after trimming, but the trimmed text is what is counted,
+ * so "Ms. Rivera" and "Ms. Rivera " collapse into one bucket while a genuine
+ * misspelling ("Ms Rivera") stays separate and visible. Blank/absent cells are
+ * skipped: an unspecified value is not a category.
+ *
+ * @param {Array<Object>} items - Students (or any objects carrying the key)
+ * @param {string} key - Category criterion key
+ * @returns {Array<[string, number]>} [value, count] sorted by count desc, then value
+ */
+function countCategoryValues(items, key) {
+  const counts = new Map();
+  (items || []).forEach(item => {
+    const raw = item ? item[key] : null;
+    const v = raw == null ? '' : String(raw).trim();
+    if (v === '') return;
+    counts.set(v, (counts.get(v) || 0) + 1);
+  });
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+
 function generateKeyFromLabel(label) {
   return label
     .toLowerCase()
@@ -140,6 +163,13 @@ function buildPrintReportData(
       colors: generateColor(c.key, idx, 'light'),
     }));
 
+    // Category distribution per class: how each prior value was split.
+    const categoryStats = categoryCriteria.map(c => ({
+      key: c.key,
+      label: c.label,
+      values: countCategoryValues(classStudents, c.key).map(([value, count]) => ({ value, count })),
+    }));
+
     const totalFlagsCount = classStudents.reduce(
       (sum, s) => sum + flagCriteria.reduce((fs, { key }) => fs + (s[key] ? 1 : 0), 0),
       0
@@ -164,7 +194,7 @@ function buildPrintReportData(
       teacherName,
       studentCount: classStudents.length,
       mCount, fCount, uCount,
-      numericStats, flagStats, totalFlagsCount,
+      numericStats, flagStats, totalFlagsCount, categoryStats,
       studentRows,
     };
   });
@@ -219,5 +249,5 @@ function buildPrintReportData(
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { buildPrintReportData, generateColor, generateKeyFromLabel };
+  module.exports = { buildPrintReportData, generateColor, generateKeyFromLabel, countCategoryValues };
 }

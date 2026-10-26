@@ -230,7 +230,7 @@ function SetupPage({ onOptimize }) {
                         </th>
                       ))}
                       {categoryCriteria.map(c => (
-                        <th key={c.key} className="col-name" title={c.label}>
+                        <th key={c.key} className="col-cat" title={`${c.label} (one value per student, not yes/no)`}>
                           {c.label}
                         </th>
                       ))}
@@ -255,11 +255,6 @@ function SetupPage({ onOptimize }) {
                             {s[c.key] || 0}
                           </td>
                         ))}
-                        {categoryCriteria.map(c => (
-                          <td key={c.key} className="col-name" style={{ color: 'var(--text2)' }}>
-                            {s[c.key] || ''}
-                          </td>
-                        ))}
                         {flagCriteria.map((c, i) => (
                           <td key={c.key} className="col-check">
                             {s[c.key] && (
@@ -273,6 +268,11 @@ function SetupPage({ onOptimize }) {
                                 ✓
                               </span>
                             )}
+                          </td>
+                        ))}
+                        {categoryCriteria.map(c => (
+                          <td key={c.key} className="col-cat">
+                            {s[c.key] ? <span className="cat-chip">{s[c.key]}</span> : ''}
                           </td>
                         ))}
                         <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
