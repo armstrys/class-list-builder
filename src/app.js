@@ -58,17 +58,6 @@ function AppContent() {
 
   const [currentTourStep, setCurrentTourStep] = useState(null);
 
-  // Ring the control the current tour step names. Imperative so a step change
-  // does not re-render the optimizer board.
-  useEffect(() => {
-    if (currentTourStep === null) return;
-    const el = document.querySelector(`[data-tour="${TOUR_STEPS[currentTourStep].target}"]`);
-    if (!el) return;
-    el.classList.add('tour-target');
-    el.scrollIntoView({ block: 'nearest' });
-    return () => el.classList.remove('tour-target');
-  }, [currentTourStep]);
-
   // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e) {

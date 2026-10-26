@@ -78,17 +78,48 @@ describe('tour anchors', () => {
   });
 
   test('the ring moves with the step and cleans up after itself', () => {
-    const app = read('src/app.js');
-    expect(app).toMatch(/classList\.add\('tour-target'\)/);
-    expect(app).toMatch(/remove\('tour-target'\)/);
-    // Two-tone so it reads on a filled primary button; one-shot entrance,
-    // and the global reduced-motion rule covers the animation.
+    const tour = read('src/components/Tour.js');
+    expect(tour).toMatch(/classList\.add\('tour-target'\)/);
+    expect(tour).toMatch(/remove\('tour-target'\)/);
+  });
+
+  test('the callout is positioned at the target, not parked in a corner', () => {
+    const tour = read('src/components/Tour.js');
+    // Measured, not assumed: the target's real rect drives placement.
+    expect(tour).toMatch(/getBoundingClientRect\(\)/);
+    expect(tour).toMatch(/left: pos\.left/);
+    expect(tour).toMatch(/top: pos\.top/);
+    // The arrow touches the control it names.
+    expect(tour).toContain('tour-arrow');
+    // And it re-places when the viewport or scroll moves under it.
+    expect(tour).toMatch(/addEventListener\('resize'/);
+    expect(tour).toMatch(/addEventListener\('scroll'/);
+  });
+
+  test('a step with no visible target docks instead of rendering at 0,0', () => {
+    const tour = read('src/components/Tour.js');
+    expect(tour).toMatch(/anchored: false/);
+    expect(tour).toContain('tour-docked');
+  });
+
+  test('the ring and the measurement agree on the same element', () => {
+    const tour = read('src/components/Tour.js');
+    // One lookup helper, used by both effects, so they can never disagree.
+    expect(tour.match(/function targetEl/)).toBeTruthy();
+    expect(tour.match(/targetEl\(currentTourStep\)/g)).toHaveLength(2);
+    expect(tour.match(/querySelector\(`\[data-tour=/g)).toHaveLength(1);
+    // The ring code lives here now, not in app.js.
+    expect(read('src/app.js')).not.toContain('tour-target');
+    // Two-tone so it reads on a filled primary button.
     const css = read('src/styles.css');
     const ring = css.match(/\.tour-target\s*\{[^}]*\}/);
     expect(ring).toBeTruthy();
     expect(ring[0]).toContain('var(--accent)');
-    expect(ring[0]).toContain('var(--bg)');
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+    expect(ring[0]).toContain('var(--surface)');
+    // It must not be interpolated: `.btn`'s `transition: all` animates a
+    // box-shadow up from transparent, leaving the ring momentarily invisible.
+    expect(ring[0]).toContain('transition: none');
+    expect(ring[0]).not.toContain('animation');
   });
 });
 

@@ -161,8 +161,14 @@ sudo tcpdump -i any -n 'tcp port 443' -w classlist.pcap
 | Data Type | Location | Persistence |
 |-----------|----------|-------------|
 | **Settings/criteria** | localStorage | Survives browser restart |
+| **UI preferences** (theme, welcome seen) | localStorage | Survives browser restart |
 | **Student data** | JavaScript memory only | Cleared on tab close |
 | **Exported results** | Downloads folder | User-managed |
+
+No localStorage entry contains student data. The keys are
+`classOptimizer_*Criteria_*` (criterion labels and weights), `clb-theme` (light
+or dark), and `clb-welcome-seen` (`1` once the welcome screen has been
+dismissed). Delete those keys and the app returns to its defaults.
 
 **Important:** Student data (names, scores, flags) is **not automatically persisted**. Export to CSV to save your work.
 

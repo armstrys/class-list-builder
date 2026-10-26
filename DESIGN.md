@@ -446,21 +446,35 @@ The dense unit of the whole product.
 
 ### Guided Tour
 
-A numbered, non-blocking walkthrough over the app, not a modal: it sits in a
-card at the bottom left, so it never covers the right-aligned primary action
-(`Optimize Classes`) that the current step is pointing at.
+A numbered, non-blocking walkthrough over the app, not a modal. Each step is a
+callout **attached to the control it describes** — an arrow touches the target
+and the ring wraps it, so the copy and the thing it refers to read as one
+object. A callout parked in a corner that only *describes* the target is not
+this component.
 
-- **Anchors, not a script.** A step names a target (`data-tour="…"`); whichever
-  rendered control carries that attribute gets the ring. A step whose target is
-  not on screen draws no ring and does not break, so the step list is a stable
-  map of the app rather than a fragile recording.
-- **The ring** is two-tone — a 3px gap in `--bg` then a 5px `--accent` — so it
-  reads on filled, ghost, and bordered controls alike. It appears with a
-  one-shot 220ms ease-out and is covered by the global reduced-motion rule.
-- **Panel:** 320px, `--surface` with hairline border and `--shadow`, `radius`
-  10px. Step counter in the uppercase 11px/600 label style, title at 15px/600,
-  body at 13px `--text2`. A dot row doubles as the step index and a jump
-  control; the active dot is `--accent`.
+- **Anchors, not a script.** A step names a target (`data-tour="…"`); one
+  lookup helper (`targetEl`) returns the rendered control, and both the ring and
+  the positioning use it, so they can never disagree. A step whose target is
+  not on screen docks to the bottom left and does not break, so the step list is
+  a stable map of the app rather than a fragile recording.
+- **Placement.** Measured from the target's real rect: centred under it, flipped
+  above when the viewport is short there, clamped to the window, and re-measured
+  on resize and scroll. Preferred side is underneath, `14px` clear of the
+  control.
+- **The arrow** is a 3-point SVG polyline, not a rotated square — only the two
+  outer edges are stroked, so it points instead of reading as a diamond. Its
+  fill overlaps the panel border by 1px to hide the seam.
+- **The ring** is two-tone — a 3px gap in `--surface` (the surface the control
+  sits on) then a 5px `--accent` — so it reads on filled, ghost, and bordered
+  controls alike. It is **static and `transition: none`**: `.btn`'s
+  `transition: all` would otherwise interpolate the ring up from a transparent
+  0-spread shadow, leaving it momentarily invisible.
+- **Panel:** 300px anchored (320px docked), `--surface`, `--accent` border,
+  `--shadow`, `radius` 10px. Step counter in the uppercase 11px/600 label
+  style, title at 15px/600, body at 13px `--text2`. A dot row doubles as the
+  step index and a jump control; the active dot is `--accent`.
+- **Copy is short by contract.** The callout must not cover the control it
+  points at, so each step earns two lines, not a paragraph.
 - **Exit** is explicit and always available: Skip, ✕, Escape, or the last
   step's button. Starting the tour never modifies data — the Demo button's own
   sample load does.

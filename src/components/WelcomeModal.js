@@ -6,31 +6,43 @@
  * - Features: What the tool does
  * - Documentation: Link to README
  *
+ * Shows once per browser, then stays out of the way. The same gate applies to
+ * the hosted build and the downloaded standalone file, so there is no build
+ * flag to inject and the two artifacts behave identically.
+ *
  * @param {Object} props
  * @param {Function} props.onClose - Close callback
  * @param {Function} props.onLoadDemo - Callback to load demo/sample data
- * @param {boolean} [props.forceShow=true] - Force display regardless of build flag (for testing)
  */
-function WelcomeModal({ onClose, onLoadDemo, forceShow = true }) {
+const WELCOME_SEEN_KEY = 'clb-welcome-seen';
+
+function WelcomeModal({ onClose, onLoadDemo }) {
   const [isVisible, setIsVisible] = React.useState(false);
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const skipWelcome = urlParams.get('skipwelcome') === '1';
+    // welcome=1 reopens it (handy in dev); skipwelcome=1 never shows it.
     const forceWelcome = urlParams.get('welcome') === '1';
+    const skipWelcome = urlParams.get('skipwelcome') === '1';
 
-    // Show modal if:
-    // 1. GitHub Pages build flag is set (injected during build), OR
-    // 2. welcome=1 URL parameter is set (for dev testing)
-    // ...but NOT if skipwelcome=1 is set or forceShow prop is false
-    const shouldShow = (window.SHOW_WELCOME_MODAL || forceWelcome) && !skipWelcome && forceShow !== false;
-    if (shouldShow) {
-      setIsVisible(true);
+    let seen = false;
+    try {
+      seen = localStorage.getItem(WELCOME_SEEN_KEY) === '1';
+    } catch {
+      // localStorage may be unavailable (private mode, sandboxed iframe).
+      // Showing the splash every time is the safer failure here.
     }
-  }, [forceShow]);
+
+    if (!skipWelcome && (forceWelcome || !seen)) setIsVisible(true);
+  }, []);
 
   const handleClose = (loadDemo = false) => {
     setIsVisible(false);
+    try {
+      localStorage.setItem(WELCOME_SEEN_KEY, '1');
+    } catch {
+      // Nothing to record; the splash simply shows again next time.
+    }
     if (loadDemo && onLoadDemo) {
       onLoadDemo();
     }

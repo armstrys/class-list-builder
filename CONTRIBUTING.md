@@ -82,26 +82,26 @@ node build-standalone.js
 
 ## Testing the Welcome Modal
 
-The welcome modal is injected only in GitHub Pages builds. To test it during development:
+The welcome modal shows once per browser, keyed on the `clb-welcome-seen`
+localStorage entry. The hosted build and the downloaded standalone file use the
+same rule, so there is no build flag and nothing is injected per deploy.
 
-**Option 1: Use the dev script**
+**To see it again during development** (it will already be marked seen):
 ```bash
 npm run dev:welcome
 ```
-This starts the dev server at `http://localhost:3000` and automatically appends `?welcome=1` to force the modal.
+That starts the dev server with `?welcome=1` appended, which forces it open
+regardless of the seen flag.
 
-**Option 2: Manual URL parameter**
-Open the URL with `?welcome=1` appended:
+Or append the parameter yourself:
 ```
 http://localhost:3000/class-list-builder-source.html?welcome=1
 ```
 
-**To skip the welcome modal during testing:**
+**To suppress it:**
 ```
 http://localhost:3000/class-list-builder-source.html?skipwelcome=1
 ```
-
-**Why this is needed:** The modal checks for `window.SHOW_WELCOME_MODAL` flag (injected by the GitHub Pages workflow) OR the `?welcome=1` parameter. Downloaded releases don't have the flag, so they never show the modal.
 
 ## Optimization Algorithm
 

@@ -701,36 +701,50 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 }
 
 /* ── Guided tour ── */
-/* Bottom-left so it never covers the right-aligned primary action
-   (Optimize Classes, Save Lists) that the current step may be pointing at. */
+/* The callout sits next to the control it names, with an arrow touching it,
+   so the copy and the target read as one object. Docked to the bottom left
+   only when the target is not on screen. */
 .tour-panel {
-  position: fixed; left: 20px; bottom: 20px; z-index: 900;
-  width: 320px; max-width: calc(100vw - 40px);
+  position: fixed; z-index: 900;
+  max-width: calc(100vw - 16px);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 16px;
   animation: slideUp .18s ease-out;
 }
+.tour-docked { left: 20px; bottom: 20px; width: 320px; }
+/* Arrow: the callout's own surface and border, half-hidden under the panel so
+   it reads as one shape rather than a triangle stuck on the edge. */
+/* A 3-point polyline, not a rotated square: only the two outer edges carry a
+   stroke, so it points instead of reading as a diamond. The fill overlaps the
+   panel border by 1px to cover the seam between them. */
+.tour-arrow {
+  position: absolute; width: 16px; height: 8px;
+  transform: translateX(-50%);
+  fill: var(--surface); stroke: var(--accent); stroke-width: 1;
+}
+.tour-arrow-up { bottom: 100%; margin-bottom: -1px; }
+.tour-arrow-down { top: 100%; margin-top: -1px; }
 .tour-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .tour-count { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .4px; }
 .tour-close { padding: 2px 6px; }
 .tour-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
 .tour-body { font-size: 13px; line-height: 1.5; color: var(--text2); margin: 0 0 12px; }
-.tour-finish { padding: 10px; margin-bottom: 12px; border-radius: var(--radius-sm); background: var(--surface2); font-size: 12.5px; line-height: 1.45; color: var(--text2); }
 .tour-dots { display: flex; gap: 6px; margin-bottom: 12px; }
 .tour-dot { width: 8px; height: 8px; padding: 0; border: none; border-radius: 50%; background: var(--border); cursor: pointer; }
 .tour-dot.active { background: var(--accent); }
 .tour-actions { display: flex; align-items: center; gap: 8px; }
 /* The ring a step puts on the control it names. Two-tone: a gap in the page
    colour then the accent, so it reads on filled and ghost buttons alike. */
+/* Static and instant: the ring is the step's whole signal, so it must not be
+   interpolated. `transition: none` overrides `.btn`'s `transition: all`, which
+   otherwise animates the ring up from a transparent 0-spread shadow. The 3px
+   gap is the surface the control sits on, then the accent. */
 .tour-target {
-  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
-  animation: tourRing .22s ease-out;
-}
-@keyframes tourRing {
-  from { box-shadow: 0 0 0 0 var(--bg), 0 0 0 0 var(--accent); }
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent);
+  transition: none;
 }
 
 /* ── Responsive ── */
