@@ -234,6 +234,18 @@ function exportClassListsToCSV(students, assignment, teachers, numericCriteria, 
   return lines.join('\n');
 }
 
+// Blank import sheet: the headers the parser expects, one example row, and a
+// no-op example for each flag/category criterion. Empty cells are accepted by
+// parseCSV, so the teacher only fills what they have.
+function buildStudentTemplateCSV(numericCriteria, flagCriteria, categoryCriteria = []) {
+  const headers = ['id', ...generateCSVHeaders(numericCriteria, flagCriteria, categoryCriteria)];
+  const row = ['', 'Jordan Example', 'F'];
+  numericCriteria.forEach(() => row.push(''));
+  flagCriteria.forEach(() => row.push('0'));
+  categoryCriteria.forEach(() => row.push(''));
+  return [headers, row].map(values => values.map(escapeCSVValue).join(',')).join('\n');
+}
+
 function triggerDownload(content, filename, mimeType) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -253,6 +265,7 @@ if (typeof module !== 'undefined' && module.exports) {
     parseCSV,
     exportStudentsToCSV,
     exportClassListsToCSV,
+    buildStudentTemplateCSV,
     triggerDownload,
     escapeCSVValue
   };

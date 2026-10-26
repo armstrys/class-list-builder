@@ -56,6 +56,8 @@ function AppContent() {
     setCategoryCriteria,
   } = useCriteriaExport();
 
+  const [currentTourStep, setCurrentTourStep] = useState(null);
+
   // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e) {
@@ -66,6 +68,10 @@ function AppContent() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
         e.preventDefault();
         openLoadProject();
+      }
+      // Escape belongs to an open dialog first; the tour is not modal.
+      if (e.key === 'Escape' && !document.querySelector('.modal-overlay')) {
+        setCurrentTourStep(null);
       }
     }
 
@@ -190,6 +196,7 @@ function AppContent() {
         onOpenSettings={openSettings}
         onOpenSave={openSaveProject}
         onOpenLoad={openLoadProject}
+        onStartTour={() => setCurrentTourStep(0)}
       />
 
       {view === 'setup' ? (
@@ -218,8 +225,13 @@ function AppContent() {
         />
       )}
 
+      {currentTourStep !== null && (
+        <Tour currentTourStep={currentTourStep} setCurrentTourStep={setCurrentTourStep} />
+      )}
+
       <WelcomeModal
         onLoadDemo={() => {
+          setCurrentTourStep(0);
           const demoStudents = generateSampleStudents(100, numericCriteria, flagCriteria, categoryCriteria);
           replaceAllStudents(demoStudents);
           // Generate random constraints after students are created
@@ -237,7 +249,7 @@ function AppContent() {
 /**
  * Header component extracted from main App
  */
-function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSave, onOpenLoad }) {
+function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSave, onOpenLoad, onStartTour }) {
   const { view, teachers, theme, toggleTheme } = useAppStateExport();
   const { students } = useStudentsExport();
   return (
@@ -268,6 +280,7 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
           <button
             className="btn btn-ghost btn-sm"
             onClick={onOpenSave}
+            data-tour="save"
             title="Save project (Ctrl+S)"
           >
             💾 Save Project
@@ -280,11 +293,20 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
           <button
             className="btn btn-ghost btn-sm"
             onClick={onOpenSettings}
+            data-tour="criteria"
             title="Configure criteria"
           >
             ⚙️ Settings
           </button>
         )}
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={onStartTour}
+          title="Take the tour"
+          aria-label="Take the tour"
+        >
+          ?
+        </button>
         <button
           className="btn btn-ghost btn-sm"
           onClick={toggleTheme}
