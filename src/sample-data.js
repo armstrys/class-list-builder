@@ -8,7 +8,7 @@ const LN = ['Smith','Johnson','Williams','Brown','Davis','Miller','Wilson','Moor
 function rnd(a, b) { return Math.round(a + Math.random() * (b - a)); }
 function p(prob) { return Math.random() < prob; }
 
-function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
+function generateSampleStudents(count = 27, numericCriteria, flagCriteria, categoryCriteria = []) {
   const students = [];
   for (let i = 0; i < count; i++) {
     const gender = p(0.5) ? 'F' : 'M';
@@ -48,6 +48,14 @@ function generateSampleStudents(count = 27, numericCriteria, flagCriteria) {
       else if (key === 'englishlanguagelearning') student[key] = ell;
       else if (key === 'medicalplan') student[key] = p(0.06);
       else student[key] = p(0.15);
+    });
+
+    // Category values: sample data should exercise the feature, so give every
+    // student a prior class. Spread over 3 rooms with a deterministic
+    // assignment so the demo is reproducible and clearly uneven before
+    // optimization.
+    categoryCriteria.forEach(({ key }, ci) => {
+      student[key] = `Room ${String.fromCharCode(65 + ((i + ci) % 3))}`;
     });
 
     students.push(student);

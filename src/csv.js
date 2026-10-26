@@ -18,10 +18,11 @@ function escapeCSVValue(value) {
   return str;
 }
 
-function generateCSVHeaders(numericCriteria, flagCriteria) {
+function generateCSVHeaders(numericCriteria, flagCriteria, categoryCriteria = []) {
   const numHeaders = numericCriteria.map(c => c.label);
   const boolHeaders = flagCriteria.map(c => c.label);
-  return ['name', 'gender', ...numHeaders, ...boolHeaders];
+  const catHeaders = categoryCriteria.map(c => c.label);
+  return ['name', 'gender', ...numHeaders, ...boolHeaders, ...catHeaders];
 }
 
 // Parse a single CSV line respecting RFC 4180 quoted fields
@@ -49,7 +50,7 @@ function parseCSVLine(line) {
 }
 
 function parseStudentRow(cols, i, ctx, errors) {
-  const { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, numericCriteria, flagCriteria } = ctx;
+  const { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, categoryKeyMap, numericCriteria, flagCriteria, categoryCriteria } = ctx;
   const name = nameIdx !== -1 ? (cols[nameIdx] || `Student ${i + 2}`) : `Student ${i + 2}`;
   const genderVal = genderIdx !== -1 ? (cols[genderIdx] || '').toUpperCase() : '';
   const gender = genderVal.startsWith('F') ? 'F' : genderVal.startsWith('M') ? 'M' : 'U';
@@ -62,6 +63,16 @@ function parseStudentRow(cols, i, ctx, errors) {
     studentId = generateId();
   }
   const student = { id: studentId, name, gender };
+
+  categoryCriteria.forEach(({ key }) => {
+    const idx = categoryKeyMap[key];
+    if (idx !== undefined) {
+      const raw = (cols[idx] || '').trim();
+      student[key] = raw;   // '' means unspecified, not a category of its own
+    } else {
+      student[key] = '';
+    }
+  });
 
   numericCriteria.forEach(({ key }) => {
     const idx = numericKeyMap[key];
@@ -96,7 +107,7 @@ function parseStudentRow(cols, i, ctx, errors) {
   return student;
 }
 
-function parseCSV(text, numericCriteria, flagCriteria) {
+function parseCSV(text, numericCriteria, flagCriteria, categoryCriteria = []) {
   // Normalize CRLF and bare CR to LF
   const normalized = text.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = normalized.split('\n');
@@ -112,6 +123,7 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   // Build mapping from criteria keys to CSV column indices
   const numericKeyMap = {};
   const flagKeyMap = {};
+  const categoryKeyMap = {};
 
   numericCriteria.forEach(({ key, label }) => {
     const normalizedLabel = label.toLowerCase().replace(/\s+/g, '');
@@ -125,6 +137,14 @@ function parseCSV(text, numericCriteria, flagCriteria) {
     if (idx !== -1) flagKeyMap[key] = idx;
   });
 
+  // Category columns hold free text (a teacher name or room), so they are
+  // matched by label exactly like the others but read as strings.
+  categoryCriteria.forEach(({ key, label }) => {
+    const normalizedLabel = label.toLowerCase().replace(/\s+/g, '');
+    const idx = headers.findIndex(h => h === normalizedLabel);
+    if (idx !== -1) categoryKeyMap[key] = idx;
+  });
+
   // Find name, gender, id columns
   const nameIdx = headers.findIndex(h => ['name','student','lastnamefirstname'].includes(h));
   const genderIdx = headers.findIndex(h => ['gender','sex'].includes(h));
@@ -136,11 +156,16 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   // Warn about missing expected columns
   const missingNumeric = numericCriteria.filter(({ key }) => numericKeyMap[key] === undefined);
   const missingFlags = flagCriteria.filter(({ key }) => flagKeyMap[key] === undefined);
+  const missingCategories = categoryCriteria.filter(({ key }) => categoryKeyMap[key] === undefined);
   if (missingNumeric.length > 0) {
     errors.push(`Missing columns (will use 0): ${missingNumeric.map(c => c.label).join(', ')}`);
   }
   if (missingFlags.length > 0) {
     errors.push(`Missing columns (will use false): ${missingFlags.map(c => c.label).join(', ')}`);
+  }
+  if (missingCategories.length > 0) {
+    // Not a problem: a category with no column is simply inactive.
+    errors.push(`No "${missingCategories.map(c => c.label).join(', ')}" column (this field will be ignored)`);
   }
 
   // Warn about unrecognized columns
@@ -149,7 +174,8 @@ function parseCSV(text, numericCriteria, flagCriteria) {
     'gender', 'sex',
     'id', 'studentid', 'student_id',
     ...numericCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, '')),
-    ...flagCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, ''))
+    ...flagCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, '')),
+    ...categoryCriteria.map(c => c.label.toLowerCase().replace(/\s+/g, ''))
   ]);
   const unrecognized = headers
     .map((h, i) => ({ normalized: h, raw: rawHeaders[i] }))
@@ -161,29 +187,30 @@ function parseCSV(text, numericCriteria, flagCriteria) {
   lines.slice(1).forEach((line, i) => {
     if (!line.trim()) return;
     const cols = parseCSVLine(line);
-    const ctx = { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, numericCriteria, flagCriteria };
+    const ctx = { nameIdx, genderIdx, idIdx, numericKeyMap, flagKeyMap, categoryKeyMap, numericCriteria, flagCriteria, categoryCriteria };
     students.push(parseStudentRow(cols, i, ctx, errors));
   });
 
   return { students, errors };
 }
 
-function exportStudentsToCSV(students, numericCriteria, flagCriteria) {
-  const headers = ['name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label)];
+function exportStudentsToCSV(students, numericCriteria, flagCriteria, categoryCriteria = []) {
+  const headers = ['name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label), ...categoryCriteria.map(c => c.label)];
   const lines = [headers.join(',')];
 
   students.forEach(s => {
     const values = [s.name, s.gender];
     numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
     flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
+    categoryCriteria.forEach(({ key }) => values.push(s[key] ?? ''));
     lines.push(values.map(escapeCSVValue).join(','));
   });
 
   return lines.join('\n');
 }
 
-function exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria) {
-  const headers = ['class', 'id', 'name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label)];
+function exportClassListsToCSV(students, assignment, teachers, numericCriteria, flagCriteria, categoryCriteria = []) {
+  const headers = ['class', 'id', 'name', 'gender', ...numericCriteria.map(c => c.label), ...flagCriteria.map(c => c.label), ...categoryCriteria.map(c => c.label)];
   const lines = [headers.join(',')];
 
   const sorted = [...students]
@@ -200,6 +227,7 @@ function exportClassListsToCSV(students, assignment, teachers, numericCriteria, 
     const values = [className, s.id, s.name, s.gender];
     numericCriteria.forEach(({ key }) => values.push(s[key] || 0));
     flagCriteria.forEach(({ key }) => values.push(s[key] ? 1 : 0));
+    categoryCriteria.forEach(({ key }) => values.push(s[key] ?? ''));
     lines.push(values.map(escapeCSVValue).join(','));
   });
 

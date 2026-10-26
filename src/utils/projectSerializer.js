@@ -31,6 +31,7 @@ function serializeProject(state) {
       teachers: state.teachers || [],
       numericCriteria: state.numericCriteria || [],
       flagCriteria: state.flagCriteria || [],
+      categoryCriteria: state.categoryCriteria || [],
       keepApart: state.keepApart || [],
       keepTogether: state.keepTogether || [],
       keepOutOfClass: state.keepOutOfClass || [],

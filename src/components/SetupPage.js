@@ -22,7 +22,7 @@ function SetupPage({ onOptimize }) {
     setKeepTogether,
     setKeepOutOfClass,
   } = useStudentsExport();
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   const { openSettings, teachers, setTeachers } = useAppStateExport();
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -229,6 +229,11 @@ function SetupPage({ onOptimize }) {
                           {c.label}
                         </th>
                       ))}
+                      {categoryCriteria.map(c => (
+                        <th key={c.key} className="col-cat" title={`${c.label} (one value per student, not yes/no)`}>
+                          {c.label}
+                        </th>
+                      ))}
                       <th></th>
                     </tr>
                   </thead>
@@ -263,6 +268,11 @@ function SetupPage({ onOptimize }) {
                                 ✓
                               </span>
                             )}
+                          </td>
+                        ))}
+                        {categoryCriteria.map(c => (
+                          <td key={c.key} className="col-cat">
+                            {s[c.key] ? <span className="cat-chip">{s[c.key]}</span> : ''}
                           </td>
                         ))}
                         <td style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
@@ -312,6 +322,7 @@ function SetupPage({ onOptimize }) {
           onClose={() => setShowForm(false)}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          categoryCriteria={categoryCriteria}
         />
       )}
       {editingStudent && (
@@ -321,6 +332,7 @@ function SetupPage({ onOptimize }) {
           onClose={() => setEditingStudent(null)}
           numericCriteria={numericCriteria}
           flagCriteria={flagCriteria}
+          categoryCriteria={categoryCriteria}
         />
       )}
       {showSampleDialog && (
@@ -328,7 +340,7 @@ function SetupPage({ onOptimize }) {
           defaultCount={sampleCount}
           onGenerate={n => {
             setSampleCount(n);
-            const newStudents = generateSampleStudents(n, numericCriteria, flagCriteria);
+            const newStudents = generateSampleStudents(n, numericCriteria, flagCriteria, categoryCriteria);
             replaceAllStudents(newStudents);
             // Generate random constraints
             const numClasses = teachers.length;
@@ -371,7 +383,7 @@ function ConstraintButton({ onClick }) {
  */
 function ImportModalWrapper({ onClose, onClearAll }) {
   const { students, setStudents } = useStudentsExport();
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
 
   const handleImport = useCallback(
     ss => {
@@ -386,6 +398,7 @@ function ImportModalWrapper({ onClose, onClearAll }) {
       onClose={onClose}
       numericCriteria={numericCriteria}
       flagCriteria={flagCriteria}
+      categoryCriteria={categoryCriteria}
       students={students}
       onClearAll={onClearAll}
     />

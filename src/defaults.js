@@ -1,7 +1,7 @@
 const { useState, useEffect, useRef, useCallback, useMemo, useId } = React;
 
 // App version for save/load compatibility checking
-const APP_VERSION = "3.2.0";
+const APP_VERSION = "3.3.1";
 
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'englishlanguageartsscore', label: 'English Language Arts Score', weight: 1.0 },
@@ -20,9 +20,23 @@ const DEFAULT_FLAG_CRITERIA = [
   { key: 'medicalplan', label: 'Medical Plan', weight: 0.8 },
 ];
 
+// Category criteria: a per-student text value, balanced by spreading each
+// distinct value evenly across classes. Unlike a flag (yes/no), a category can
+// have any number of values, and a blank cell means "no value" rather than a
+// bucket of its own.
+//
+// "Current Class" ships enabled by default. It reads the prior/current teacher
+// or room from a `Current Class` CSV column and is the supported way to avoid
+// recreating last year's grouping: spreading each prior class evenly across the
+// new ones. Cost is 0 until data exists, so it is inert for rosters without it.
+const DEFAULT_CATEGORY_CRITERIA = [
+  { key: 'currentclass', label: 'Current Class', weight: 1.5 },
+];
+
 const STORAGE_KEYS = {
   NUMERIC_CRITERIA: 'classOptimizer_numericCriteria_v2',
   FLAG_CRITERIA: 'classOptimizer_flagCriteria_v2',
+  CATEGORY_CRITERIA: 'classOptimizer_categoryCriteria_v1',
 };
 
 // Optimization penalty weights
@@ -83,6 +97,29 @@ function generateColor(key, index, theme) {
   };
 }
 
+/**
+ * Count the distinct values of a category criterion across a set of students.
+ *
+ * Values are compared after trimming, but the trimmed text is what is counted,
+ * so "Ms. Rivera" and "Ms. Rivera " collapse into one bucket while a genuine
+ * misspelling ("Ms Rivera") stays separate and visible. Blank/absent cells are
+ * skipped: an unspecified value is not a category.
+ *
+ * @param {Array<Object>} items - Students (or any objects carrying the key)
+ * @param {string} key - Category criterion key
+ * @returns {Array<[string, number]>} [value, count] sorted by count desc, then value
+ */
+function countCategoryValues(items, key) {
+  const counts = new Map();
+  (items || []).forEach(item => {
+    const raw = item ? item[key] : null;
+    const v = raw == null ? '' : String(raw).trim();
+    if (v === '') return;
+    counts.set(v, (counts.get(v) || 0) + 1);
+  });
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+
 function generateKeyFromLabel(label) {
   return label
     .toLowerCase()
@@ -99,7 +136,8 @@ function buildPrintReportData(
   keepOutOfClass,
   teachers,
   numericCriteria,
-  flagCriteria
+  flagCriteria,
+  categoryCriteria = []
 ) {
   const numClasses = teachers.length;
   const classes = Array.from({ length: numClasses }, (_, i) =>
@@ -125,6 +163,13 @@ function buildPrintReportData(
       colors: generateColor(c.key, idx, 'light'),
     }));
 
+    // Category distribution per class: how each prior value was split.
+    const categoryStats = categoryCriteria.map(c => ({
+      key: c.key,
+      label: c.label,
+      values: countCategoryValues(classStudents, c.key).map(([value, count]) => ({ value, count })),
+    }));
+
     const totalFlagsCount = classStudents.reduce(
       (sum, s) => sum + flagCriteria.reduce((fs, { key }) => fs + (s[key] ? 1 : 0), 0),
       0
@@ -138,6 +183,7 @@ function buildPrintReportData(
       return {
         ...s,
         index: idx + 1,
+        categoryValues: categoryCriteria.map(c => ({ label: c.label, value: s[c.key] || '' })),
         isLocked,
         hasConstraints: hasKeepApart || hasKeepTogether || hasKeepOutOfClass,
       };
@@ -148,7 +194,7 @@ function buildPrintReportData(
       teacherName,
       studentCount: classStudents.length,
       mCount, fCount, uCount,
-      numericStats, flagStats, totalFlagsCount,
+      numericStats, flagStats, totalFlagsCount, categoryStats,
       studentRows,
     };
   });
@@ -203,5 +249,5 @@ function buildPrintReportData(
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { buildPrintReportData, generateColor, generateKeyFromLabel };
+  module.exports = { buildPrintReportData, generateColor, generateKeyFromLabel, countCategoryValues };
 }

@@ -337,21 +337,29 @@
   const CriteriaContext = React.createContext(null);
   const STORAGE_KEY_NUMERIC = 'classOptimizer_numericCriteria_v2';
   const STORAGE_KEY_FLAG = 'classOptimizer_flagCriteria_v2';
+  const STORAGE_KEY_CATEGORY = STORAGE_KEYS.CATEGORY_CRITERIA;
 
   function loadCriteriaFromStorage() {
     try {
       const savedNumeric = localStorage.getItem(STORAGE_KEY_NUMERIC);
       const savedFlag = localStorage.getItem(STORAGE_KEY_FLAG);
+      const savedCategory = localStorage.getItem(STORAGE_KEY_CATEGORY);
       const numeric = savedNumeric ? JSON.parse(savedNumeric) : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c }));
       const flag = savedFlag ? JSON.parse(savedFlag) : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c }));
+      const category = savedCategory ? JSON.parse(savedCategory) : DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c }));
+      // Every key must be present on the success path too. Omitting one here
+      // leaves criteria.category undefined, and consumers that call
+      // .some()/.map() on it crash the whole tree.
       return {
         numeric: validateCriteriaArray(numeric, 'numeric') ? numeric : DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
         flag: validateCriteriaArray(flag, 'flag') ? flag : DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
+        category: validateCriteriaArray(category, 'category') ? category : DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })),
       };
     } catch (e) {
       return {
         numeric: DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
         flag: DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
+        category: DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })),
       };
     }
   }
@@ -381,6 +389,7 @@
       try {
         localStorage.setItem(STORAGE_KEY_NUMERIC, JSON.stringify(criteria.numeric));
         localStorage.setItem(STORAGE_KEY_FLAG, JSON.stringify(criteria.flag));
+        localStorage.setItem(STORAGE_KEY_CATEGORY, JSON.stringify(criteria.category));
       } catch (e) {
         console.error('Failed to save criteria:', e);
       }
@@ -430,10 +439,33 @@
       setCriteria(prev => ({ ...prev, flag: prev.flag.filter((_, i) => i !== index) }));
     }, []);
 
+    const setCategoryCriteria = useCallback(newCriteria => {
+      setCriteria(prev => ({ ...prev, category: newCriteria }));
+    }, []);
+
+    const updateCategoryCriterion = useCallback((index, field, value) => {
+      setCriteria(prev => ({
+        ...prev,
+        category: prev.category.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
+      }));
+    }, []);
+
+    const addCategoryCriterion = useCallback(
+      (criterion = { key: '', label: '', weight: 1.5 }) => {
+        setCriteria(prev => ({ ...prev, category: [...prev.category, criterion] }));
+      },
+      []
+    );
+
+    const removeCategoryCriterion = useCallback(index => {
+      setCriteria(prev => ({ ...prev, category: prev.category.filter((_, i) => i !== index) }));
+    }, []);
+
     const resetToDefaults = useCallback(() => {
       setCriteria({
         numeric: DEFAULT_NUMERIC_CRITERIA.map(c => ({ ...c })),
         flag: DEFAULT_FLAG_CRITERIA.map(c => ({ ...c })),
+        category: DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })),
       });
     }, []);
 
@@ -441,14 +473,24 @@
       setCriteria({
         numeric: newCriteria.numeric.map(c => ({ ...c })),
         flag: newCriteria.flag.map(c => ({ ...c })),
+        // Older configs and project files have no category section; fall back to
+        // defaults rather than dropping the array entirely.
+        category: Array.isArray(newCriteria.category)
+          ? newCriteria.category.map(c => ({ ...c }))
+          : DEFAULT_CATEGORY_CRITERIA.map(c => ({ ...c })),
       });
     }, []);
 
     const value = {
       numericCriteria: criteria.numeric,
       flagCriteria: criteria.flag,
+      categoryCriteria: criteria.category,
       setNumericCriteria,
       setFlagCriteria,
+      setCategoryCriteria,
+      updateCategoryCriterion,
+      addCategoryCriterion,
+      removeCategoryCriterion,
       updateNumericCriterion,
       updateFlagCriterion,
       addNumericCriterion,

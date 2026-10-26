@@ -1,9 +1,10 @@
-function StudentFormModal({ student, onSave, onClose, numericCriteria, flagCriteria }) {
+function StudentFormModal({ student, onSave, onClose, numericCriteria, flagCriteria, categoryCriteria = [] }) {
   const initialForm = {
     name: '',
     gender: 'M',
     ...Object.fromEntries(numericCriteria.map(c => [c.key, ''])),
     ...Object.fromEntries(flagCriteria.map(c => [c.key, false])),
+    ...Object.fromEntries(categoryCriteria.map(c => [c.key, ''])),
   };
 
   const [form, setForm] = useState(student ? { ...student } : { ...initialForm, id: uid() });
@@ -66,6 +67,27 @@ function StudentFormModal({ student, onSave, onClose, numericCriteria, flagCrite
                     className="form-input"
                     type="number"
                     value={form[c.key]}
+                    onChange={e => set(c.key, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {categoryCriteria.length > 0 && (
+          <>
+            <div className="divider" />
+            <div className="panel-title" style={{ marginBottom: 8 }}>Categories</div>
+            <div className="form-row" style={{ gridTemplateColumns: `repeat(${Math.min(categoryCriteria.length, 3)}, 1fr)` }}>
+              {categoryCriteria.map(c => (
+                <div key={c.key} className="form-group">
+                  <label className="form-label">{c.label}</label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    placeholder="Leave blank if unknown"
+                    value={form[c.key] ?? ''}
                     onChange={e => set(c.key, e.target.value)}
                   />
                 </div>

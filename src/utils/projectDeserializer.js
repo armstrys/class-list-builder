@@ -434,6 +434,17 @@ function deserializeProject(projectData, options = {}) {
   }
   
   const { data: projectState } = data;
+
+  // Category criteria are additive: older projects have none, and a malformed
+  // entry is dropped rather than blocking the load.
+  const validCategories = Array.isArray(projectState.categoryCriteria)
+    ? projectState.categoryCriteria.filter(
+        c => c && typeof c === 'object'
+          && typeof c.key === 'string' && c.key.length > 0
+          && typeof c.label === 'string' && c.label.length > 0
+          && typeof c.weight === 'number' && isFinite(c.weight)
+      )
+    : [];
   
   // Validate teachers first (needed for student validation)
   const rawTeachers = projectState.teachers || [];
@@ -567,6 +578,14 @@ function deserializeProject(projectData, options = {}) {
   }
   if (invalidItems.keepOutOfClass.length > 0) {
     warnings.push(`${invalidItems.keepOutOfClass.length} keep-out-of-class constraint(s) skipped due to invalid references.`);
+  }
+
+  if (validCategories.length !== (projectState.categoryCriteria || []).length) {
+    warnings.push('Some category criteria were skipped due to invalid data.');
+  }
+
+  if (resultData) {
+    resultData.categoryCriteria = validCategories;
   }
 
   return {

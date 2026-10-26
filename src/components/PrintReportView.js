@@ -7,7 +7,7 @@
 function PrintReportView() {
   const { students, assignment, locked, keepApart, keepTogether, keepOutOfClass, assessment } =
     useStudentsExport();
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   const { teachers } = useAppStateExport();
 
   const reportData = useMemo(
@@ -21,7 +21,8 @@ function PrintReportView() {
         keepOutOfClass,
         teachers,
         numericCriteria,
-        flagCriteria
+        flagCriteria,
+        categoryCriteria
       ),
     [
       students,
@@ -33,6 +34,7 @@ function PrintReportView() {
       teachers,
       numericCriteria,
       flagCriteria,
+      categoryCriteria,
     ]
   );
 
@@ -239,6 +241,11 @@ function PrintReportView() {
                 style={{ background: stat.colors.bg, color: stat.colors.fg }}
               >
                 {stat.label}: {stat.count}
+              </div>
+            ))}
+            {page.categoryStats.map(stat => (
+              <div key={stat.key} className="print-stat-badge">
+                {stat.label}: {stat.values.map(v => `${v.value} ${v.count}`).join(' · ')}
               </div>
             ))}
             {flagCriteria.length > 0 && (

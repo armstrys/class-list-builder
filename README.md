@@ -47,6 +47,23 @@ Click **Settings** in the top-right to set up what the optimizer balances.
 
 **Flag criteria** are yes/no attributes (Extended Learning, SPED, ELL, behavior). The optimizer spreads students with each flag evenly across classes.
 
+**Category criteria** are fields with one value per student, where the value is a label rather than a number or a yes/no — most usefully **Current Class**, the class or teacher a student was with last year. Each distinct value is spread evenly across the new classes, so last year's groupings are not recreated. A blank cell means "no value" and is ignored.
+
+#### Avoiding last year's groupings
+
+"Current Class" ships enabled by default. To use it, include a `Current Class` column in your roster holding each student's previous teacher or room:
+
+```
+name,gender,Current Class
+Alice,F,Ms. Rivera
+Bob,M,Mr. Okafor
+Charlie,M,Ms. Rivera
+```
+
+With four previous classes split across four new ones, each prior class lands about a quarter in each new class. On a 96-student roster with four prior rooms and five new classes this takes the number of ex-classmates still sitting together from 1,104 pairs down to the arithmetic minimum, 184.
+
+Category fields are inert until the column is present, so leaving the default on costs nothing. Add more category fields under **Settings → Category Fields** if you have another label-shaped factor.
+
 The optimizer always balances **gender** and **class size** automatically. You don't configure those.
 
 **Weights** control how hard the optimizer works to balance each factor. A weight of `2.0` means that criterion is twice as important as one with weight `1.0`. The defaults work for most schools. Raise a weight if one factor matters most.
