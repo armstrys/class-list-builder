@@ -457,6 +457,12 @@ this component.
   the positioning use it, so they can never disagree. A step whose target is
   not on screen docks to the bottom left and does not break, so the step list is
   a stable map of the app rather than a fragile recording.
+- **Conditional controls get a fallback anchor.** The same `data-tour` value may
+  appear on more than one control; the lookup takes the first with client rects.
+  Save Project only exists once students do, so Load Project carries `save` too
+  — otherwise a first-time user on an empty roster gets the docked corner
+  instead of a callout on the header. (`getClientRects()`, not `offsetParent`,
+  which is null for `position: fixed` and would silently break this.)
 - **Placement.** Measured from the target's real rect: centred under it, flipped
   above when the viewport is short there, clamped to the window, and re-measured
   on resize and scroll. Preferred side is underneath, `14px` clear of the
@@ -469,6 +475,15 @@ this component.
   controls alike. It is **static and `transition: none`**: `.btn`'s
   `transition: all` would otherwise interpolate the ring up from a transparent
   0-spread shadow, leaving it momentarily invisible.
+- **Focus scrim.** The app is shaded behind the step so the spotlighted
+  control is the only crisp thing on screen. The hole is the control's own
+  rect inflated by `8px`, with `radius` corners, painted as
+  `box-shadow: 0 0 0 100vmax var(--modal-scrim)` on a transparent element —
+  not a four-panel overlay, and not `clip-path`, which cannot round corners.
+  A step with no visible target still shades, just without a hole.
+- **The scrim is never modal.** `pointer-events: none`, and it renders below
+  the callout. The tour must not block the control it points at; a click
+  guard here would break the thing it is teaching.
 - **Panel:** 300px anchored (320px docked), `--surface`, `--accent` border,
   `--shadow`, `radius` 10px. Step counter in the uppercase 11px/600 label
   style, title at 15px/600, body at 13px `--text2`. A dot row doubles as the

@@ -12,20 +12,57 @@
  */
 
 const TOUR_STEPS = [
-  { target: 'classes', title: 'Classes', body: 'Set how many classes you are building and rename them. Everything balances across these.' },
-  { target: 'criteria', title: 'Criteria', body: 'Choose what gets balanced — scores, flags like intervention needs, and how much each one counts.' },
-  { target: 'import', title: 'Students', body: 'Upload your roster here. The same dialog offers a blank template with your criteria as the column headers; Excel files work too.' },
-  { target: 'constraints', title: 'Constraints', body: 'Keep students apart, keep them together, or keep one out of a particular class.' },
-  { target: 'save', title: 'Save and load', body: 'Save the whole project to a file and reopen it later, on this computer or another one.' },
-  { target: 'optimize', title: 'Optimize', body: 'When you are ready, run it. The board opens next: drag students, lock the ones you keep, then re-optimize around them.' },
+  {
+    target: 'classes',
+    title: 'Classes',
+    body: 'Set how many classes you are building and rename them. Everything balances across these.',
+  },
+  {
+    target: 'criteria',
+    title: 'Criteria',
+    body: 'Choose what gets balanced — scores, flags like intervention needs, and how much each one counts.',
+  },
+  {
+    target: 'import',
+    title: 'Students',
+    body: 'Upload your roster here. The same dialog offers a blank template with your criteria as the column headers; Excel files work too.',
+  },
+  {
+    target: 'constraints',
+    title: 'Constraints',
+    body: 'Keep students apart, keep them together, or keep one out of a particular class.',
+  },
+  {
+    target: 'save',
+    title: 'Save and load',
+    body: 'Save the whole project to a file and reopen it later, on this computer or another one.',
+  },
+  {
+    target: 'optimize',
+    title: 'Optimize',
+    body: 'When you are ready, run it. The board opens next: drag students, lock the ones you keep, then re-optimize around them.',
+  },
 ];
 
 const CALLOUT_WIDTH = 300;
 const GAP = 14;
+// Room around the spotlighted control so the ring sits inside the hole.
+const HOLE_PAD = 8;
 
-/** The rendered control a step names, or null when it is not on screen. */
+/**
+ * The rendered control a step names, or null when nothing matches.
+ *
+ * More than one control may carry the same target, in priority order: a step
+ * whose primary control is conditional (Save Project only exists once there
+ * are students) falls back to the always-present one next to it instead of
+ * dropping the callout into the docked corner.
+ */
 function targetEl(step) {
-  return document.querySelector(`[data-tour="${TOUR_STEPS[step].target}"]`);
+  const all = document.querySelectorAll(`[data-tour="${TOUR_STEPS[step].target}"]`);
+  // getClientRects() is empty for display:none. Chosen over offsetParent,
+  // which is also null for position:fixed — a false negative this header
+  // could easily acquire.
+  return [...all].find(el => el.getClientRects().length > 0) || null;
 }
 
 function Tour({ currentTourStep, setCurrentTourStep }) {
@@ -57,6 +94,9 @@ function Tour({ currentTourStep, setCurrentTourStep }) {
         top: placeBelow ? r.bottom + GAP : r.top - GAP,
         above: !placeBelow,
         arrowX: Math.max(16, Math.min(CALLOUT_WIDTH - 16, centerX - left)),
+        // The scrim cuts its hole from this, so it must be the same rect the
+        // ring is drawn on.
+        rect: { top: r.top, left: r.left, width: r.width, height: r.height },
       });
     }
 
@@ -94,74 +134,96 @@ function Tour({ currentTourStep, setCurrentTourStep }) {
       }
     : {};
 
+  // Shade everything except the control this step names, and let that hole
+  // close around the control's own corners. Purely visual: pointer-events are
+  // off, so the tour stays non-modal and nothing becomes unclickable.
+  const dim =
+    pos && pos.rect ? (
+      <div
+        className="tour-dim tour-dim-hole"
+        style={{
+          left: pos.rect.left - HOLE_PAD,
+          top: pos.rect.top - HOLE_PAD,
+          width: pos.rect.width + HOLE_PAD * 2,
+          height: pos.rect.height + HOLE_PAD * 2,
+        }}
+        aria-hidden="true"
+      />
+    ) : (
+      <div className="tour-dim" aria-hidden="true" />
+    );
+
   return (
-    <div
-      className={`tour-panel ${anchored ? 'tour-anchored' : 'tour-docked'}`}
-      style={style}
-      role="region"
-      aria-label="Guided tour"
-    >
-      {anchored && (
-        <svg
-          className={`tour-arrow ${pos.above ? 'tour-arrow-down' : 'tour-arrow-up'}`}
-          style={{ left: pos.arrowX }}
-          viewBox="0 0 16 8"
-          aria-hidden="true"
-        >
-          <polyline points={pos.above ? '0,0 8,8 16,0' : '0,8 8,0 16,8'} />
-        </svg>
-      )}
-
-      <div className="tour-head">
-        <span className="tour-count">
-          Step {currentTourStep + 1} of {TOUR_STEPS.length}
-        </span>
-        <button
-          className="btn btn-ghost btn-sm tour-close"
-          onClick={() => setCurrentTourStep(null)}
-          aria-label="End tour"
-        >
-          ✕
-        </button>
-      </div>
-
-      <div aria-live="polite">
-        <div className="tour-title">{step.title}</div>
-        <p className="tour-body">{step.body}</p>
-      </div>
-
-      <div className="tour-dots">
-        {TOUR_STEPS.map((s, i) => (
-          <button
-            key={s.target}
-            className={`tour-dot ${i === currentTourStep ? 'active' : ''}`}
-            onClick={() => go(i)}
-            aria-label={`Step ${i + 1}: ${s.title}`}
-            aria-current={i === currentTourStep ? 'step' : undefined}
-          />
-        ))}
-      </div>
-
-      <div className="tour-actions">
-        <button className="btn btn-ghost btn-sm" onClick={() => setCurrentTourStep(null)}>
-          {last ? 'End tour' : 'Skip'}
-        </button>
-        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => go(currentTourStep - 1)}
-            disabled={currentTourStep === 0}
+    <>
+      {dim}
+      <div
+        className={`tour-panel ${anchored ? 'tour-anchored' : 'tour-docked'}`}
+        style={style}
+        role="region"
+        aria-label="Guided tour"
+      >
+        {anchored && (
+          <svg
+            className={`tour-arrow ${pos.above ? 'tour-arrow-down' : 'tour-arrow-up'}`}
+            style={{ left: pos.arrowX }}
+            viewBox="0 0 16 8"
+            aria-hidden="true"
           >
-            ← Back
-          </button>
+            <polyline points={pos.above ? '0,0 8,8 16,0' : '0,8 8,0 16,8'} />
+          </svg>
+        )}
+
+        <div className="tour-head">
+          <span className="tour-count">
+            Step {currentTourStep + 1} of {TOUR_STEPS.length}
+          </span>
           <button
-            className="btn btn-primary btn-sm"
-            onClick={() => (last ? setCurrentTourStep(null) : go(currentTourStep + 1))}
+            className="btn btn-ghost btn-sm tour-close"
+            onClick={() => setCurrentTourStep(null)}
+            aria-label="End tour"
           >
-            {last ? 'Start with my data' : 'Next →'}
+            ✕
           </button>
         </div>
+
+        <div aria-live="polite">
+          <div className="tour-title">{step.title}</div>
+          <p className="tour-body">{step.body}</p>
+        </div>
+
+        <div className="tour-dots">
+          {TOUR_STEPS.map((s, i) => (
+            <button
+              key={s.target}
+              className={`tour-dot ${i === currentTourStep ? 'active' : ''}`}
+              onClick={() => go(i)}
+              aria-label={`Step ${i + 1}: ${s.title}`}
+              aria-current={i === currentTourStep ? 'step' : undefined}
+            />
+          ))}
+        </div>
+
+        <div className="tour-actions">
+          <button className="btn btn-ghost btn-sm" onClick={() => setCurrentTourStep(null)}>
+            {last ? 'End tour' : 'Skip'}
+          </button>
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => go(currentTourStep - 1)}
+              disabled={currentTourStep === 0}
+            >
+              ← Back
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => (last ? setCurrentTourStep(null) : go(currentTourStep + 1))}
+            >
+              {last ? 'Start with my data' : 'Next →'}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

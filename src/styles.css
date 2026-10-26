@@ -715,6 +715,26 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
   animation: slideUp .18s ease-out;
 }
 .tour-docked { left: 20px; bottom: 20px; width: 320px; }
+
+/* Shade the app so the current step is the only thing competing for
+   attention. The hole is the control's own rect, so the ring sits inside it.
+   An inset shadow on the hole rather than `box-shadow: 0 0 0 100vmax`: the
+   shadow version cannot round the corners and repaints the whole viewport on
+   every scroll, while this clips to the box. */
+.tour-dim {
+  position: fixed; inset: 0; z-index: 890;
+  background: var(--modal-scrim);
+  pointer-events: none;
+  animation: fadeIn .18s ease-out;
+}
+.tour-dim-hole {
+  background: transparent;
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 100vmax var(--modal-scrim);
+}
+/* The scrim must never eat a click: the tour is not modal, and a teacher
+   should be able to use the control the step is pointing at. */
+.tour-dim, .tour-dim-hole { pointer-events: none; }
 /* Arrow: the callout's own surface and border, half-hidden under the panel so
    it reads as one shape rather than a triangle stuck on the edge. */
 /* A 3-point polyline, not a rotated square: only the two outer edges carry a

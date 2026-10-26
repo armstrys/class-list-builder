@@ -96,6 +96,45 @@ describe('tour anchors', () => {
     expect(tour).toMatch(/addEventListener\('scroll'/);
   });
 
+  test('the scrim shades everything but the spotlighted control', () => {
+    const tour = read('src/components/Tour.js');
+    const css = read('src/styles.css');
+    // The hole is cut from the same measured rect the ring is drawn on.
+    expect(tour).toMatch(/rect: \{ top: r\.top, left: r\.left/);
+    expect(tour).toContain('tour-dim-hole');
+    // A step with no target still dims, just with no hole.
+    expect(tour).toMatch(/<div className="tour-dim" aria-hidden="true" \/>/);
+    const hole = css.match(/\.tour-dim-hole\s*\{[^}]*\}/);
+    expect(hole).toBeTruthy();
+    expect(hole[0]).toContain('transparent');
+    expect(hole[0]).toContain('100vmax');
+  });
+
+  test('the scrim never swallows a click', () => {
+    const css = read('src/styles.css');
+    const dim = css.match(/\.tour-dim\s*\{[^}]*\}/);
+    expect(dim).toBeTruthy();
+    // The tour is non-modal: a teacher can still use the control it points at.
+    expect(css).toMatch(/\.tour-dim[^{]*\{[^}]*pointer-events:\s*none/);
+    // And it must sit below the callout, or it would shade its own panel.
+    const z = n => Number((css.match(new RegExp(`\\.${n}\\s*\\{[^}]*z-index:\\s*(\\d+)`)) || [])[1]);
+    expect(z('tour-dim')).toBeLessThan(z('tour-panel'));
+  });
+
+  test('a conditional target has an always-present fallback', () => {
+    const app = read('src/app.js');
+    const tour = read('src/components/Tour.js');
+    // Save Project only renders once there are students. Load Project sits
+    // next to it and is always there, so the step anchors to a real control
+    // on an empty roster instead of dropping into the docked corner.
+    const saves = [...app.matchAll(/data-tour="save"/g)];
+    expect(saves.length).toBe(2);
+    // Two anchors are only useful if the lookup tries each one and skips the
+    // ones that are not rendered.
+    expect(tour).toMatch(/querySelectorAll\(`\[data-tour=/);
+    expect(tour).toMatch(/getClientRects\(\)\.length > 0/);
+  });
+
   test('a step with no visible target docks instead of rendering at 0,0', () => {
     const tour = read('src/components/Tour.js');
     expect(tour).toMatch(/anchored: false/);
@@ -107,7 +146,8 @@ describe('tour anchors', () => {
     // One lookup helper, used by both effects, so they can never disagree.
     expect(tour.match(/function targetEl/)).toBeTruthy();
     expect(tour.match(/targetEl\(currentTourStep\)/g)).toHaveLength(2);
-    expect(tour.match(/querySelector\(`\[data-tour=/g)).toHaveLength(1);
+    // One lookup, inside the helper — neither effect queries on its own.
+    expect(tour.match(/data-tour=/g)).toHaveLength(1);
     // The ring code lives here now, not in app.js.
     expect(read('src/app.js')).not.toContain('tour-target');
     // Two-tone so it reads on a filled primary button.
