@@ -113,6 +113,7 @@ function SetupPage({ onOptimize }) {
               <input
                 id="num-classes"
                 className="form-input"
+                data-tour="classes"
                 type="number"
                 min="2"
                 max="1000"
@@ -149,7 +150,11 @@ function SetupPage({ onOptimize }) {
               </div>
               <span className="tag">{students.length}</span>
               <div className="students-header-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  data-tour="import"
+                  onClick={() => setShowImport(true)}
+                >
                   ⬆ Import Students
                 </button>
                 {students.length > 0 && (
@@ -310,7 +315,12 @@ function SetupPage({ onOptimize }) {
         <button className="btn btn-secondary" onClick={() => setShowSampleDialog(true)}>
           Load Sample Data
         </button>
-        <button className="btn btn-primary" disabled={!canOptimize} onClick={onOptimize}>
+        <button
+          className="btn btn-primary"
+          data-tour="optimize"
+          disabled={!canOptimize}
+          onClick={onOptimize}
+        >
           Optimize Classes →
         </button>
       </div>
@@ -372,7 +382,7 @@ function ConstraintButton({ onClick }) {
   const count = keepApart.length + keepTogether.length + keepOutOfClass.length;
 
   return (
-    <button className="btn btn-secondary btn-sm" onClick={onClick}>
+    <button className="btn btn-secondary btn-sm" data-tour="constraints" onClick={onClick}>
       🔗 Constraints {count > 0 && `(${count})`}
     </button>
   );

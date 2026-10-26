@@ -269,6 +269,24 @@ function ImportModal({ onImport, onClose, numericCriteria, flagCriteria, categor
             </div>
           )}
 
+          {/* Blank sheet with the current criteria as headers: the import
+              fails silently-ish on a mislabelled column, so hand out the
+              exact shape we expect. */}
+          <div className="import-toggle">
+            <button
+              className="btn btn-text btn-sm"
+              onClick={() =>
+                triggerDownload(
+                  buildStudentTemplateCSV(numericCriteria, flagCriteria, categoryCriteria),
+                  'students-template.csv',
+                  'text/csv'
+                )
+              }
+            >
+              ⬇ Download a blank CSV template
+            </button>
+          </div>
+
           {/* Toggle paste mode */}
           <div className="import-toggle">
             <button className="btn btn-text btn-sm" onClick={() => setShowPaste(!showPaste)}>

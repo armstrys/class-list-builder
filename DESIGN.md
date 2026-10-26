@@ -392,6 +392,10 @@ library.
 ### Cards and Class Columns
 
 - **Corner style:** 10px radius.
+- **Grid items carry `min-width: 0`.** The roster table is wider than its
+  column; without this the card stretches the `setup-layout` grid past the
+  viewport and clips the action row and the last columns. The roster action row
+  wraps (`flex-wrap`) rather than spilling for the same reason.
 - **Background:** white surface on paper ground.
 - **Border:** 1px hairline for cards; 1.5px for class columns, which strengthens
   to teal during drag-over.
@@ -439,6 +443,27 @@ The dense unit of the whole product.
   right-aligned actions.
 - Focus is trapped, restored on close, and Escape closes — except where a
   destructive confirmation is pending, where dismissal is gated.
+
+### Guided Tour
+
+A numbered, non-blocking walkthrough over the app, not a modal: it sits in a
+card at the bottom left, so it never covers the right-aligned primary action
+(`Optimize Classes`) that the current step is pointing at.
+
+- **Anchors, not a script.** A step names a target (`data-tour="…"`); whichever
+  rendered control carries that attribute gets the ring. A step whose target is
+  not on screen draws no ring and does not break, so the step list is a stable
+  map of the app rather than a fragile recording.
+- **The ring** is two-tone — a 3px gap in `--bg` then a 5px `--accent` — so it
+  reads on filled, ghost, and bordered controls alike. It appears with a
+  one-shot 220ms ease-out and is covered by the global reduced-motion rule.
+- **Panel:** 320px, `--surface` with hairline border and `--shadow`, `radius`
+  10px. Step counter in the uppercase 11px/600 label style, title at 15px/600,
+  body at 13px `--text2`. A dot row doubles as the step index and a jump
+  control; the active dot is `--accent`.
+- **Exit** is explicit and always available: Skip, ✕, Escape, or the last
+  step's button. Starting the tour never modifies data — the Demo button's own
+  sample load does.
 
 ### Inline Tints
 
