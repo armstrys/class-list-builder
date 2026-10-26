@@ -18,6 +18,9 @@ const WELCOME_SEEN_KEY = 'clb-welcome-seen';
 
 function WelcomeModal({ onClose, onLoadDemo }) {
   const [isVisible, setIsVisible] = React.useState(false);
+  // Cancelling asks first: the demo is the fastest way in, and a one-click
+  // skip on the first screen is how someone dismisses it without ever seeing it.
+  const [confirmSkip, setConfirmSkip] = React.useState(false);
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -74,18 +77,18 @@ function WelcomeModal({ onClose, onLoadDemo }) {
           </button>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
+              className="btn btn-secondary"
+              onClick={() => setConfirmSkip(true)}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
               className="btn btn-primary"
               onClick={() => handleClose(true)}
               type="button"
             >
               ▶️ Demo
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={() => handleClose(false)}
-              type="button"
-            >
-              Close
             </button>
           </div>
         </div>
@@ -165,6 +168,30 @@ function WelcomeModal({ onClose, onLoadDemo }) {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={confirmSkip}
+        onClose={() => setConfirmSkip(false)}
+        title="Skip the demo?"
+        size="sm"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => handleClose(false)} type="button">
+              Skip the demo
+            </button>
+            {/* Answers the question it asks: it starts the demo, not just
+                dismisses the confirmation. */}
+            <button className="btn btn-primary" onClick={() => handleClose(true)} type="button">
+              Show me the demo
+            </button>
+          </>
+        }
+      >
+        <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
+          The demo loads a full roster of sample students and starts the tour, so you can see the optimizer
+          work before you enter your own. Nothing is saved until you save it, so you can stop at any time.
+        </p>
+      </Modal>
     </Modal>
   );
 }

@@ -3,6 +3,10 @@ const { useState, useEffect, useRef, useCallback, useMemo, useId } = React;
 // App version for save/load compatibility checking
 const APP_VERSION = "3.5.0";
 
+// How many students the demo and the sample-data dialog generate. Named here
+// because the demo promise on the splash screen quotes it verbatim.
+const DEFAULT_SAMPLE_COUNT = 100;
+
 const DEFAULT_NUMERIC_CRITERIA = [
   { key: 'englishlanguageartsscore', label: 'English Language Arts Score', weight: 1.0 },
   { key: 'mathscore', label: 'Math Score', weight: 1.0 },

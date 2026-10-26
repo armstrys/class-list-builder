@@ -288,3 +288,93 @@ describe('modal dismissal gating', () => {
     expect(studentDetail).toMatch(/e\.target\.value === ''\s*\)\s*return/);
   });
 });
+
+describe('first-run splash', () => {
+  const welcome = read('src/components/WelcomeModal.js');
+  const footer = welcome.slice(welcome.indexOf('footer={'), welcome.indexOf('welcome-content'));
+
+  test('cancel sits left of the demo, so the demo is the button under the thumb', () => {
+    expect(footer.indexOf('Cancel')).toBeGreaterThan(-1);
+    expect(footer.indexOf('Cancel')).toBeLessThan(footer.indexOf('▶️ Demo'));
+    // Both live in the same right-hand cluster; the order inside it is the fix.
+    expect(footer).toMatch(/justifyContent: 'space-between'/);
+  });
+
+  test('cancel asks before skipping, and its dialog defaults to keeping the demo', () => {
+    expect(welcome).toMatch(/setConfirmSkip\(true\)/);
+    const confirm = welcome.slice(welcome.indexOf('isOpen={confirmSkip}'));
+    // The primary action in the confirmation is the demo, not the skip.
+    expect(confirm).toMatch(/className="btn btn-primary"[\s\S]{0,120}?Show me the demo/);
+    // Skipping is what actually closes the splash and records it as seen.
+    expect(confirm).toMatch(/className="btn btn-secondary" onClick=\{\(\) => handleClose\(false\)\}/);
+  });
+
+  test('closing without a demo still records the splash as seen', () => {
+    const handleClose = welcome.slice(welcome.indexOf('const handleClose'), welcome.indexOf('const handleReadMore'));
+    expect(handleClose).toContain('localStorage.setItem(WELCOME_SEEN_KEY');
+    expect(handleClose).toContain('if (loadDemo && onLoadDemo)');
+  });
+});
+
+describe('tour entry point', () => {
+  const app = read('src/app.js');
+  const header = app.slice(app.indexOf('function Header'), app.indexOf('onStartTour'));
+
+  test('the tour button names itself instead of a bare question mark', () => {
+    const start = app.slice(app.indexOf('onClick={onStartTour}'));
+    expect(start).toMatch(/Take a tour/);
+    expect(start).toMatch(/❓/);
+  });
+
+  test('the label collapses to its emoji on narrow headers that already overflow', () => {
+    expect(app).toContain('tour-start-label');
+    const narrow = styles.slice(styles.indexOf('@media (max-width: 640px)'));
+    expect(narrow).toMatch(/\.tour-start-label\s*\{\s*display:\s*none/);
+  });
+
+  test('the accessible name survives collapsing the visible label', () => {
+    const start = app.slice(app.indexOf('onClick={onStartTour}'));
+    // Hide the glyph from AT and keep the aria-label, or the emoji is the name.
+    expect(start).toMatch(/aria-label="Take the tour"/);
+    expect(start).toMatch(/aria-hidden="true">❓/);
+  });
+});
+
+describe('demo sample count', () => {
+  const app = read('src/app.js');
+  const defaults = read('src/defaults.js');
+  const setup = read('src/components/SetupPage.js');
+
+  test('the count is a named constant, not a literal repeated at call sites', () => {
+    expect(defaults).toMatch(/const DEFAULT_SAMPLE_COUNT = \d+;/);
+    expect(app).not.toMatch(/generateSampleStudents\(\s*\d+/);
+    expect(app).toMatch(/generateSampleStudents\(\s*DEFAULT_SAMPLE_COUNT/);
+    expect(setup).toMatch(/useState\(DEFAULT_SAMPLE_COUNT\)/);
+  });
+
+  test('the splash copy never quotes a number that could drift', () => {
+    const welcome = read('src/components/WelcomeModal.js');
+    // The demo promise described "100 sample students" while the demo picked
+    // its own literal, so changing either one silently made the copy a lie.
+    const confirm = welcome.slice(welcome.indexOf('isOpen={confirmSkip}'));
+    expect(confirm).not.toMatch(/\d+\s+sample students/);
+  });
+});
+
+describe('splash confirmation wiring', () => {
+  const welcome = read('src/components/WelcomeModal.js');
+  const confirm = welcome.slice(welcome.indexOf('isOpen={confirmSkip}'));
+
+  test('the demo answer starts the demo, it does not just dismiss the dialog', () => {
+    // Regression: "Show me the demo" only cleared confirmSkip, so answering
+    // the question left the user with an empty board and no tour.
+    const demoBtn = confirm.match(/<button[^>]*btn btn-primary[^>]*>([\s\S]*?)<\/button>/);
+    expect(demoBtn).toBeTruthy();
+    expect(demoBtn[0]).toContain('handleClose(true)');
+    expect(demoBtn[0]).not.toContain('setConfirmSkip(false)');
+  });
+
+  test('skipping is the only path that closes without a demo', () => {
+    expect(confirm).toMatch(/btn btn-secondary" onClick=\{\(\) => handleClose\(false\)\}/);
+  });
+});
