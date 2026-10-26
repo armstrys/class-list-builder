@@ -457,6 +457,12 @@ this component.
   the positioning use it, so they can never disagree. A step whose target is
   not on screen docks to the bottom left and does not break, so the step list is
   a stable map of the app rather than a fragile recording.
+- **Conditional controls get a fallback anchor.** The same `data-tour` value may
+  appear on more than one control; the lookup takes the first with client rects.
+  Save Project only exists once students do, so Load Project carries `save` too
+  — otherwise a first-time user on an empty roster gets the docked corner
+  instead of a callout on the header. (`getClientRects()`, not `offsetParent`,
+  which is null for `position: fixed` and would silently break this.)
 - **Placement.** Measured from the target's real rect: centred under it, flipped
   above when the viewport is short there, clamped to the window, and re-measured
   on resize and scroll. Preferred side is underneath, `14px` clear of the

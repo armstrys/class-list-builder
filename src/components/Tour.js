@@ -49,9 +49,20 @@ const GAP = 14;
 // Room around the spotlighted control so the ring sits inside the hole.
 const HOLE_PAD = 8;
 
-/** The rendered control a step names, or null when it is not on screen. */
+/**
+ * The rendered control a step names, or null when nothing matches.
+ *
+ * More than one control may carry the same target, in priority order: a step
+ * whose primary control is conditional (Save Project only exists once there
+ * are students) falls back to the always-present one next to it instead of
+ * dropping the callout into the docked corner.
+ */
 function targetEl(step) {
-  return document.querySelector(`[data-tour="${TOUR_STEPS[step].target}"]`);
+  const all = document.querySelectorAll(`[data-tour="${TOUR_STEPS[step].target}"]`);
+  // getClientRects() is empty for display:none. Chosen over offsetParent,
+  // which is also null for position:fixed — a false negative this header
+  // could easily acquire.
+  return [...all].find(el => el.getClientRects().length > 0) || null;
 }
 
 function Tour({ currentTourStep, setCurrentTourStep }) {

@@ -286,7 +286,14 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
             💾 Save Project
           </button>
         )}
-        <button className="btn btn-ghost btn-sm" onClick={onOpenLoad} title="Load project (Ctrl+O)">
+        {/* Second anchor for the tour's save/load step, so the callout still
+            lands on a real control before any students exist. */}
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={onOpenLoad}
+          data-tour="save"
+          title="Load project (Ctrl+O)"
+        >
           📂 Load Project
         </button>
         {view === 'setup' && (
