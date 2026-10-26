@@ -96,6 +96,31 @@ describe('tour anchors', () => {
     expect(tour).toMatch(/addEventListener\('scroll'/);
   });
 
+  test('the scrim shades everything but the spotlighted control', () => {
+    const tour = read('src/components/Tour.js');
+    const css = read('src/styles.css');
+    // The hole is cut from the same measured rect the ring is drawn on.
+    expect(tour).toMatch(/rect: \{ top: r\.top, left: r\.left/);
+    expect(tour).toContain('tour-dim-hole');
+    // A step with no target still dims, just with no hole.
+    expect(tour).toMatch(/<div className="tour-dim" aria-hidden="true" \/>/);
+    const hole = css.match(/\.tour-dim-hole\s*\{[^}]*\}/);
+    expect(hole).toBeTruthy();
+    expect(hole[0]).toContain('transparent');
+    expect(hole[0]).toContain('100vmax');
+  });
+
+  test('the scrim never swallows a click', () => {
+    const css = read('src/styles.css');
+    const dim = css.match(/\.tour-dim\s*\{[^}]*\}/);
+    expect(dim).toBeTruthy();
+    // The tour is non-modal: a teacher can still use the control it points at.
+    expect(css).toMatch(/\.tour-dim[^{]*\{[^}]*pointer-events:\s*none/);
+    // And it must sit below the callout, or it would shade its own panel.
+    const z = n => Number((css.match(new RegExp(`\\.${n}\\s*\\{[^}]*z-index:\\s*(\\d+)`)) || [])[1]);
+    expect(z('tour-dim')).toBeLessThan(z('tour-panel'));
+  });
+
   test('a step with no visible target docks instead of rendering at 0,0', () => {
     const tour = read('src/components/Tour.js');
     expect(tour).toMatch(/anchored: false/);

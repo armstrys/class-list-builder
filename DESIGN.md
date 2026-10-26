@@ -469,6 +469,15 @@ this component.
   controls alike. It is **static and `transition: none`**: `.btn`'s
   `transition: all` would otherwise interpolate the ring up from a transparent
   0-spread shadow, leaving it momentarily invisible.
+- **Focus scrim.** The app is shaded behind the step so the spotlighted
+  control is the only crisp thing on screen. The hole is the control's own
+  rect inflated by `8px`, with `radius` corners, painted as
+  `box-shadow: 0 0 0 100vmax var(--modal-scrim)` on a transparent element —
+  not a four-panel overlay, and not `clip-path`, which cannot round corners.
+  A step with no visible target still shades, just without a hole.
+- **The scrim is never modal.** `pointer-events: none`, and it renders below
+  the callout. The tour must not block the control it points at; a click
+  guard here would break the thing it is teaching.
 - **Panel:** 300px anchored (320px docked), `--surface`, `--accent` border,
   `--shadow`, `radius` 10px. Step counter in the uppercase 11px/600 label
   style, title at 15px/600, body at 13px `--text2`. A dot row doubles as the
