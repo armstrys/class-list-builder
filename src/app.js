@@ -232,7 +232,12 @@ function AppContent() {
       <WelcomeModal
         onLoadDemo={() => {
           setCurrentTourStep(0);
-          const demoStudents = generateSampleStudents(100, numericCriteria, flagCriteria, categoryCriteria);
+          const demoStudents = generateSampleStudents(
+            DEFAULT_SAMPLE_COUNT,
+            numericCriteria,
+            flagCriteria,
+            categoryCriteria
+          );
           replaceAllStudents(demoStudents);
           // Generate random constraints after students are created
           const numClasses = teachers.length;
@@ -307,12 +312,13 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
           </button>
         )}
         <button
-          className="btn btn-ghost btn-sm"
+          className="btn btn-secondary btn-sm tour-start"
           onClick={onStartTour}
           title="Take the tour"
           aria-label="Take the tour"
         >
-          ?
+          <span aria-hidden="true">❓</span>
+          <span className="tour-start-label">Take a tour</span>
         </button>
         <button
           className="btn btn-ghost btn-sm"

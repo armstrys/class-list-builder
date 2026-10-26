@@ -42,6 +42,7 @@
     "DEFAULT_CATEGORY_CRITERIA": "readonly",
     "countCategoryValues": "readonly",
     "APP_VERSION": "readonly",
+    "DEFAULT_SAMPLE_COUNT": "readonly",
     "uid": "readonly",
     "generateColor": "readonly",
     "generateKeyFromLabel": "readonly",

@@ -794,6 +794,9 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
      incidental. Cards are tapped constantly, so give them room too. */
   .btn-sm { padding: 8px 12px; font-size: 12.5px; }
   .lock-btn { padding: 8px; font-size: 15px; }
+  /* The header already overflows at this width; the label keeps only its
+     emoji so the tour control does not push the theme switch further out. */
+  .tour-start-label { display: none; }
   .student-card { padding: 8px 10px; min-height: 44px; }
   .class-col { width: min(340px, 92vw); }
 
