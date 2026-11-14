@@ -9,16 +9,18 @@
  */
 
 // Node.js imports for testing
-let _computeCost, _optimize, _restarts;
+let _computeCost, _computeCostTerms, _optimize, _restarts;
 if (typeof module !== 'undefined' && module.exports) {
   const optimizer = require('../optimizer.js');
   _computeCost = optimizer.computeCost;
+  _computeCostTerms = optimizer.computeCostTerms;
   _optimize = optimizer.optimize;
   _restarts = optimizer.OPTIMIZE_RESTARTS;
 }
 
 // Use global functions in browser, imported functions in Node
 const computeCostRef = typeof computeCost !== 'undefined' ? computeCost : _computeCost;
+const computeCostTermsRef = typeof computeCostTerms !== 'undefined' ? computeCostTerms : _computeCostTerms;
 const optimizeRef = typeof optimize !== 'undefined' ? optimize : _optimize;
 // Shared with optimizeMultiStart so the baseline and the app's own optimize
 // run the identical search. If these drift, an unconstrained assignment can
@@ -251,6 +253,7 @@ async function runFullAssessment({
       balancedCost: 0,
       randomCost: 0,
       classStats: [],
+      costTerms: [],
       ready: false,
     };
   }
@@ -259,9 +262,11 @@ async function runFullAssessment({
     if (onProgress) onProgress(pct, msg);
   };
 
-  // Step 1: Compute current cost (with constraints)
+  // Step 1: Compute current cost (with constraints), itemised. The total is
+  // summed from these very terms, so the breakdown in the assessment modal and
+  // the cost it explains cannot drift apart.
   reportProgress(5, 'Computing current assignment cost...');
-  const currentCost = computeCostRef(
+  const costTerms = computeCostTermsRef(
     students,
     assignment,
     numClasses,
@@ -272,6 +277,7 @@ async function runFullAssessment({
     keepOutOfClass,
     categoryCriteria
   );
+  const currentCost = costTerms.reduce((sum, t) => sum + t.cost, 0);
 
   // Step 2: Compute class stats
   reportProgress(10, 'Computing class statistics...');
@@ -329,8 +335,32 @@ async function runFullAssessment({
     balancedCost: Math.round(effectiveBalancedCost * 100000) / 100000,
     randomCost: Math.round(randomCost * 100000) / 100000,
     classStats,
+    costTerms: costTerms.map(t => ({ ...t, cost: Math.round(t.cost * 100000) / 100000 })),
     ready: true,
   };
+}
+
+/**
+ * Rank itemised cost terms for display.
+ *
+ * Keeps the terms that actually contribute, largest first, and attaches each
+ * one's integer share of the total. A zero (or otherwise non-positive) total
+ * yields 0% rather than `NaN`, so a display built from this can never print a
+ * non-number.
+ *
+ * @param {Array<{id: string, label: string, kind: string, cost: number}>} terms
+ * @returns {Array<{id: string, label: string, kind: string, cost: number, percent: number}>}
+ */
+function rankCostTerms(terms) {
+  const all = Array.isArray(terms) ? terms : [];
+  const total = all.reduce((sum, term) => sum + term.cost, 0);
+  return all
+    .filter(term => term.cost > 0)
+    .sort((a, b) => b.cost - a.cost)
+    .map(term => ({
+      ...term,
+      percent: total > 0 ? Math.round((term.cost / total) * 100) : 0,
+    }));
 }
 
 /**
@@ -402,5 +432,5 @@ function normalizeBalanceScore({ currentCost, balancedCost, randomCost }) {
 
 // Export for Node.js testing (conditional to not break browser)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { computeClassStats, computeBaselineBalanced, computeBaselineRandom, runFullAssessment, normalizeBalanceScore };
+  module.exports = { computeClassStats, computeBaselineBalanced, computeBaselineRandom, runFullAssessment, normalizeBalanceScore, rankCostTerms };
 }

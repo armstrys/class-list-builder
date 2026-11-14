@@ -1,19 +1,26 @@
 /**
- * Compute the optimization cost for a given student assignment.
- * 
+ * Itemise the optimization cost for a given student assignment.
+ *
  * The cost function measures how imbalanced the class distribution is across
- * all criteria (numeric scores, flags, gender, total flags, total scores, and size).
- * Lower cost = better balanced classes.
- * 
+ * all criteria (numeric scores, flags, categories, gender, total flags, total
+ * scores, and size), plus the constraint penalties. Lower cost = better balance.
+ *
+ * This is the single source of truth for the cost model: `computeCost` is the
+ * sum of the terms returned here, in this same order, so a breakdown shown to
+ * a user can never disagree with the score it explains.
+ *
  * @param {Array<Object>} students - Array of student objects with id, gender, and criteria properties
  * @param {Object<string, number>} assignment - Map of studentId -> classIndex
  * @param {number} numClasses - Total number of classes
- * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric score criteria with weights
- * @param {Array<{key: string, weight: number}>} flagCriteria - Boolean flag criteria with weights
+ * @param {Array<{key: string, label: string, weight: number}>} numericCriteria - Numeric score criteria with weights
+ * @param {Array<{key: string, label: string, weight: number}>} flagCriteria - Boolean flag criteria with weights
  * @param {Array<[string, string]>} keepApart - Pairs of student IDs that should be in different classes
  * @param {Array<string[]>} keepTogether - Groups of student IDs that should be in the same class
  * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Students blocked from specific classes
- * @returns {number} The total cost (lower is better)
+ * @param {Array<{key: string, label: string, weight: number}>} categoryCriteria - Categorical criteria with weights
+ * @returns {Array<{id: string, label: string, kind: 'balance'|'penalty', cost: number}>}
+ *   One term per criterion and per penalty, in accumulation order. An empty
+ *   roster returns an empty array.
  */
 
 // Coerce a categorical cell to a comparable value, or null when unspecified.
@@ -40,37 +47,41 @@ const PW = (typeof PENALTY_WEIGHTS !== 'undefined') ? PENALTY_WEIGHTS : {
   // default entry is needed here. The interface exists for parity.
 };
 
-function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], categoryCriteria = []) {
-  if (!students.length || !numClasses) return 0;
+function computeCostTerms(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], categoryCriteria = []) {
+  if (!students.length || !numClasses) return [];
   const classes = Array.from({ length: numClasses }, () => []);
   students.forEach(s => {
     const c = assignment[s.id];
     if (c !== undefined && c >= 0 && c < numClasses) classes[c].push(s);
   });
 
-  let cost = 0;
+  const terms = [];
 
   // Numeric metrics: variance of class means, normalized by overall population variance
-  numericCriteria.forEach(({ key, weight }) => {
+  numericCriteria.forEach(({ key, label, weight }) => {
     const vals = students.map(s => s[key] || 0);
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
     const popVar = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
-    if (popVar === 0) return; // all identical scores — no imbalance possible
-    const means = classes.map(cls =>
-      cls.length ? cls.reduce((sum, s) => sum + (s[key] || 0), 0) / cls.length : mean
-    );
-    const varianceOfMeans = means.reduce((s, m) => s + (m - mean) ** 2, 0) / numClasses;
-    cost += weight * varianceOfMeans / popVar;
+    // All identical scores — no imbalance is possible, so the term is inert.
+    let termCost = 0;
+    if (popVar !== 0) {
+      const means = classes.map(cls =>
+        cls.length ? cls.reduce((sum, s) => sum + (s[key] || 0), 0) / cls.length : mean
+      );
+      const varianceOfMeans = means.reduce((s, m) => s + (m - mean) ** 2, 0) / numClasses;
+      termCost = weight * varianceOfMeans / popVar;
+    }
+    terms.push({ id: `numeric:${key}`, label: label || key, kind: 'balance', cost: termCost });
   });
 
   // Boolean metrics: variance of proportions across classes
-  flagCriteria.forEach(({ key, weight }) => {
+  flagCriteria.forEach(({ key, label, weight }) => {
     const overall = students.filter(s => s[key]).length / students.length;
     const props = classes.map(cls =>
       cls.length ? cls.filter(s => s[key]).length / cls.length : overall
     );
     const variance = props.reduce((s, p) => s + (p - overall) ** 2, 0) / numClasses;
-    cost += weight * variance;
+    terms.push({ id: `flag:${key}`, label: label || key, kind: 'balance', cost: weight * variance });
   });
 
   // Categorical metrics: for each distinct value v of the criterion, variance of
@@ -81,7 +92,7 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
   // the same as the flag loop above rather than getting its own machinery.
   // Dividing by the value count keeps magnitudes comparable with a flag: a
   // two-valued category contributes the same cost a flag does.
-  categoryCriteria.forEach(({ key, weight }) => {
+  categoryCriteria.forEach(({ key, label, weight }) => {
     const counts = new Map();
     students.forEach(s => {
       const v = normalizeCategoryValue(s[key]);
@@ -93,19 +104,23 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     // every class holding it is already representative. This matches flag
     // semantics (a flag that is true for everyone is inert). A *subset* group
     // such as 8 of 96 students is a flag's job, not a category's.
-    if (valueCount < 2) return;
-    let valueCost = 0;
-    for (const [value, overallCount] of counts) {
-      const overall = overallCount / students.length;
-      const props = classes.map(cls => {
-        if (!cls.length) return overall;
-        let n = 0;
-        for (const s of cls) if (normalizeCategoryValue(s[key]) === value) n++;
-        return n / cls.length;
-      });
-      valueCost += props.reduce((s, p) => s + (p - overall) ** 2, 0) / numClasses;
+    // Zero or one distinct value cannot be spread; the term is inert.
+    let termCost = 0;
+    if (valueCount >= 2) {
+      let valueCost = 0;
+      for (const [value, overallCount] of counts) {
+        const overall = overallCount / students.length;
+        const props = classes.map(cls => {
+          if (!cls.length) return overall;
+          let n = 0;
+          for (const s of cls) if (normalizeCategoryValue(s[key]) === value) n++;
+          return n / cls.length;
+        });
+        valueCost += props.reduce((s, p) => s + (p - overall) ** 2, 0) / numClasses;
+      }
+      termCost = weight * valueCost / valueCount;
     }
-    cost += weight * valueCost / valueCount;
+    terms.push({ id: `category:${key}`, label: label || key, kind: 'balance', cost: termCost });
   });
 
   // Gender balance: variance of female proportion
@@ -114,7 +129,7 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     cls.length ? cls.filter(s => s.gender === 'F').length / cls.length : overallF
   );
   const gVariance = fProps.reduce((s, p) => s + (p - overallF) ** 2, 0) / numClasses;
-  cost += PW.GENDER * gVariance;
+  terms.push({ id: 'gender', label: 'Gender balance', kind: 'balance', cost: PW.GENDER * gVariance });
 
   // Total flags balance: variance of mean total flags per class
   // Weighted by individual flag criterion weights
@@ -131,7 +146,7 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     return total / cls.length;
   });
   const tfVariance = classMeanTotalFlags.reduce((s, m) => s + (m - overallMeanTotalFlags) ** 2, 0) / numClasses;
-  cost += PW.TOTAL_FLAGS * tfVariance;
+  terms.push({ id: 'totalFlags', label: 'Total flags balance', kind: 'balance', cost: PW.TOTAL_FLAGS * tfVariance });
 
   // Total score balance: variance of mean z-score per class
   // Calculate z-scores for each numeric criterion
@@ -164,14 +179,16 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     return total / cls.length;
   });
   const tsVariance = classMeanTotalScores.reduce((s, m) => s + (m - overallMeanTotalScore) ** 2, 0) / numClasses;
-  cost += PW.TOTAL_SCORE * tsVariance;
+  terms.push({ id: 'totalScore', label: 'Total score balance', kind: 'balance', cost: PW.TOTAL_SCORE * tsVariance });
 
   // Class size balance: normalized variance of sizes
   const meanSize = students.length / numClasses;
+  let classSizeCost = 0;
   if (meanSize > 0) {
     const sVar = classes.reduce((s, cls) => s + (cls.length - meanSize) ** 2, 0) / numClasses;
-    cost += PW.CLASS_SIZE * sVar / (meanSize * meanSize);
+    classSizeCost = PW.CLASS_SIZE * sVar / (meanSize * meanSize);
   }
+  terms.push({ id: 'classSize', label: 'Class size balance', kind: 'balance', cost: classSizeCost });
 
   // Keep Apart penalty: count of constrained pairs in same class (high weight)
   const keepApartPenalty = keepApart.reduce((penalty, [id1, id2]) => {
@@ -179,7 +196,7 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     const c2 = assignment[id2];
     return (c1 !== undefined && c2 !== undefined && c1 === c2) ? penalty + 1 : penalty;
   }, 0);
-  cost += PW.KEEP_APART * keepApartPenalty;
+  terms.push({ id: 'keepApart', label: 'Keep apart penalty', kind: 'penalty', cost: PW.KEEP_APART * keepApartPenalty });
 
   // Keep Together penalty: count of groups split across classes (very high weight)
   // Note: This is a soft constraint - high penalty encourages togetherness but doesn't guarantee it
@@ -193,15 +210,39 @@ function computeCost(students, assignment, numClasses, numericCriteria, flagCrit
     // Penalty if group members are in more than 1 class
     return classes.size > 1 ? penalty + 1 : penalty;
   }, 0);
-  cost += PW.KEEP_TOGETHER * keepTogetherPenalty;
+  terms.push({ id: 'keepTogether', label: 'Keep together penalty', kind: 'penalty', cost: PW.KEEP_TOGETHER * keepTogetherPenalty });
 
   // Keep Out of Class penalty: count of students assigned to their forbidden class
   const keepOutOfClassPenalty = keepOutOfClass.reduce((penalty, { studentId, classIndex }) => {
     const assignedClass = assignment[studentId];
     return (assignedClass !== undefined && assignedClass === classIndex) ? penalty + 1 : penalty;
   }, 0);
-  cost += PW.KEEP_OUT_OF_CLASS * keepOutOfClassPenalty;
+  terms.push({ id: 'keepOutOfClass', label: 'Keep out of class penalty', kind: 'penalty', cost: PW.KEEP_OUT_OF_CLASS * keepOutOfClassPenalty });
 
+  return terms;
+}
+
+/**
+ * Total optimization cost for an assignment.
+ *
+ * Defined as the ordered sum of `computeCostTerms`, so the number a user sees
+ * and the breakdown explaining it come from one computation and cannot drift.
+ *
+ * @param {Array<Object>} students - Array of student objects with id, gender, and criteria properties
+ * @param {Object<string, number>} assignment - Map of studentId -> classIndex
+ * @param {number} numClasses - Total number of classes
+ * @param {Array<{key: string, weight: number}>} numericCriteria - Numeric score criteria with weights
+ * @param {Array<{key: string, weight: number}>} flagCriteria - Boolean flag criteria with weights
+ * @param {Array<[string, string]>} keepApart - Pairs of student IDs that should be in different classes
+ * @param {Array<string[]>} keepTogether - Groups of student IDs that should be in the same class
+ * @param {Array<{studentId: string, classIndex: number}>} keepOutOfClass - Students blocked from specific classes
+ * @param {Array<{key: string, weight: number}>} categoryCriteria - Categorical criteria with weights
+ * @returns {number} The total cost (lower is better)
+ */
+function computeCost(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], categoryCriteria = []) {
+  const terms = computeCostTerms(students, assignment, numClasses, numericCriteria, flagCriteria, keepApart, keepTogether, keepOutOfClass, categoryCriteria);
+  let cost = 0;
+  for (let i = 0; i < terms.length; i++) cost += terms[i].cost;
   return cost;
 }
 
@@ -1045,5 +1086,5 @@ function computeAdaptiveAnnealingParams(numStudents, numClasses) {
 
 // Export for Node.js testing (conditional to not break browser)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { optimize, optimizeMultiStart, OPTIMIZE_RESTARTS, computeCost, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams };
+  module.exports = { optimize, optimizeMultiStart, OPTIMIZE_RESTARTS, computeCost, computeCostTerms, computeSeed, createSeededRNG, computeAdaptiveAnnealingParams };
 }

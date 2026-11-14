@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Held apart from the routine dev bumps on purpose: this is the one
+      # direct devDependency with a platform pin (cpu: x64), which is why a
+      # local macOS/arm64 `npm ci` needs --force. Reviewed on its own diff.
+      rolldown-binding:
+        patterns:
+          - '@rolldown/*'
+      dev-minor-patch:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns:
+          - '*'
