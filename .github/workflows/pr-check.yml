@@ -17,6 +17,39 @@ jobs:
     steps:
       - name: Checkout PR code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # Full history, because the scope step below diffs this PR against main.
+          fetch-depth: 0
+
+      - name: Determine whether this PR ships anything
+        id: scope
+        run: |
+          # A PR that touches nothing in the release-audit manifest
+          # (.security/scripts/audit-hash.js COMPONENTS) cannot change what a user
+          # runs, so it has no version to record. Config, docs and dependency
+          # bumps land here. Anything under src/ or in the build chain is still
+          # gated by the comparison below.
+          SHIPPED='^(src/|package\.json$|package-lock\.json$|SECURITY\.md$|build-standalone\.js$|class-list-builder-source\.html$|scripts/validate-build\.js$)'
+
+          CHANGED=$(git diff --name-only origin/main...HEAD) || {
+            echo "❌ Could not diff this PR against main"
+            exit 1
+          }
+
+          echo "Files changed in this PR:"
+          if [ -z "$CHANGED" ]; then
+            echo "  (none)"
+          else
+            echo "$CHANGED" | sed 's/^/  /'
+          fi
+
+          if echo "$CHANGED" | grep -Eq "$SHIPPED"; then
+            echo "ships=true" >> $GITHUB_OUTPUT
+            echo "→ shipped files changed: version bump required"
+          else
+            echo "ships=false" >> $GITHUB_OUTPUT
+            echo "→ no shipped files changed: version bump not applicable"
+          fi
 
       - name: Get PR version
         id: pr-version
@@ -47,6 +80,16 @@ jobs:
 
       - name: Compare versions
         run: |
+          if [ "${{ steps.scope.outputs.ships }}" = "false" ]; then
+            echo "✅ No shipped files changed — version bump not required for this PR."
+            echo ""
+            echo "The gate ties anything a user runs to a release audit. This PR only"
+            echo "touches files outside the audit manifest, so there is no version to"
+            echo "record. A PR that changes src/ or the build chain still hits the"
+            echo "comparison below."
+            exit 0
+          fi
+
           PR_VERSION="${{ steps.pr-version.outputs.version }}"
           MAIN_VERSION="${{ steps.main-version.outputs.version }}"
           APP_VERSION="${{ steps.app-version.outputs.version }}"
