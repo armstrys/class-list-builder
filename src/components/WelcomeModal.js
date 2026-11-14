@@ -160,11 +160,14 @@ function WelcomeModal({ onClose, onLoadDemo }) {
           </ol>
         </div>
 
-        {/* Offline Note */}
+        {/* Offline Note. Also where the outbound links live: the header hides
+            them below 900px, where its width runs out before they fit. */}
         <div className="welcome-note">
           <strong>💡 Tip:</strong> Want to use this offline? Download the standalone HTML file.
-          <div style={{ marginTop: '8px' }}>
+          <div style={{ marginTop: '8px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <a href="https://github.com/armstrys/class-list-builder/releases" target="_blank" rel="noopener noreferrer" className="releases-link">➡️ Visit Releases Page</a>
+            <a href="https://github.com/armstrys/class-list-builder" target="_blank" rel="noopener noreferrer" className="releases-link">🐙 Project on GitHub</a>
+            <a href="https://github.com/armstrys/class-list-builder/issues/new" target="_blank" rel="noopener noreferrer" className="releases-link">💬 Ask for help</a>
           </div>
         </div>
       </div>

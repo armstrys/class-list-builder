@@ -48,6 +48,50 @@ const CALLOUT_WIDTH = 300;
 const GAP = 14;
 // Room around the spotlighted control so the ring sits inside the hole.
 const HOLE_PAD = 8;
+// Hole corner radius. Matches --radius, which CSS cannot contribute to a
+// clip-path path, so it is mirrored here.
+const HOLE_RADIUS = 10;
+
+/**
+ * Path data for the scrim: the whole viewport, minus a rounded hole.
+ *
+ * The fill rule is passed separately by the caller — `path(evenodd, "...")` —
+ * because `path("evenodd, ...")` is not valid CSS. WebKit drops that form
+ * silently, leaving `clip-path: none` and dimming the control the step points
+ * at; `CSS.supports()` still returns true, so only looking at the rendered
+ * result catches it.
+ *
+ * The hole is drawn with arcs rather than the `border-radius` +
+ * `box-shadow: 0 0 0 100vmax` trick this replaces: WebKit inflates a shadow's
+ * corner radius by the spread distance, so at a ~1500px spread the rounded
+ * corner lands inside the viewport and leaks an undimmed quarter-disc into the
+ * bottom-left corner. Measured in WebKit at 1728x1117: ~1550 undimmed pixels.
+ * A shadow spread cannot round a hole that reaches the edge of the screen.
+ */
+function scrimPath(rect, vw, vh) {
+  const r = HOLE_RADIUS;
+  const x0 = Math.max(0, rect.left - HOLE_PAD);
+  const y0 = Math.max(0, rect.top - HOLE_PAD);
+  const x1 = Math.min(vw, rect.left + rect.width + HOLE_PAD);
+  const y1 = Math.min(vh, rect.top + rect.height + HOLE_PAD);
+  const whole = `M0 0 H${vw} V${vh} H0 Z `;
+  // A hole narrower or shorter than two radii has no room for the arcs.
+  if (x1 - x0 < r * 2 || y1 - y0 < r * 2) {
+    return `${whole}M${x0} ${y0} H${x1} V${y1} H${x0} Z`;
+  }
+  return (
+    whole +
+    `M${x0 + r} ${y0} H${x1 - r} A${r} ${r} 0 0 1 ${x1} ${y0 + r} ` +
+    `V${y1 - r} A${r} ${r} 0 0 1 ${x1 - r} ${y1} ` +
+    `H${x0 + r} A${r} ${r} 0 0 1 ${x0} ${y1 - r} ` +
+    `V${y0 + r} A${r} ${r} 0 0 1 ${x0 + r} ${y0} Z`
+  );
+}
+
+/** The CSS value that cuts `data` out of the scrim. */
+function clipValue(data) {
+  return `path(evenodd, "${data}")`;
+}
 
 /**
  * The rendered control a step names, or null when nothing matches.
@@ -97,6 +141,13 @@ function Tour({ currentTourStep, setCurrentTourStep }) {
         // The scrim cuts its hole from this, so it must be the same rect the
         // ring is drawn on.
         rect: { top: r.top, left: r.left, width: r.width, height: r.height },
+        // Built here, not in render: a resize must re-cut the hole, and the
+        // viewport size is only known after layout.
+        clip: scrimPath(
+          { top: r.top, left: r.left, width: r.width, height: r.height },
+          vw,
+          vh
+        ),
       });
     }
 
@@ -137,21 +188,20 @@ function Tour({ currentTourStep, setCurrentTourStep }) {
   // Shade everything except the control this step names, and let that hole
   // close around the control's own corners. Purely visual: pointer-events are
   // off, so the tour stays non-modal and nothing becomes unclickable.
-  const dim =
-    pos && pos.rect ? (
-      <div
-        className="tour-dim tour-dim-hole"
-        style={{
-          left: pos.rect.left - HOLE_PAD,
-          top: pos.rect.top - HOLE_PAD,
-          width: pos.rect.width + HOLE_PAD * 2,
-          height: pos.rect.height + HOLE_PAD * 2,
-        }}
-        aria-hidden="true"
-      />
-    ) : (
-      <div className="tour-dim" aria-hidden="true" />
-    );
+  //
+  // One full-viewport element either way. An anchored step clips the hole out
+  // of it; a step with no visible target just dims, with no hole to cut.
+  const dim = (
+    <div
+      className={`tour-dim ${anchored ? 'tour-dim-hole' : ''}`}
+      style={
+        anchored && pos.clip
+          ? { clipPath: clipValue(pos.clip), WebkitClipPath: clipValue(pos.clip) }
+          : undefined
+      }
+      aria-hidden="true"
+    />
+  );
 
   return (
     <>

@@ -44,9 +44,26 @@ Then open <http://localhost:3000/class-list-builder-source.html> in your browser
 1. Fork the repository
 2. Edit the relevant file in `src/` (or `class-list-builder-source.html` for HTML/structure changes)
 3. Reload the page in your browser to see changes
-4. Submit a pull request
+4. Bump the version (see below) and submit a pull request
 
-PR titles can include `#major` to trigger a major version bump; otherwise minor versions are automatically incremented on merge to `main`.
+### Versioning
+
+Semantic versioning, chosen by whoever cuts the release — nothing bumps it
+automatically. `release.yml` tags whatever `package.json` says, and
+`pr-check.yml` blocks a PR whose version still matches `main`.
+
+- **Patch** (`3.5.1` → `3.5.2`): fixes to shipped behaviour.
+- **Minor** (`3.5.2` → `3.6.0`): new capability.
+- **Major** (`3.x` → `4.0.0`): breaking, including dropping project-file
+  compatibility.
+
+The version must be changed in **both** `package.json` and `APP_VERSION` in
+`src/defaults.js`; CI fails if they disagree. Several files then name the
+version, so check for stale references before opening the PR:
+
+```bash
+grep -rn "$(node -p "require('./package.json').version")" README.md SECURITY.md
+```
 
 ## Release Security Audit
 

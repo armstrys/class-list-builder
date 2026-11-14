@@ -317,26 +317,37 @@ describe('first-run splash', () => {
 });
 
 describe('tour entry point', () => {
+  // The tour starts from the header, beside the logo, but only while the setup
+  // page is on screen: every step names a control on that page.
   const app = read('src/app.js');
-  const header = app.slice(app.indexOf('function Header'), app.indexOf('onStartTour'));
+  const header = app.slice(app.indexOf('function Header'), app.indexOf('function App('));
 
   test('the tour button names itself instead of a bare question mark', () => {
-    const start = app.slice(app.indexOf('onClick={onStartTour}'));
+    const start = header.slice(header.indexOf('onClick={onStartTour}'));
     expect(start).toMatch(/Take a tour/);
     expect(start).toMatch(/❓/);
   });
 
-  test('the label collapses to its emoji on narrow headers that already overflow', () => {
+  test('the label collapses to its emoji on the narrow header', () => {
     expect(app).toContain('tour-start-label');
     const narrow = styles.slice(styles.indexOf('@media (max-width: 640px)'));
     expect(narrow).toMatch(/\.tour-start-label\s*\{\s*display:\s*none/);
   });
 
   test('the accessible name survives collapsing the visible label', () => {
-    const start = app.slice(app.indexOf('onClick={onStartTour}'));
+    const start = header.slice(header.indexOf('onClick={onStartTour}'));
     // Hide the glyph from AT and keep the aria-label, or the emoji is the name.
     expect(start).toMatch(/aria-label="Take the tour"/);
     expect(start).toMatch(/aria-hidden="true">❓/);
+  });
+
+  test('the tour button only shows where the tour applies', () => {
+    // Offering it on the optimize board would start a walkthrough of a screen
+    // that is not on display, with every callout falling back to the docked
+    // corner. The header is shared, so the button is gated on the view.
+    const aux = header.slice(header.indexOf('header-aux'), header.indexOf('header-steps'));
+    expect(aux).toMatch(/view === 'setup' && \(/);
+    expect(aux).toMatch(/onClick=\{onStartTour\}/);
   });
 });
 
