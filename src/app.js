@@ -262,6 +262,33 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
       <div className="app-logo">
         Class<span>List</span> Builder
       </div>
+      {/* Orientation controls sit with the identity, ahead of the view pills:
+          the tour teaches this page, and the mark is a link out, so neither is
+          a view switch. The tour is setup-only, like Settings, because every
+          step names a control on this page. */}
+      <div className="header-aux">
+        <a
+          className="btn btn-ghost btn-sm header-github"
+          href="https://github.com/armstrys/class-list-builder"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Class List Builder on GitHub (opens in a new tab)"
+          aria-label="Class List Builder on GitHub (opens in a new tab)"
+        >
+          <GitHubMark />
+        </a>
+        {view === 'setup' && (
+          <button
+            className="btn btn-secondary btn-sm tour-start"
+            onClick={onStartTour}
+            title="Take the tour"
+            aria-label="Take the tour"
+          >
+            <span aria-hidden="true">❓</span>
+            <span className="tour-start-label">Take a tour</span>
+          </button>
+        )}
+      </div>
       <div className="header-steps">
         <button
           className={`step-pill ${view === 'setup' ? 'active' : 'done'}`}
@@ -312,15 +339,6 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
           </button>
         )}
         <button
-          className="btn btn-secondary btn-sm tour-start"
-          onClick={onStartTour}
-          title="Take the tour"
-          aria-label="Take the tour"
-        >
-          <span aria-hidden="true">❓</span>
-          <span className="tour-start-label">Take a tour</span>
-        </button>
-        <button
           className="btn btn-ghost btn-sm"
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -330,6 +348,28 @@ function Header({ onNavigateSetup, onNavigateOptimize, onOpenSettings, onOpenSav
         </button>
       </div>
     </header>
+  );
+}
+
+/**
+ * GitHubMark - The GitHub logo, in currentColor so it follows the ghost button.
+ *
+ * Authored inline rather than an emoji or an icon font: there is no octocat
+ * emoji, and a font or image would be another request for a 14px mark.
+ */
+function GitHubMark() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="14"
+      height="14"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+      style={{ flex: 'none' }}
+    >
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+    </svg>
   );
 }
 

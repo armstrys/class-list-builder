@@ -1,0 +1,62 @@
+name: Bug report or help request
+description: Something looked wrong, broke, or did not do what you expected.
+title: "[Bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. The app runs entirely in your
+        browser, so nothing you type here is visible to it — only what you paste
+        below is shared.
+
+        **Please do not paste student names, IDs, or a real roster.** The
+        screenshot and the smallest made-up example are enough.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, and what the app did instead.
+      placeholder: I clicked Optimize with 3 classes and 12 students, and ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: The classes should have been balanced by reading score.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: How are you using the app?
+      options:
+        - GitHub Pages site (online)
+        - The single downloaded HTML file (offline)
+        - I am not sure
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      description: >-
+        For example "Safari 27.2 on macOS", or "Chrome on a school Windows
+        laptop". A browser name is enough.
+      placeholder: Safari 27.2 on macOS
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: >-
+        Drag images here. Please crop or blur any real student names first.
+    validations:
+      required: false
