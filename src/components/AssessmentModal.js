@@ -40,6 +40,11 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
 
   const { score, currentCost, balancedCost, randomCost, classStats } = assessment;
 
+  // Cost attribution. The terms arrive on the assessment itself, computed from
+  // the same call that produced `currentCost`, so their sum is that number by
+  // construction. Rendered by ScoreBreakdown, which ranks and formats them.
+  const costTerms = Array.isArray(assessment.costTerms) ? assessment.costTerms : [];
+
   // Score color coding
   const scoreColor = score >= 80 ? 'var(--accent)' : score >= 50 ? 'var(--amber)' : 'var(--danger)';
 
@@ -181,6 +186,10 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
             </tr>
           </tbody>
         </table>
+
+        {/* Cost Attribution */}
+        <h3 style={{ fontSize: 15, marginBottom: 12 }}>What's affecting your balance score</h3>
+        <ScoreBreakdown terms={costTerms} />
 
         {/* Per-Class Statistics */}
         <h3 style={{ fontSize: 15, marginBottom: 12 }}>Per-Class Statistics</h3>
