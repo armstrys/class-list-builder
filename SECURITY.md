@@ -140,10 +140,22 @@ IT teams can independently verify security claims:
 grep -r "fetch\|XMLHttpRequest\|WebSocket\|sendBeacon" src/
 # Expected: No matches
 
-# Verify no external URLs in release
-grep -r "http" dist/*.html | grep -v "http-equiv"
-# Expected: Only data URIs
+# Verify the release loads nothing from the network
+grep -oE '<(script|link|img|iframe)[^>]*(src|href)="https?://[^"]*"' dist/*.html
+# Expected: No matches — every dependency is inlined as a data: URI
+
+# List every outbound target the app can navigate to on a click
+grep -oE '<a[^>]*href="https?://[^"]*"' dist/*.html | sort -u
+# Expected: only github.com/armstrys/class-list-builder* links, all
+#   target="_blank" rel="noopener noreferrer"
 ```
+
+Those two greps are deliberately separate. The app **loads** nothing over the
+network, which is what keeps student data on the machine; it *can* navigate to
+the project's GitHub page if the user clicks that link, which sends no data and
+is the same as any hyperlink. An earlier version of this section used a single
+`grep -r "http"`, which reported the documentation links as if they were
+network resources.
 
 ### Network Monitoring
 ```bash
@@ -279,7 +291,7 @@ Visit `https://armstrys.github.io/class-list-builder/`:
 1. **Pin a release:** Download from Releases page
 2. **Verify SHA-256:** Compare against release notes
 3. **Verify build provenance:** `gh attestation verify <file> --repo armstrys/class-list-builder`
-4. **Inspect artifact:** Open in editor; confirm zero remote `<script src="…">` or `<link href="https://…">` references
+4. **Inspect artifact:** Open in editor; confirm zero remote `<script src="…">` or `<link href="https://…">` references, and that the only `https://` anchors point at this project on GitHub (see Verification Methods)
 5. **Behavioral test:** Run on air-gapped machine, verify all features (including XLSX import) work
 6. **Reproducibility:** Build locally, diff against release
 

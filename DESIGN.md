@@ -365,7 +365,25 @@ shadow on the same element except the modal's deliberate edge ring.
 ### Buttons
 
 Quiet, compact, and text-led. Icons are emoji or a bare glyph, never an icon
-library.
+library. The one exception is the GitHub mark in the header: it is an authored
+inline `<svg>` path in `currentColor`, because there is no octocat glyph and
+an emoji beside a real mark reads as two different icon systems. It is not an
+icon font and adds no request.
+
+- **Orientation controls sit beside the logo.** The GitHub mark and "❓ Take a
+  tour" are one group between `app-logo` and the view pills, in that order:
+  the pills are the only thing that switches view, and neither of these does.
+  The tour is gated on the setup view — every step names a control there, so on
+  the optimize board it would walk through a screen that is not on display.
+- **The mark is a link out, and only that.** Most teachers have no GitHub
+  account, so the header offers no "ask for help" promise; it points at the
+  project page and nothing else. Help is the docs link in the welcome splash.
+- **Phones drop the mark, never the tour.** Below 640px the header is the
+  tightest row in the app: the tour keeps its ❓ and drops its label (back to
+  the width that slot had before), and the mark goes rather than push Settings
+  and the theme toggle off the edge. The welcome splash still links to the
+  project. The header's remaining overflow under ~480px is pre-existing and
+  belongs to the right-hand controls, not this group.
 
 - **Shape:** 6px radius, 1.5px border (transparent for ghost/danger), 7px/14px
   padding at 13px/500. The `btn-sm` variant drops to 4px/10px at 12px.
@@ -476,11 +494,26 @@ this component.
   `transition: all` would otherwise interpolate the ring up from a transparent
   0-spread shadow, leaving it momentarily invisible.
 - **Focus scrim.** The app is shaded behind the step so the spotlighted
-  control is the only crisp thing on screen. The hole is the control's own
-  rect inflated by `8px`, with `radius` corners, painted as
-  `box-shadow: 0 0 0 100vmax var(--modal-scrim)` on a transparent element —
-  not a four-panel overlay, and not `clip-path`, which cannot round corners.
-  A step with no visible target still shades, just without a hole.
+  control is the only crisp thing on screen. One full-viewport element, with
+  the control's own rect inflated by `8px` and rounded to `radius`, cut out of
+  it by `clip-path: path(evenodd, …)` — the outer subpath is the viewport, the
+  inner one the hole, so `evenodd` leaves the hole unpainted. A step with no
+  visible target still shades, just without a hole (no clip is set).
+- **Why not `box-shadow: 0 0 0 100vmax`.** That was the first implementation,
+  and it is broken in WebKit: a shadow's corner radius is inflated by the
+  spread distance, so with the ~1500px spread this needs the rounded corner
+  lands *inside* the viewport and leaks an undimmed quarter-disc into the
+  bottom-left corner. Measured in WebKit at 1728×1117 as ~1550 undimmed
+  pixels. A shadow spread cannot round a hole that reaches the screen edge.
+- **The fill rule is a `path()` argument, not path data.** `path("evenodd, …")`
+  is invalid CSS; WebKit drops it silently and leaves `clip-path: none`, which
+  dims the very control the step points at. `CSS.supports()` still returns
+  true for it, so this is only caught by looking at the rendered result. Use
+  `path(evenodd, "…")`. Chromium is forgiving; Safari is not.
+- **The narrow-screen rule must not touch an anchored callout.** The anchored
+  panel is placed by inline `left`/`top`/`width`; a media query that also pins
+  `left`/`right`/`bottom` stretches it into a tall empty box, or collapses it to
+  a sliver with its buttons spilling out. Only `.tour-docked` is stretched.
 - **The scrim is never modal.** `pointer-events: none`, and it renders below
   the callout. The tour must not block the control it points at; a click
   guard here would break the thing it is teaching.
