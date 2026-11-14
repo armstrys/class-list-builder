@@ -64,11 +64,13 @@ describe('tour anchors', () => {
     expect(importStep.slice(0, 400)).toMatch(/template/i);
   });
 
-  test('the tour can be left from the panel and from the header', () => {
+  test('the tour can be left from the panel and started from the header', () => {
     const tour = read('src/components/Tour.js');
     expect(tour).toMatch(/setCurrentTourStep\(null\)/);
     expect(tour).toMatch(/aria-label="End tour"/);
-    expect(read('src/app.js')).toMatch(/onStartTour=\{\(\) => setCurrentTourStep\(0\)\}/);
+    const app = read('src/app.js');
+    expect(app).toMatch(/onClick=\{onStartTour\}/);
+    expect(app).toMatch(/onStartTour=\{\(\) => setCurrentTourStep\(0\)\}/);
   });
 
   test('the Demo button starts the tour', () => {
@@ -98,16 +100,32 @@ describe('tour anchors', () => {
 
   test('the scrim shades everything but the spotlighted control', () => {
     const tour = read('src/components/Tour.js');
-    const css = read('src/styles.css');
     // The hole is cut from the same measured rect the ring is drawn on.
     expect(tour).toMatch(/rect: \{ top: r\.top, left: r\.left/);
     expect(tour).toContain('tour-dim-hole');
-    // A step with no target still dims, just with no hole.
-    expect(tour).toMatch(/<div className="tour-dim" aria-hidden="true" \/>/);
-    const hole = css.match(/\.tour-dim-hole\s*\{[^}]*\}/);
+    // A step with no target still dims, just with no hole to cut.
+    expect(tour).toMatch(/className={`tour-dim \$\{anchored \? 'tour-dim-hole' : ''\}`}/);
+    // The hole is a hole: evenodd cuts the second subpath out of the viewport.
+    expect(tour).toMatch(/const whole = `M0 0 H\$\{vw\} V\$\{vh\} H0 Z `;/);
+    // The fill rule must be a path() argument, not part of the path string:
+    // `path("evenodd, ...")` is invalid CSS, and WebKit drops it silently.
+    expect(tour).toContain('path(evenodd, "${data}")');
+    expect(tour).not.toMatch(/path\("\$\{/);
+  });
+
+  test('the scrim does not rely on shadow spread to hold a hole', () => {
+    // WebKit inflates a box-shadow's corner radius by the spread distance, so
+    // at the ~1500px spread this used to need, the rounded corner landed inside
+    // the viewport and leaked an undimmed quarter-disc into the bottom-left.
+    // Measured in WebKit at 1728x1117: ~1550 undimmed pixels before, 0 after.
+    const css = read('src/styles.css');
+    const hole = css.match(/\.tour-dim-hole[^{]*\{[^}]*\}/);
     expect(hole).toBeTruthy();
-    expect(hole[0]).toContain('transparent');
-    expect(hole[0]).toContain('100vmax');
+    expect(hole[0]).not.toContain('100vmax');
+    // The scrim itself is one full-viewport fill, not a hole-shaped box.
+    const dim = css.match(/\.tour-dim\s*\{[^}]*\}/);
+    expect(dim[0]).toContain('inset: 0');
+    expect(dim[0]).toContain('background: var(--modal-scrim)');
   });
 
   test('the scrim never swallows a click', () => {
@@ -139,6 +157,20 @@ describe('tour anchors', () => {
     const tour = read('src/components/Tour.js');
     expect(tour).toMatch(/anchored: false/);
     expect(tour).toContain('tour-docked');
+    // No hole to cut means no clip, so the scrim is a plain full-viewport fill.
+    expect(tour).toMatch(/anchored && pos\.clip/);
+  });
+
+  test('the narrow-screen rule cannot reach an anchored callout', () => {
+    // The anchored panel is placed by inline left/top/width. A media query that
+    // also pins left/right/bottom stretches it into a tall empty box or
+    // collapses it to a sliver with its buttons spilling out.
+    const css = read('src/styles.css');
+    const narrow = css.slice(css.indexOf('@media (max-width: 640px)'));
+    const rule = narrow.match(/\.tour-[a-z]+\s*\{[^}]*bottom: 8px[^}]*\}/);
+    expect(rule).toBeTruthy();
+    expect(rule[0]).toContain('.tour-docked');
+    expect(rule[0]).not.toContain('.tour-panel');
   });
 
   test('the ring and the measurement agree on the same element', () => {
@@ -199,3 +231,67 @@ describe('CSV template', () => {
     expect(parseCSV(csv, [], [], []).errors).toEqual([]);
   });
 });
+
+describe('the GitHub link', () => {
+  const app = read('src/app.js');
+  const css = read('src/styles.css');
+  const header = app.slice(app.indexOf('function Header'), app.indexOf('function App('));
+
+  test('it sits with the identity, left of the view pills', () => {
+    // The pills are the only thing that switches view; a link out and the tour
+    // are orientation controls, so they belong beside the logo, not among the
+    // view switches or in the footer where they read as page actions.
+    expect(header).toContain('https://github.com/armstrys/class-list-builder"');
+    expect(header).toMatch(/className="btn btn-ghost btn-sm header-github"/);
+    const order = [...header.matchAll(/className="(app-logo|header-aux|header-steps|header-right)"/g)].map(m => m[1]);
+    expect(order).toEqual(['app-logo', 'header-aux', 'header-steps', 'header-right']);
+    // The aux group holds the mark's link and the tour, in that order.
+    const aux = header.slice(header.indexOf('header-aux'), header.indexOf('header-steps'));
+    expect(aux.indexOf('header-github')).toBeLessThan(aux.indexOf('tour-start'));
+  });
+
+  test('it points at the project page, not the issue form', () => {
+    // Most teachers do not have a GitHub account, so "ask for help" through
+    // issues is the wrong promise. This is a plain "the project lives here"
+    // link; help itself is the docs link in the welcome splash.
+    expect(header).toContain('href="https://github.com/armstrys/class-list-builder"');
+    expect(app).not.toContain('/issues/new');
+  });
+
+  test('it opens in a new tab and cannot reach the app window', () => {
+    // The app is local and offline; a link-out must not discard unsaved work,
+    // and a new tab must not hold a handle back to this one.
+    const link = header.match(/<a\s[^>]*header-github[\s\S]{0,500}?<\/a>/)[0];
+    expect(link).toContain('target="_blank"');
+    expect(link).toContain('rel="noopener noreferrer"');
+  });
+
+  test('it is icon-only, so it names itself for assistive tech', () => {
+    const link = header.match(/<a\s[^>]*header-github[\s\S]{0,500}?<\/a>/)[0];
+    expect(link).toMatch(/aria-label="Class List Builder on GitHub[^"]*"/);
+    expect(link).toMatch(/title="Class List Builder on GitHub[^"]*"/);
+    // The mark is the only content; the name comes from aria-label.
+    expect(link).toContain('<GitHubMark />');
+    expect(link.replace(/<[^>]+>/g, '').trim()).toBe('');
+  });
+
+  test('no emoji stands in for the mark', () => {
+    // An authored SVG path in currentColor: no extra network request, and it
+    // follows the ghost button's colour in either theme.
+    expect(app).toMatch(/function GitHubMark/);
+    expect(app).toMatch(/<svg[\s\S]{0,200}fill="currentColor"/);
+    const link = header.match(/<a\s[^>]*header-github[\s\S]{0,500}?<\/a>/)[0];
+    expect(link).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
+  });
+
+  test('phones keep the tour glyph and drop the mark instead', () => {
+    // The header is the tightest row on a phone. Dropping the label puts the
+    // tour back to the width this slot had before, and the mark goes rather
+    // than pushing Settings and the theme toggle off the edge.
+    const narrow = css.slice(css.indexOf('@media (max-width: 640px)'));
+    expect(narrow).toMatch(/\.tour-start-label\s*\{\s*display:\s*none/);
+    expect(narrow).toMatch(/\.header-github\s*\{\s*display:\s*none/);
+    // Never the other way round: the tour cannot be reached anywhere else.
+    expect(css).not.toMatch(/\.tour-start[^-][^{]*\{[^}]*display:\s*none/);
+  });
+})

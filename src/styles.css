@@ -121,6 +121,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .step-pill.done { color: var(--text2); }
 .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
+
 /* ── Buttons ── */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -166,6 +167,13 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .setup-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; padding: 20px 24px; }
 .setup-bottom { padding: 12px 24px; border-top: 1px solid var(--border); background: var(--surface); display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
 .setup-bottom-left { margin-right: auto; display: flex; gap: 8px; }
+/* Identity row: mark and tour sit between the logo and the view pills, so the
+   pills stay the only thing that switches view. */
+.header-aux { display: flex; gap: 6px; align-items: center; }
+/* `<a class="btn">` needs the decoration reset a <button> never needed.
+   Icon-only, so aria-label + title name it. */
+.header-github { text-decoration: none; padding: 4px 8px; }
+.header-github svg { display: block; transform: translateY(1px); }
 
 /* ── Teachers Panel ── */
 .teacher-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
@@ -717,20 +725,19 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .tour-docked { left: 20px; bottom: 20px; width: 320px; }
 
 /* Shade the app so the current step is the only thing competing for
-   attention. The hole is the control's own rect, so the ring sits inside it.
-   An inset shadow on the hole rather than `box-shadow: 0 0 0 100vmax`: the
-   shadow version cannot round the corners and repaints the whole viewport on
-   every scroll, while this clips to the box. */
+   attention. One full-viewport fill; the hole is cut out of it by a
+   `clip-path: path(evenodd, "...")` set inline from the measured rect. The
+   fill rule must be inside `path()`: `path("evenodd, ...")` is invalid CSS and
+   WebKit drops the whole declaration.
+   Not `border-radius` + `box-shadow: 0 0 0 100vmax`: WebKit inflates a
+   shadow's corner radius by the spread distance, so at a ~1500px spread the
+   rounded corner lands inside the viewport and leaks an undimmed quarter-disc
+   into the bottom-left corner. Not four panels either. */
 .tour-dim {
   position: fixed; inset: 0; z-index: 890;
   background: var(--modal-scrim);
   pointer-events: none;
   animation: fadeIn .18s ease-out;
-}
-.tour-dim-hole {
-  background: transparent;
-  border-radius: var(--radius);
-  box-shadow: 0 0 0 100vmax var(--modal-scrim);
 }
 /* The scrim must never eat a click: the tour is not modal, and a teacher
    should be able to use the control the step is pointing at. */
@@ -755,7 +762,12 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .tour-dots { display: flex; gap: 6px; margin-bottom: 12px; }
 .tour-dot { width: 8px; height: 8px; padding: 0; border: none; border-radius: 50%; background: var(--border); cursor: pointer; }
 .tour-dot.active { background: var(--accent); }
-.tour-actions { display: flex; align-items: center; gap: 8px; }
+/* Buttons stay inside the callout. The last step's label is long enough that
+   "Start with my data" overflowed a 300px panel by 31px at every width, which
+   put a sliver of it outside the border and, being inside the scrim's hole,
+   showed as a bright notch on narrow screens. */
+.tour-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tour-actions .btn { min-width: 0; max-width: 100%; }
 /* The ring a step puts on the control it names. Two-tone: a gap in the page
    colour then the accent, so it reads on filled and ghost buttons alike. */
 /* Static and instant: the ring is the step's whole signal, so it must not be
@@ -784,6 +796,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
   .optimize-toolbar { padding: 8px 12px; gap: 6px; }
   .classes-area { padding: 10px; }
   .students-header-actions { flex-wrap: wrap; }
+
 }
 
 @media (max-width: 640px) {
@@ -794,13 +807,21 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
      incidental. Cards are tapped constantly, so give them room too. */
   .btn-sm { padding: 8px 12px; font-size: 12.5px; }
   .lock-btn { padding: 8px; font-size: 15px; }
-  /* The header already overflows at this width; the label keeps only its
-     emoji so the tour control does not push the theme switch further out. */
+  /* The header is the tightest row on a phone. The tour keeps its ❓ and drops
+     its label, putting it back to the width this slot had before, and the
+     outbound mark goes rather than pushing Settings and the theme toggle off
+     the edge. The welcome splash still links to the project. */
   .tour-start-label { display: none; }
+  .header-github { display: none; }
   .student-card { padding: 8px 10px; min-height: 44px; }
   .class-col { width: min(340px, 92vw); }
 
-  .tour-panel { left: 8px; right: 8px; bottom: 8px; width: auto; max-width: none; }
+  /* Docked only. An anchored panel is placed by inline left/top/width, so
+     stretching it to the screen edges would fight that: it grew into a tall
+     empty box or collapsed to a sliver with its buttons spilling out. */
+  .tour-docked { left: 8px; right: 8px; bottom: 8px; width: auto; max-width: none; }
+  /* A 300px callout does not fit a 320px screen inside the 8px gutters. */
+  .tour-actions .btn { padding: 4px 8px; }
 }
 
 /* ============================================================
