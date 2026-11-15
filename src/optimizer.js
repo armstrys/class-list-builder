@@ -905,15 +905,6 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
 
   let bestCost = currentCost;
   let iterationsSinceImprovement = 0;
-  
-  // Log adaptive parameters for large problems (helpful for debugging)
-  // eslint-disable-next-line no-console
-  if (students.length > 500) {
-    // eslint-disable-next-line no-console
-    console.log(`[Optimizer] Problem size: ${students.length} students × ${numClasses} classes`);
-    // eslint-disable-next-line no-console
-    console.log(`[Optimizer] Annealing params: ${maxIters.toLocaleString()} iterations, cooling=${cooling.toFixed(5)}, window=${convergenceWindow}`);
-  }
 
   for (let i = 0; i < maxIters; i++) {
     const i1 = Math.floor(rand() * unlocked.length);
