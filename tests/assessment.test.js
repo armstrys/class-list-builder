@@ -129,6 +129,44 @@ describe('Assessment Engine', () => {
       expect(behavior1.count).toBe(0);
     });
 
+    test('reports the category split per class (#108)', () => {
+      const categoryCriteria = [{ key: 'currentclass', label: 'Current Class', weight: 1.5 }];
+      const students = [
+        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2000, behavior: false, sped: false, currentclass: 'Room 3' },
+        { id: uid(), name: 'Bob', gender: 'M', readingScore: 200, mathScore: 2500, behavior: true, sped: false, currentclass: 'Room 3' },
+        { id: uid(), name: 'Charlie', gender: 'M', readingScore: 150, mathScore: 2200, behavior: false, sped: true, currentclass: 'Room 4' },
+        { id: uid(), name: 'Diana', gender: 'F', readingScore: 180, mathScore: 2400, behavior: true, sped: true, currentclass: '  ' },
+      ];
+      const assignment = {
+        [students[0].id]: 0,
+        [students[1].id]: 0,
+        [students[2].id]: 1,
+        [students[3].id]: 1,
+      };
+
+      const stats = computeClassStats(students, assignment, 2, numericCriteria, flagCriteria, categoryCriteria);
+
+      // The breakdown the score already charges for is visible per class, with
+      // counts high to low.
+      expect(stats[0].categoryStats).toHaveLength(1);
+      expect(stats[0].categoryStats[0]).toEqual({
+        key: 'currentclass',
+        label: 'Current Class',
+        values: [{ value: 'Room 3', count: 2 }],
+      });
+      expect(stats[1].categoryStats[0].values).toEqual([{ value: 'Room 4', count: 1 }]);
+      // A blank cell is "no value", not a bucket of its own.
+      expect(stats[1].categoryStats[0].values.map(v => v.value)).not.toContain('');
+    });
+
+    test('omitting category criteria leaves the structure without category stats', () => {
+      const students = [
+        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2000, behavior: false, sped: false, currentclass: 'Room 3' },
+      ];
+      const stats = computeClassStats(students, { [students[0].id]: 0 }, 1, numericCriteria, flagCriteria);
+      expect(stats[0].categoryStats).toEqual([]);
+    });
+
     test('handles empty classes', () => {
       const students = [
         { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2000, behavior: false, sped: false },

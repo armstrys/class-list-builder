@@ -36,9 +36,10 @@ const RESTARTS_REF = typeof OPTIMIZE_RESTARTS !== 'undefined' ? OPTIMIZE_RESTART
  * @param {number} numClasses - Total number of classes
  * @param {Array<{key: string, label: string}>} numericCriteria - Numeric criteria config
  * @param {Array<{key: string, label: string}>} flagCriteria - Flag criteria config
+ * @param {Array<{key: string, label: string}>} [categoryCriteria] - Categorical criteria config
  * @returns {Array<Object>} Per-class statistics
  */
-function computeClassStats(students, assignment, numClasses, numericCriteria, flagCriteria) {
+function computeClassStats(students, assignment, numClasses, numericCriteria, flagCriteria, categoryCriteria = []) {
   if (!students.length || !numClasses) return [];
 
   const classes = Array.from({ length: numClasses }, (_, i) =>
@@ -58,6 +59,23 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
       return { key, label, count, mean: Math.round(mean * 100) / 100 };
     });
 
+    // Category breakdown, shaped like the class-column footer so the modal and
+    // the board describe the same spread the score charges for. Blank cells are
+    // "no value", not a bucket of their own — same rule the cost function uses.
+    const categoryStats = categoryCriteria.map(({ key, label }) => {
+      const counts = new Map();
+      cls.forEach(s => {
+        const raw = s[key];
+        const value = raw == null ? '' : String(raw).trim();
+        if (value === '') return;
+        counts.set(value, (counts.get(value) || 0) + 1);
+      });
+      const values = [...counts.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+      return { key, label: label || key, values };
+    });
+
     const totalFlags = flagCriteria.reduce((sum, { key }) =>
       sum + cls.filter(s => s[key]).length, 0
     );
@@ -70,6 +88,7 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
       uCount: cls.filter(s => !s.gender || s.gender === 'U').length,
       numericStats,
       flagStats,
+      categoryStats,
       totalFlags,
       totalFlagsMean: cls.length ? totalFlags / cls.length : 0,
     };
@@ -286,7 +305,8 @@ async function runFullAssessment({
     assignment,
     numClasses,
     numericCriteria,
-    flagCriteria
+    flagCriteria,
+    categoryCriteria
   );
 
   // Step 3: Compute balanced baseline (unconstrained optimal)
