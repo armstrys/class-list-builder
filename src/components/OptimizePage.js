@@ -154,15 +154,17 @@ function OptimizePage({ onBack }) {
   }, [locked, assignment, runOptimize]);
 
   // Auto-reoptimize when criteria change (respecting locked students).
-  // Deps are intentionally limited to criteria — adding assignment/optimizing/
-  // handleReoptimize would re-trigger this on every reoptimize result and
-  // cause a runaway loop.
+  // Deps are intentionally limited to the criteria sets — adding assignment/
+  // optimizing/handleReoptimize would re-trigger this on every reoptimize
+  // result and cause a runaway loop. All three criteria sets belong here: a
+  // category weight changes what runOptimize is asked to optimise, so leaving
+  // it out left the board on its old trajectory.
   useEffect(() => {
     if (assignment && Object.keys(assignment).length > 0 && !optimizing) {
       handleReoptimize();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [numericCriteria, flagCriteria]);
+  }, [numericCriteria, flagCriteria, categoryCriteria]);
 
   function handleToggleLock(sid) {
     setLocked(prev => {

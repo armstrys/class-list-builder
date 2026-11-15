@@ -63,3 +63,25 @@ describe('OptimizePage assessment effect', () => {
     }
   });
 });
+
+describe('OptimizePage auto-reoptimize effect', () => {
+  const deps = depArrayAfter(optimizePage, 'handleReoptimize();');
+
+  // #106: runOptimize passes category criteria to the optimizer, so a category
+  // weight change alters the trajectory the board should be on. Numeric and
+  // flag changes re-ran the optimizer; category changes did not, and the board
+  // silently stayed on its old placement until Re-Optimize was pressed.
+  test('re-runs when any criteria set changes, category criteria included', () => {
+    for (const dep of ['numericCriteria', 'flagCriteria', 'categoryCriteria']) {
+      expect(deps).toContain(dep);
+    }
+  });
+
+  // The effect must not depend on the results it produces, or every reoptimize
+  // feeds the next one.
+  test('does not depend on the assignment it rewrites or its own handler', () => {
+    expect(deps).not.toContain('assignment');
+    expect(deps).not.toContain('optimizing');
+    expect(deps).not.toContain('handleReoptimize');
+  });
+});
