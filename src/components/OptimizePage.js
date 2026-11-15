@@ -138,7 +138,12 @@ function OptimizePage({ onBack }) {
     return () => {
       cancelled = true;
     };
-  }, [students, assignment, numClasses, numericCriteria, flagCriteria, categoryCriteria]);
+    // The constraint sets belong in the deps: the assessment includes their
+    // penalties, so adding a violated constraint changes the true cost without
+    // touching the assignment. They are safe as deps — each is a `useState`
+    // array in the students context, so identity is stable between renders and
+    // this cannot re-trigger itself.
+  }, [students, assignment, numClasses, numericCriteria, flagCriteria, categoryCriteria, keepApart, keepTogether, keepOutOfClass]);
 
   const handleReoptimize = useCallback(() => {
     const lockedObj = new Map();
