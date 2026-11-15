@@ -227,6 +227,18 @@ function OptimizePage({ onBack }) {
 
   const { apartViolations, togetherViolations, outOfClassViolations, totalViolations } = violations;
 
+  // Students in no class. The balance score is computed over placed students
+  // (#103), so it has to say how many students it is about — otherwise the
+  // number describes a subset the teacher cannot see. A card on the board
+  // requires a valid class index, so these students match no column.
+  const unplaced = useMemo(() =>
+    students.filter(s => {
+      const c = assignment[s.id];
+      return !(c >= 0 && c < numClasses);
+    }),
+    [students, assignment, numClasses]
+  );
+
   // Memoize class grouping and sorting
   const classesByIdx = useMemo(() =>
     Array.from({ length: numClasses }, (_, i) =>
@@ -299,6 +311,15 @@ function OptimizePage({ onBack }) {
             >
               {assessment.score}
             </span>
+            {unplaced.length > 0 && (
+              <span
+                className="label"
+                style={{ color: 'var(--amber)' }}
+                title={`${unplaced.length} student${unplaced.length === 1 ? '' : 's'} in no class. The balance score counts placed students only.`}
+              >
+                {unplaced.length} not placed
+              </span>
+            )}
           </div>
         )}
         {isAssessing && (
@@ -430,6 +451,7 @@ function OptimizePage({ onBack }) {
           ? `${totalViolations} constraint violation${totalViolations === 1 ? '' : 's'}.`
           : 'All constraints met.'}
         {assessment && assessment.ready ? ` Balance score ${assessment.score} out of 100.` : ''}
+        {unplaced.length > 0 ? ` ${unplaced.length} student${unplaced.length === 1 ? '' : 's'} not placed in a class.` : ''}
       </div>
 
       <div className="classes-area" style={{ flex: 1 }}>

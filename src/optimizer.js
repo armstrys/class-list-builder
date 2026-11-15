@@ -55,13 +55,29 @@ function computeCostTerms(students, assignment, numClasses, numericCriteria, fla
     if (c !== undefined && c >= 0 && c < numClasses) classes[c].push(s);
   });
 
+  // The students the classes actually hold — the only ones this score is about.
+  //
+  // Every baseline below runs over this list, not over the roster. A student
+  // with no class contributes to no class, so letting them into the population
+  // mean, variance or expected size changes the score while nothing on screen
+  // moves: the teacher sees the same two columns and a different number. Taking
+  // the baselines from `classes` also makes it impossible for the two to drift,
+  // since they are then literally the same list.
+  //
+  // Unplaced students are not dropped from the app — they are counted and
+  // shown separately (the Optimize page reports them), which is the only form
+  // of "included" that does not secretly re-weight the balance.
+  const placed = classes.flat();
+  const placedCount = placed.length;
+
   const terms = [];
 
-  // Numeric metrics: variance of class means, normalized by overall population variance
+  // Numeric metrics: variance of class means, normalized by population variance
+  // of the placed students.
   numericCriteria.forEach(({ key, label, weight }) => {
-    const vals = students.map(s => s[key] || 0);
-    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const popVar = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
+    const vals = placed.map(s => s[key] || 0);
+    const mean = placedCount ? vals.reduce((a, b) => a + b, 0) / placedCount : 0;
+    const popVar = placedCount ? vals.reduce((s, v) => s + (v - mean) ** 2, 0) / placedCount : 0;
     // All identical scores — no imbalance is possible, so the term is inert.
     let termCost = 0;
     if (popVar !== 0) {
@@ -76,7 +92,7 @@ function computeCostTerms(students, assignment, numClasses, numericCriteria, fla
 
   // Boolean metrics: variance of proportions across classes
   flagCriteria.forEach(({ key, label, weight }) => {
-    const overall = students.filter(s => s[key]).length / students.length;
+    const overall = placedCount ? placed.filter(s => s[key]).length / placedCount : 0;
     const props = classes.map(cls =>
       cls.length ? cls.filter(s => s[key]).length / cls.length : overall
     );
@@ -94,7 +110,7 @@ function computeCostTerms(students, assignment, numClasses, numericCriteria, fla
   // two-valued category contributes the same cost a flag does.
   categoryCriteria.forEach(({ key, label, weight }) => {
     const counts = new Map();
-    students.forEach(s => {
+    placed.forEach(s => {
       const v = normalizeCategoryValue(s[key]);
       if (v === null) return;
       counts.set(v, (counts.get(v) || 0) + 1);
@@ -109,7 +125,7 @@ function computeCostTerms(students, assignment, numClasses, numericCriteria, fla
     if (valueCount >= 2) {
       let valueCost = 0;
       for (const [value, overallCount] of counts) {
-        const overall = overallCount / students.length;
+        const overall = overallCount / placedCount;
         const props = classes.map(cls => {
           if (!cls.length) return overall;
           let n = 0;
@@ -124,7 +140,7 @@ function computeCostTerms(students, assignment, numClasses, numericCriteria, fla
   });
 
   // Gender balance: variance of female proportion
-  const overallF = students.filter(s => s.gender === 'F').length / students.length;
+  const overallF = placedCount ? placed.filter(s => s.gender === 'F').length / placedCount : 0;
   const fProps = classes.map(cls =>
     cls.length ? cls.filter(s => s.gender === 'F').length / cls.length : overallF
   );
@@ -133,10 +149,12 @@ function computeCostTerms(students, assignment, numClasses, numericCriteria, fla
 
   // Total flags balance: variance of mean total flags per class
   // Weighted by individual flag criterion weights
-  const studentTotalFlags = students.map(s =>
+  const studentTotalFlags = placed.map(s =>
     flagCriteria.reduce((sum, { key, weight }) => sum + (s[key] ? weight : 0), 0)
   );
-  const overallMeanTotalFlags = studentTotalFlags.reduce((a, b) => a + b, 0) / studentTotalFlags.length;
+  const overallMeanTotalFlags = placedCount
+    ? studentTotalFlags.reduce((a, b) => a + b, 0) / placedCount
+    : 0;
   const classMeanTotalFlags = classes.map(cls => {
     if (!cls.length) return overallMeanTotalFlags;
     const total = cls.reduce((sum, s) => {
@@ -151,21 +169,23 @@ function computeCostTerms(students, assignment, numClasses, numericCriteria, fla
   // Total score balance: variance of mean z-score per class
   // Calculate z-scores for each numeric criterion
   const zScoreMeans = numericCriteria.map(({ key }) => {
-    const vals = students.map(s => s[key] || 0);
-    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
+    const vals = placed.map(s => s[key] || 0);
+    const mean = placedCount ? vals.reduce((a, b) => a + b, 0) / placedCount : 0;
+    const variance = placedCount ? vals.reduce((s, v) => s + (v - mean) ** 2, 0) / placedCount : 0;
     const stdDev = Math.sqrt(variance);
     return { key, mean, stdDev };
   });
 
-  const studentTotalScores = students.map(s =>
+  const studentTotalScores = placed.map(s =>
     zScoreMeans.reduce((sum, { key, mean, stdDev }, ki) => {
       if (stdDev === 0) return sum;
       const weight = numericCriteria[ki]?.weight ?? 1.0;
       return sum + weight * ((s[key] || 0) - mean) / stdDev;
     }, 0)
   );
-  const overallMeanTotalScore = studentTotalScores.reduce((a, b) => a + b, 0) / studentTotalScores.length;
+  const overallMeanTotalScore = placedCount
+    ? studentTotalScores.reduce((a, b) => a + b, 0) / placedCount
+    : 0;
   const classMeanTotalScores = classes.map(cls => {
     if (!cls.length) return overallMeanTotalScore;
     const total = cls.reduce((sum, s) => {
@@ -181,8 +201,11 @@ function computeCostTerms(students, assignment, numClasses, numericCriteria, fla
   const tsVariance = classMeanTotalScores.reduce((s, m) => s + (m - overallMeanTotalScore) ** 2, 0) / numClasses;
   terms.push({ id: 'totalScore', label: 'Total score balance', kind: 'balance', cost: PW.TOTAL_SCORE * tsVariance });
 
-  // Class size balance: normalized variance of sizes
-  const meanSize = students.length / numClasses;
+  // Class size balance: normalized variance of sizes. The expected size is
+  // placed students per class, not roster per class: charging a class for a
+  // student who is in no class would make the term report an imbalance the
+  // teacher cannot find anywhere on the board.
+  const meanSize = placedCount / numClasses;
   let classSizeCost = 0;
   if (meanSize > 0) {
     const sVar = classes.reduce((s, cls) => s + (cls.length - meanSize) ** 2, 0) / numClasses;
@@ -497,6 +520,19 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   }
 
   // ── Pre-compute global population stats (constant throughout annealing) ──
+  //
+  // "Population" means the students the classes hold, matching computeCostTerms.
+  // Greedy init above places every unlocked student, so after this point the
+  // two lists are the same — but deriving the stats from the assignment rather
+  // than the roster keeps costFromSums, swapDelta and applySwap pinned to the
+  // same baselines as computeCost even if a caller ever passes a lock the
+  // classes cannot hold (an out-of-range class index, say), which would
+  // otherwise leave a student in the roster and in no class.
+  const placed = students.filter(s => {
+    const c = assignment[s.id];
+    return c !== undefined && c >= 0 && c < numClasses;
+  });
+  const placedCount = placed.length;
   const nk = numericCriteria.length;
   const fk = flagCriteria.length;
 
@@ -509,9 +545,9 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
 
   // Compute z-score based total score per student (sum of z-scores across numeric criteria)
   const popNumeric = numericCriteria.map(({ key }) => {
-    const vals = students.map(s => s[key] || 0);
-    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const popVar = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
+    const vals = placed.map(s => s[key] || 0);
+    const mean = placedCount ? vals.reduce((a, b) => a + b, 0) / placedCount : 0;
+    const popVar = placedCount ? vals.reduce((s, v) => s + (v - mean) ** 2, 0) / placedCount : 0;
     const stdDev = Math.sqrt(popVar);
     return { key, mean, popVar, stdDev };
   });
@@ -529,7 +565,7 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
   });
   const popFlag = flagCriteria.map(({ key }) => ({
     key,
-    overallProp: students.filter(s => s[key]).length / students.length,
+    overallProp: placedCount ? placed.filter(s => s[key]).length / placedCount : 0,
   }));
 
   // ── Category criteria setup ─────────────────────────────────────
@@ -542,32 +578,36 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
 
   const catDefs = categoryCriteria.map(({ key, weight }) => {
     const seen = new Set();
-    students.forEach(s => {
+    placed.forEach(s => {
       const v = normalizeCategoryValue(s[key]);
       if (v !== null) seen.add(v);
     });
     const values = [...seen].sort();
     const valueIndex = new Map(values.map((v, i) => [v, i]));
+    // Indexed over the full roster so applySwap can look a student up by
+    // position; only the population counts are restricted to placed students.
     const valIdx = new Int32Array(students.length);
     const overallCounts = new Int32Array(values.length);
     students.forEach((s, i) => {
       const v = normalizeCategoryValue(s[key]);
-      const vi = v === null ? -1 : valueIndex.get(v);
-      valIdx[i] = vi;
+      valIdx[i] = v === null ? -1 : valueIndex.get(v);
+    });
+    placed.forEach(s => {
+      const vi = valIdx[studentIndex.get(s.id)];
       if (vi >= 0) overallCounts[vi]++;
     });
     return { key, weight, values, valIdx, overallCounts, valueCount: values.length };
   });
-  const overallF = students.filter(s => s.gender === 'F').length / students.length;
-  const meanSize = students.length / numClasses;
+  const overallF = placedCount ? placed.filter(s => s.gender === 'F').length / placedCount : 0;
+  const meanSize = placedCount / numClasses;
 
   // Total flags distribution stats
-  const allTotalFlags = students.map(s => studentTotalFlags.get(s.id));
-  const overallMeanTotalFlags = allTotalFlags.reduce((a, b) => a + b, 0) / allTotalFlags.length;
+  const allTotalFlags = placed.map(s => studentTotalFlags.get(s.id));
+  const overallMeanTotalFlags = placedCount ? allTotalFlags.reduce((a, b) => a + b, 0) / placedCount : 0;
 
   // Total score distribution stats (z-scores should sum to ~0 across population)
-  const allTotalScores = students.map(s => studentTotalScore.get(s.id));
-  const overallMeanTotalScore = allTotalScores.reduce((a, b) => a + b, 0) / allTotalScores.length;
+  const allTotalScores = placed.map(s => studentTotalScore.get(s.id));
+  const overallMeanTotalScore = placedCount ? allTotalScores.reduce((a, b) => a + b, 0) / placedCount : 0;
 
   // ── Initialize per-class running sums ───────────────────────────
   const classSizes = new Array(numClasses).fill(0);
@@ -658,7 +698,7 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       if (d.valueCount < 2) return;
       let valueCost = 0;
       for (let vi = 0; vi < d.valueCount; vi++) {
-        const overall = d.overallCounts[vi] / students.length;
+        const overall = d.overallCounts[vi] / placedCount;
         let v = 0;
         for (let c = 0; c < numClasses; c++) {
           const p = classSizes[c] > 0 ? classCatCounts[di][c][vi] / classSizes[c] : overall;
@@ -776,7 +816,7 @@ function optimize(students, numClasses, lockedAssignments = {}, numericCriteria,
       let valueCost = 0;
       const touched = vi1 >= 0 && vi2 >= 0 ? [vi1, vi2] : [vi1 >= 0 ? vi1 : vi2];
       for (const vi of touched) {
-        const overall = d.overallCounts[vi] / students.length;
+        const overall = d.overallCounts[vi] / placedCount;
         const n1 = classCatCounts[di][c1][vi];
         const n2 = classCatCounts[di][c2][vi];
         const d1 = (vi === vi1 ? -1 : 0) + (vi === vi2 ? +1 : 0);

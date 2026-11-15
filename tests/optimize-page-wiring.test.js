@@ -85,3 +85,29 @@ describe('OptimizePage auto-reoptimize effect', () => {
     expect(deps).not.toContain('handleReoptimize');
   });
 });
+
+describe('the balance score reports the students it does not count (#103)', () => {
+  const unplacedBlock = () => {
+    const at = optimizePage.indexOf('const unplaced = useMemo');
+    expect(at).toBeGreaterThan(-1);
+    return optimizePage.slice(at, optimizePage.indexOf(');', at));
+  };
+
+  test('derives unplaced students from an assignment the board cannot render', () => {
+    const block = unplacedBlock();
+    // Same validity rule the cost function and the columns use: a student is
+    // placed only when the assignment names a class that exists.
+    expect(block).toMatch(/const c = assignment\[s\.id\]/);
+    expect(block).toMatch(/c >= 0 && c < numClasses/);
+  });
+
+  test('shows the count next to the balance score', () => {
+    const badge = optimizePage.slice(optimizePage.indexOf('className="score-badge"'));
+    expect(badge).toMatch(/unplaced\.length > 0/);
+    expect(badge).toMatch(/not placed/);
+  });
+
+  test('announces the count to screen readers with the score', () => {
+    expect(optimizePage).toMatch(/not placed in a class/);
+  });
+});

@@ -798,3 +798,82 @@ describe('Assessment Engine', () => {
     });
   });
 });
+
+describe('the balance score counts placed students (#103)', () => {
+  /**
+   * The score is a ratio between three costs. All three must describe the same
+   * students: if the current cost excludes an unplaced student while the
+   * baselines include them, the ratio compares two different rosters — and a
+   * roster with nobody placed produces a zero current cost under a positive
+   * range, which the defensive floor turns into a perfect score.
+   */
+  function fixture(count = 12) {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `s${String(i).padStart(2, '0')}`,
+      name: `Student ${i + 1}`,
+      gender: ['F', 'M', 'U'][i % 3],
+      readingScore: 40 + ((i * 17) % 60),
+      mathScore: 30 + ((i * 23) % 70),
+      behavior: i % 4 === 0,
+      sped: i % 5 === 0,
+    }));
+  }
+
+  const NUMERIC = [
+    { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
+    { key: 'mathScore', label: 'Math Score', weight: 1.0 },
+  ];
+  const FLAGS = [
+    { key: 'behavior', label: 'Behavior', weight: 1.0 },
+    { key: 'sped', label: 'SPED', weight: 1.0 },
+  ];
+
+  const params = (students, assignment) => ({
+    students,
+    assignment,
+    numClasses: 3,
+    numericCriteria: NUMERIC,
+    flagCriteria: FLAGS,
+  });
+
+  test('an unplaced student changes neither the current cost nor the baselines', async () => {
+    const students = fixture();
+    const full = optimize(students, 3, {}, NUMERIC, FLAGS);
+    const partial = { ...full };
+    delete partial[students[0].id];
+    const placedOnly = students.slice(1);
+
+    const withUnplaced = await runFullAssessment(params(students, partial));
+    const withoutUnplaced = await runFullAssessment(params(placedOnly, partial));
+
+    // Same three classes in both runs; the roster's extra student is in no class.
+    expect(withUnplaced.currentCost).toBe(withoutUnplaced.currentCost);
+    expect(withUnplaced.balancedCost).toBe(withoutUnplaced.balancedCost);
+    for (const term of withUnplaced.costTerms) {
+      const twin = withoutUnplaced.costTerms.find(t => t.id === term.id);
+      expect(twin.cost).toBe(term.cost);
+    }
+  });
+
+  test('nobody placed scores 0, not a perfect score', async () => {
+    const students = fixture();
+    const result = await runFullAssessment(params(students, {}));
+
+    expect(result.ready).toBe(true);
+    expect(result.currentCost).toBe(0);
+    expect(result.score).toBe(0);
+  });
+
+  test('a fully placed roster is unaffected by the placed-students rule', async () => {
+    const students = fixture();
+    const full = optimize(students, 3, {}, NUMERIC, FLAGS);
+    const placedOnly = students.filter(s => full[s.id] !== undefined);
+
+    const result = await runFullAssessment(params(students, full));
+    const placedResult = await runFullAssessment(params(placedOnly, full));
+
+    expect(placedOnly).toHaveLength(students.length);
+    expect(result.currentCost).toBe(placedResult.currentCost);
+    expect(result.balancedCost).toBe(placedResult.balancedCost);
+  });
+});

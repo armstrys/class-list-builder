@@ -298,6 +298,16 @@ async function runFullAssessment({
   );
   const currentCost = costTerms.reduce((sum, t) => sum + t.cost, 0);
 
+  // The baselines must describe the same students the current cost does (#103).
+  // `computeCostTerms` runs every baseline over placed students, so a baseline
+  // computed over the whole roster would put an unplaced student in the
+  // denominator and not in the numerator — and a roster with nobody placed
+  // would score 100 on a zero cost sitting under a positive range.
+  const placedStudents = students.filter(s => {
+    const c = assignment[s.id];
+    return c !== undefined && c >= 0 && c < numClasses;
+  });
+
   // Step 2: Compute class stats
   reportProgress(10, 'Computing class statistics...');
   const classStats = computeClassStats(
@@ -315,7 +325,7 @@ async function runFullAssessment({
   // assignment; otherwise a category term inflates currentCost while the
   // ceiling ignores it, and an optimal result stops scoring 100.
   const balancedCost = computeBaselineBalanced(
-    students,
+    placedStudents,
     numClasses,
     numericCriteria,
     flagCriteria,
@@ -329,7 +339,7 @@ async function runFullAssessment({
   const NUM_RANDOM_TRIALS = 1000; // Fixed number of random trials
 
   const randomCost = await computeBaselineRandomAsync(
-    students,
+    placedStudents,
     numClasses,
     numericCriteria,
     flagCriteria,
