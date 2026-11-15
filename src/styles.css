@@ -314,6 +314,23 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
 .class-stat-bar { height: 100%; width: 100%; border-radius: 3px; background: var(--accent); transform-origin: left; transition: transform .3s; }
 .class-stat-val { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text2); width: 30px; text-align: right; }
 
+/* ── Unplaced pool ──
+   Students in no class match no column, so they need their own surface above
+   the board. Dashed border and the warning colour say "this is not a class". */
+.unplaced-pool {
+  flex-shrink: 0;
+  margin: 12px 16px 0;
+  padding: 8px 12px 10px;
+  background: var(--surface);
+  border: 1.5px dashed var(--amber);
+  border-radius: var(--radius);
+}
+.unplaced-pool-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.unplaced-pool-title { font-size: 12px; font-weight: 600; color: var(--amber); text-transform: uppercase; letter-spacing: .5px; }
+.unplaced-pool-hint { font-size: 11px; color: var(--text3); }
+.unplaced-pool-cards { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.unplaced-pool-cards .student-card { width: 230px; flex-shrink: 0; }
+
 /* ── Student Card ── */
 .student-card {
   background: var(--surface);
@@ -790,6 +807,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; font-size: 
   /* Fixed 340px columns put class 4+ off-screen on any laptop smaller than
      ~1100px. Let columns shrink with the viewport instead. */
   .class-col { width: min(340px, 84vw); }
+  .unplaced-pool { margin: 10px 10px 0; }
+  .unplaced-pool-cards .student-card { width: min(230px, 70vw); }
   .setup-layout { grid-template-columns: 1fr; }
   .app-header { padding: 0 14px; gap: 10px; }
   .header-steps { margin-left: 0; }

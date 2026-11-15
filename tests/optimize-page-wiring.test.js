@@ -111,3 +111,47 @@ describe('the balance score reports the students it does not count (#103)', () =
     expect(optimizePage).toMatch(/not placed in a class/);
   });
 });
+
+describe('the board shows students who are in no class (#104)', () => {
+  const poolBlock = () => {
+    const at = optimizePage.indexOf('className="unplaced-pool"');
+    expect(at).toBeGreaterThan(-1);
+    return optimizePage.slice(optimizePage.indexOf('{unplaced.length > 0 &&', at - 400), optimizePage.indexOf('className="classes-area"', at));
+  };
+
+  // A student added after the optimizer ran has no `assignment` entry, so
+  // `assignment[s.id] === i` is false for every column and no card is rendered.
+  // The pool is the only place that student appears.
+  test('renders a card per unplaced student', () => {
+    const block = poolBlock();
+    expect(block).toMatch(/unplaced\.map\(/);
+    expect(block).toMatch(/<StudentCard/);
+  });
+
+  test('takes the pool away once every student is placed', () => {
+    const block = poolBlock();
+    expect(block).toMatch(/unplaced\.length > 0 &&/);
+  });
+
+  // Placement uses the path the board already had; the pool only supplies a
+  // card. Drag onto a column calls the same handleDrop -> moveStudent write.
+  test('drops a pool card through the same move the columns use', () => {
+    expect(poolBlock()).toMatch(/onDragStart=\{handleDragStart\}/);
+    expect(optimizePage).toMatch(/onDrop=\{handleDrop\}/);
+    expect(optimizePage).toMatch(/function moveStudent\(sid, classIdx\)/);
+  });
+
+  test('names the pool for screen readers, with the count', () => {
+    const block = poolBlock();
+    expect(block).toMatch(/role="region"/);
+    expect(block).toMatch(/aria-label=\{`/);
+    expect(block).toMatch(/unplaced\.length\} student/);
+  });
+
+  test('offers no lock control on a student with no class to lock to', () => {
+    const card = read('src/components/StudentCard.js');
+    const detail = read('src/components/StudentDetailModal.js');
+    expect(card).toMatch(/\{!unplaced && \(/);
+    expect(detail).toMatch(/\{!unplaced && \(/);
+  });
+});

@@ -454,6 +454,44 @@ function OptimizePage({ onBack }) {
         {unplaced.length > 0 ? ` ${unplaced.length} student${unplaced.length === 1 ? '' : 's'} not placed in a class.` : ''}
       </div>
 
+      {/* A student added after the optimizer ran has no entry in `assignment`,
+          and every column renders `assignment[s.id] === i`, so that student
+          matches no column and appears nowhere on this screen. They get a pool
+          of their own: drag a card onto a class, or open it for the class
+          picker. Re-Optimize is deliberately not the only answer here — it
+          re-seeds placements the teacher may already have accepted. */}
+      {unplaced.length > 0 && (
+        <div
+          className="unplaced-pool"
+          role="region"
+          aria-label={`${unplaced.length} student${unplaced.length === 1 ? '' : 's'} not placed in a class`}
+        >
+          <div className="unplaced-pool-header">
+            <span className="unplaced-pool-title">Not placed ({unplaced.length})</span>
+            <span className="unplaced-pool-hint">Drag onto a class, or open a card to choose one.</span>
+          </div>
+          <div className="unplaced-pool-cards">
+            {unplaced.map(s => (
+              <StudentCard
+                key={s.id}
+                student={s}
+                unplaced
+                locked={false}
+                onToggleLock={handleToggleLock}
+                onDragStart={handleDragStart}
+                dragging={draggingId === s.id}
+                flagCriteria={flagCriteria}
+                numericCriteria={numericCriteria}
+                keepApart={keepApart}
+                keepTogether={keepTogether}
+                keepOutOfClass={keepOutOfClass}
+                allStudents={students}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="classes-area" style={{ flex: 1 }}>
         {classesByIdx.map((classStudents, i) => (
           visibleClasses.has(i) && (

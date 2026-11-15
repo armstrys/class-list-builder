@@ -1,4 +1,4 @@
-function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
+function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, flagCriteria, numericCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [], unplaced = false }) {
   const activeFlags = useMemo(() =>
     flagCriteria
       .map((c, idx) => ({ ...c, idx }))
@@ -42,7 +42,9 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
         draggable
         role="button"
         tabIndex={0}
-        aria-label={`${student.name}, ${student.gender}. Open details to move between classes.`}
+        aria-label={unplaced
+          ? `${student.name}, ${student.gender}. In no class. Open details to choose one.`
+          : `${student.name}, ${student.gender}. Open details to move between classes.`}
         onDragStart={e => { didDrag.current = true; onDragStart(e, student.id); }}
         onDragEnd={() => { setTimeout(() => { didDrag.current = false; }, 100); }}
         onClick={() => { if (!didDrag.current) setShowDetail(true); }}
@@ -79,21 +81,26 @@ function StudentCard({ student, locked, onToggleLock, onDragStart, dragging, fla
               🔗
             </span>
           )}
-          <button
-            className={`lock-btn${locked ? ' locked' : ''}`}
-            onClick={e => { e.stopPropagation(); onToggleLock(student.id); }}
-            onKeyDown={e => e.stopPropagation()}
-            title={locked ? 'Unlock student' : 'Lock to this class'}
-            aria-label={locked ? `Unlock ${student.name}` : `Lock ${student.name} to this class`}
-          >
-            {locked ? '🔒' : '🔓'}
-          </button>
+          {/* Locking pins a student to the class they are already in, so a
+              student in no class has nothing to lock to. */}
+          {!unplaced && (
+            <button
+              className={`lock-btn${locked ? ' locked' : ''}`}
+              onClick={e => { e.stopPropagation(); onToggleLock(student.id); }}
+              onKeyDown={e => e.stopPropagation()}
+              title={locked ? 'Unlock student' : 'Lock to this class'}
+              aria-label={locked ? `Unlock ${student.name}` : `Lock ${student.name} to this class`}
+            >
+              {locked ? '🔒' : '🔓'}
+            </button>
+          )}
         </div>
       </div>
       {showDetail && (
         <StudentDetailModal
           student={student}
           locked={locked}
+          unplaced={unplaced}
           onToggleLock={onToggleLock}
           onClose={() => setShowDetail(false)}
           numericCriteria={numericCriteria}
