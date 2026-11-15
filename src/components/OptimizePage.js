@@ -138,7 +138,12 @@ function OptimizePage({ onBack }) {
     return () => {
       cancelled = true;
     };
-  }, [students, assignment, numClasses, numericCriteria, flagCriteria, categoryCriteria]);
+    // The constraint sets belong in the deps: the assessment includes their
+    // penalties, so adding a violated constraint changes the true cost without
+    // touching the assignment. They are safe as deps — each is a `useState`
+    // array in the students context, so identity is stable between renders and
+    // this cannot re-trigger itself.
+  }, [students, assignment, numClasses, numericCriteria, flagCriteria, categoryCriteria, keepApart, keepTogether, keepOutOfClass]);
 
   const handleReoptimize = useCallback(() => {
     const lockedObj = new Map();
@@ -149,15 +154,17 @@ function OptimizePage({ onBack }) {
   }, [locked, assignment, runOptimize]);
 
   // Auto-reoptimize when criteria change (respecting locked students).
-  // Deps are intentionally limited to criteria — adding assignment/optimizing/
-  // handleReoptimize would re-trigger this on every reoptimize result and
-  // cause a runaway loop.
+  // Deps are intentionally limited to the criteria sets — adding assignment/
+  // optimizing/handleReoptimize would re-trigger this on every reoptimize
+  // result and cause a runaway loop. All three criteria sets belong here: a
+  // category weight changes what runOptimize is asked to optimise, so leaving
+  // it out left the board on its old trajectory.
   useEffect(() => {
     if (assignment && Object.keys(assignment).length > 0 && !optimizing) {
       handleReoptimize();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [numericCriteria, flagCriteria]);
+  }, [numericCriteria, flagCriteria, categoryCriteria]);
 
   function handleToggleLock(sid) {
     setLocked(prev => {
@@ -219,6 +226,18 @@ function OptimizePage({ onBack }) {
   }, [keepApart, keepTogether, keepOutOfClass, assignment]);
 
   const { apartViolations, togetherViolations, outOfClassViolations, totalViolations } = violations;
+
+  // Students in no class. The balance score is computed over placed students
+  // (#103), so it has to say how many students it is about — otherwise the
+  // number describes a subset the teacher cannot see. A card on the board
+  // requires a valid class index, so these students match no column.
+  const unplaced = useMemo(() =>
+    students.filter(s => {
+      const c = assignment[s.id];
+      return !(c >= 0 && c < numClasses);
+    }),
+    [students, assignment, numClasses]
+  );
 
   // Memoize class grouping and sorting
   const classesByIdx = useMemo(() =>
@@ -292,6 +311,15 @@ function OptimizePage({ onBack }) {
             >
               {assessment.score}
             </span>
+            {unplaced.length > 0 && (
+              <span
+                className="label"
+                style={{ color: 'var(--amber)' }}
+                title={`${unplaced.length} student${unplaced.length === 1 ? '' : 's'} in no class. The balance score counts placed students only.`}
+              >
+                {unplaced.length} not placed
+              </span>
+            )}
           </div>
         )}
         {isAssessing && (
@@ -423,7 +451,46 @@ function OptimizePage({ onBack }) {
           ? `${totalViolations} constraint violation${totalViolations === 1 ? '' : 's'}.`
           : 'All constraints met.'}
         {assessment && assessment.ready ? ` Balance score ${assessment.score} out of 100.` : ''}
+        {unplaced.length > 0 ? ` ${unplaced.length} student${unplaced.length === 1 ? '' : 's'} not placed in a class.` : ''}
       </div>
+
+      {/* A student added after the optimizer ran has no entry in `assignment`,
+          and every column renders `assignment[s.id] === i`, so that student
+          matches no column and appears nowhere on this screen. They get a pool
+          of their own: drag a card onto a class, or open it for the class
+          picker. Re-Optimize is deliberately not the only answer here — it
+          re-seeds placements the teacher may already have accepted. */}
+      {unplaced.length > 0 && (
+        <div
+          className="unplaced-pool"
+          role="region"
+          aria-label={`${unplaced.length} student${unplaced.length === 1 ? '' : 's'} not placed in a class`}
+        >
+          <div className="unplaced-pool-header">
+            <span className="unplaced-pool-title">Not placed ({unplaced.length})</span>
+            <span className="unplaced-pool-hint">Drag onto a class, or open a card to choose one.</span>
+          </div>
+          <div className="unplaced-pool-cards">
+            {unplaced.map(s => (
+              <StudentCard
+                key={s.id}
+                student={s}
+                unplaced
+                locked={false}
+                onToggleLock={handleToggleLock}
+                onDragStart={handleDragStart}
+                dragging={draggingId === s.id}
+                flagCriteria={flagCriteria}
+                numericCriteria={numericCriteria}
+                keepApart={keepApart}
+                keepTogether={keepTogether}
+                keepOutOfClass={keepOutOfClass}
+                allStudents={students}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="classes-area" style={{ flex: 1 }}>
         {classesByIdx.map((classStudents, i) => (

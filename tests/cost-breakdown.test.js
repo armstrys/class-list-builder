@@ -348,3 +348,106 @@ describe('rankCostTerms', () => {
     }
   });
 });
+
+describe('the score describes the students it counts (#103)', () => {
+  /**
+   * An unplaced student used to change the score without changing a class:
+   * every baseline in `computeCostTerms` ran over the roster while the classes
+   * held only placed students, so removing one student from the plan moved the
+   * population mean, its variance and the expected class size. The teacher saw
+   * the same two columns and a different number, which is the one thing a
+   * balance score cannot do.
+   *
+   * The fixed contract: every baseline is computed from placed students, so the
+   * score for a set of classes is the same whether or not an unplaced student
+   * happens to be in the roster.
+   */
+  const args = (students, assignment) => [students, assignment, 3, NUMERIC, FLAGS, [], [], [], CATEGORIES];
+
+  /** Two classes of placed students, plus one student in no class. */
+  function partialRoster() {
+    const students = roster();
+    return { students, assignment: roundRobin(students).valueOf(), unplaced: students[0] };
+  }
+
+  test('an unplaced student moves no term cost', () => {
+    const { students } = partialRoster();
+    const placedStudents = students.slice(1); // leave students[0] unplaced
+    const assignment = {};
+    placedStudents.forEach((s, i) => {
+      assignment[s.id] = i % 3;
+    });
+
+    // Same classes, same assignment, roster includes the unplaced student.
+    const withUnplaced = computeCostTerms(...args(students, assignment));
+    // Same classes, same assignment, unplaced student removed from the roster.
+    const withoutUnplaced = computeCostTerms(...args(placedStudents, assignment));
+
+    expect(withUnplaced.map(t => t.id)).toEqual(withoutUnplaced.map(t => t.id));
+    expect(withUnplaced.map(t => t.cost)).toEqual(withoutUnplaced.map(t => t.cost));
+  });
+
+  test('an unplaced student cannot change the score a teacher sees', () => {
+    const { students } = partialRoster();
+    const placedStudents = students.slice(1);
+    const assignment = {};
+    placedStudents.forEach((s, i) => {
+      assignment[s.id] = i % 3;
+    });
+
+    const withUnplaced = computeCost(...args(students, assignment));
+    const withoutUnplaced = computeCost(...args(placedStudents, assignment));
+
+    expect(withUnplaced).toBe(withoutUnplaced);
+  });
+
+  test('the class-size term counts placed students, not the roster', () => {
+    // Four students, two classes, one unplaced: the real sizes are 2 and 1
+    // against an expected 1.5, not against an expected 2.
+    const students = [
+      { id: 'a', name: 'A', gender: 'F', reading: 90, math: 60, iep: false, priorClass: 'Room 1' },
+      { id: 'b', name: 'B', gender: 'M', reading: 80, math: 70, iep: false, priorClass: 'Room 1' },
+      { id: 'c', name: 'C', gender: 'F', reading: 70, math: 80, iep: false, priorClass: 'Room 1' },
+      { id: 'd', name: 'D', gender: 'M', reading: 20, math: 30, iep: false, priorClass: 'Room 1' },
+    ];
+    const assignment = { a: 0, b: 0, c: 1 };
+
+    const terms = computeCostTerms(students, assignment, 2, NUMERIC, FLAGS, [], [], [], CATEGORIES);
+    const classSize = terms.find(t => t.id === 'classSize');
+    const sizes = [2, 1];
+    const meanSize = 3 / 2;
+    const expected = 3.0 * (sizes.reduce((sum, sz) => sum + (sz - meanSize) ** 2, 0) / 2) / meanSize ** 2;
+
+    expect(classSize.cost).toBeCloseTo(expected, 10);
+    expect(classSize.cost).toBeGreaterThan(0);
+  });
+
+  test('the reported score matches the score of the classes it describes', () => {
+    // The repro from the issue: four students, two classes, one left out.
+    const students = [
+      { id: 'a', name: 'A', gender: 'F', reading: 90, math: 60, iep: false, priorClass: 'Room 1' },
+      { id: 'b', name: 'B', gender: 'M', reading: 80, math: 70, iep: false, priorClass: 'Room 1' },
+      { id: 'c', name: 'C', gender: 'F', reading: 70, math: 80, iep: false, priorClass: 'Room 2' },
+      { id: 'd', name: 'D', gender: 'M', reading: 20, math: 30, iep: false, priorClass: 'Room 2' },
+    ];
+    const twoClasses = { a: 0, b: 0, c: 1, d: 1 };
+    const oneUnplaced = { a: 0, b: 0, c: 1 };
+
+    // Two classes of two is not the same plan as two classes of two-and-one;
+    // what must not happen is the score changing for the *same* classes.
+    const placedOnly = students.filter(s => oneUnplaced[s.id] !== undefined);
+    expect(computeCost(...args(students, oneUnplaced))).toBe(computeCost(...args(placedOnly, oneUnplaced)));
+    expect(computeCost(...args(students, twoClasses))).not.toBe(computeCost(...args(students, oneUnplaced)));
+  });
+
+  test('nothing placed returns terms that are finite zeros, never NaN', () => {
+    const students = roster();
+    const terms = computeCostTerms(...args(students, {}));
+    expect(terms.length).toBeGreaterThan(0);
+    for (const term of terms) {
+      expect(Number.isFinite(term.cost)).toBe(true);
+      expect(term.cost).toBe(0);
+    }
+    expect(computeCost(...args(students, {}))).toBe(0);
+  });
+});

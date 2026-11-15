@@ -7,7 +7,7 @@
  * @param {boolean} props.isAssessing - Whether assessment is running
  */
 function AssessmentModal({ onClose, assessment, isAssessing }) {
-  const { numericCriteria, flagCriteria } = useCriteriaExport();
+  const { numericCriteria, flagCriteria, categoryCriteria } = useCriteriaExport();
   const { teachers } = useAppStateExport();
 
   if (isAssessing) {
@@ -281,6 +281,32 @@ function AssessmentModal({ onClose, assessment, isAssessing }) {
                     </span>
                   )}
                 </div>
+              </div>
+            )}
+
+            {categoryCriteria.length > 0 && cls.categoryStats.some(stat => stat.values.length > 0) && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                  Categories
+                </div>
+                {cls.categoryStats.filter(stat => stat.values.length > 0).map(stat => (
+                  <div key={stat.key} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
+                    {stat.values.map(({ value, count }) => (
+                      <span
+                        key={value}
+                        style={{
+                          fontSize: 12,
+                          fontFamily: "'DM Mono', monospace",
+                          background: 'var(--surface)',
+                          padding: '3px 8px',
+                          borderRadius: 4,
+                        }}
+                      >
+                        {stat.label}: {value} ({count})
+                      </span>
+                    ))}
+                  </div>
+                ))}
               </div>
             )}
           </div>

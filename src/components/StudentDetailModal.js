@@ -1,4 +1,4 @@
-function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
+function StudentDetailModal({ student, locked, unplaced = false, onToggleLock, onClose, numericCriteria, flagCriteria, keepApart = [], keepTogether = [], keepOutOfClass = [], allStudents = [] }) {
   const { teachers } = useAppStateExport();
   const { assignment, setAssignment } = useStudentsExport();
   const currentClass = assignment[student.id];
@@ -44,13 +44,15 @@ function StudentDetailModal({ student, locked, onToggleLock, onClose, numericCri
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 12, color: 'var(--text3)' }}>ID:</span>
           <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'DM Mono, monospace', background: 'var(--surface2)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{student.id}</span>
-          <button
-            className={`lock-btn${locked ? ' locked' : ''}`}
-            style={{ fontSize: 18, marginLeft: 'auto' }}
-            onClick={() => onToggleLock(student.id)}
-            title={locked ? 'Unlock student' : 'Lock to this class'}
-            aria-label={locked ? `Unlock ${student.name}` : `Lock ${student.name} to this class`}
-          >{locked ? '🔒' : '🔓'}</button>
+          {!unplaced && (
+            <button
+              className={`lock-btn${locked ? ' locked' : ''}`}
+              style={{ fontSize: 18, marginLeft: 'auto' }}
+              onClick={() => onToggleLock(student.id)}
+              title={locked ? 'Unlock student' : 'Lock to this class'}
+              aria-label={locked ? `Unlock ${student.name}` : `Lock ${student.name} to this class`}
+            >{locked ? '🔒' : '🔓'}</button>
+          )}
         </div>
 
         {/* The board moves students by drag-and-drop only. This picker is the

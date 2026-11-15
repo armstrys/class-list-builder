@@ -534,6 +534,37 @@ Bob,F,`;
     });
   });
 
+  describe('Category columns', () => {
+    const categoryCriteria = [{ key: 'currentclass', label: 'Current Class', weight: 1.5 }];
+
+    test('round-trip preserves category values', () => {
+      // #107: setup exported rosters without category columns, so a backup
+      // silently lost the field that explains a placement. With the fourth
+      // argument passed the file round-trips.
+      const students = [
+        { id: '1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: true, sped: false, currentclass: 'Room 3' },
+        { id: '2', name: 'Bob', gender: 'M', readingScore: 78, mathScore: 82, behavior: false, sped: true, currentclass: 'Room 4' },
+      ];
+
+      const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria, categoryCriteria);
+      expect(csv.split('\n')[0]).toContain('Current Class');
+
+      const result = parseCSV(csv, numericCriteria, flagCriteria, categoryCriteria);
+      expect(result.students).toHaveLength(2);
+      expect(result.students[0].currentclass).toBe('Room 3');
+      expect(result.students[1].currentclass).toBe('Room 4');
+    });
+
+    test('omitting the criteria argument drops the column, as the default intends', () => {
+      const students = [
+        { id: '1', name: 'Alice', gender: 'F', readingScore: 85, mathScore: 90, behavior: true, sped: false, currentclass: 'Room 3' },
+      ];
+
+      const csv = exportStudentsToCSV(students, numericCriteria, flagCriteria);
+      expect(csv.split('\n')[0]).not.toContain('Current Class');
+    });
+  });
+
   describe('Unrecognized columns', () => {
     test('warns about unrecognized columns including old constraint columns', () => {
       // Arrange

@@ -129,6 +129,44 @@ describe('Assessment Engine', () => {
       expect(behavior1.count).toBe(0);
     });
 
+    test('reports the category split per class (#108)', () => {
+      const categoryCriteria = [{ key: 'currentclass', label: 'Current Class', weight: 1.5 }];
+      const students = [
+        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2000, behavior: false, sped: false, currentclass: 'Room 3' },
+        { id: uid(), name: 'Bob', gender: 'M', readingScore: 200, mathScore: 2500, behavior: true, sped: false, currentclass: 'Room 3' },
+        { id: uid(), name: 'Charlie', gender: 'M', readingScore: 150, mathScore: 2200, behavior: false, sped: true, currentclass: 'Room 4' },
+        { id: uid(), name: 'Diana', gender: 'F', readingScore: 180, mathScore: 2400, behavior: true, sped: true, currentclass: '  ' },
+      ];
+      const assignment = {
+        [students[0].id]: 0,
+        [students[1].id]: 0,
+        [students[2].id]: 1,
+        [students[3].id]: 1,
+      };
+
+      const stats = computeClassStats(students, assignment, 2, numericCriteria, flagCriteria, categoryCriteria);
+
+      // The breakdown the score already charges for is visible per class, with
+      // counts high to low.
+      expect(stats[0].categoryStats).toHaveLength(1);
+      expect(stats[0].categoryStats[0]).toEqual({
+        key: 'currentclass',
+        label: 'Current Class',
+        values: [{ value: 'Room 3', count: 2 }],
+      });
+      expect(stats[1].categoryStats[0].values).toEqual([{ value: 'Room 4', count: 1 }]);
+      // A blank cell is "no value", not a bucket of its own.
+      expect(stats[1].categoryStats[0].values.map(v => v.value)).not.toContain('');
+    });
+
+    test('omitting category criteria leaves the structure without category stats', () => {
+      const students = [
+        { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2000, behavior: false, sped: false, currentclass: 'Room 3' },
+      ];
+      const stats = computeClassStats(students, { [students[0].id]: 0 }, 1, numericCriteria, flagCriteria);
+      expect(stats[0].categoryStats).toEqual([]);
+    });
+
     test('handles empty classes', () => {
       const students = [
         { id: uid(), name: 'Alice', gender: 'F', readingScore: 100, mathScore: 2000, behavior: false, sped: false },
@@ -758,5 +796,84 @@ describe('Assessment Engine', () => {
       expect(score).toBeLessThan(90);
       expect(score).toBeGreaterThan(0);
     });
+  });
+});
+
+describe('the balance score counts placed students (#103)', () => {
+  /**
+   * The score is a ratio between three costs. All three must describe the same
+   * students: if the current cost excludes an unplaced student while the
+   * baselines include them, the ratio compares two different rosters — and a
+   * roster with nobody placed produces a zero current cost under a positive
+   * range, which the defensive floor turns into a perfect score.
+   */
+  function fixture(count = 12) {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `s${String(i).padStart(2, '0')}`,
+      name: `Student ${i + 1}`,
+      gender: ['F', 'M', 'U'][i % 3],
+      readingScore: 40 + ((i * 17) % 60),
+      mathScore: 30 + ((i * 23) % 70),
+      behavior: i % 4 === 0,
+      sped: i % 5 === 0,
+    }));
+  }
+
+  const NUMERIC = [
+    { key: 'readingScore', label: 'Reading Score', weight: 1.0 },
+    { key: 'mathScore', label: 'Math Score', weight: 1.0 },
+  ];
+  const FLAGS = [
+    { key: 'behavior', label: 'Behavior', weight: 1.0 },
+    { key: 'sped', label: 'SPED', weight: 1.0 },
+  ];
+
+  const params = (students, assignment) => ({
+    students,
+    assignment,
+    numClasses: 3,
+    numericCriteria: NUMERIC,
+    flagCriteria: FLAGS,
+  });
+
+  test('an unplaced student changes neither the current cost nor the baselines', async () => {
+    const students = fixture();
+    const full = optimize(students, 3, {}, NUMERIC, FLAGS);
+    const partial = { ...full };
+    delete partial[students[0].id];
+    const placedOnly = students.slice(1);
+
+    const withUnplaced = await runFullAssessment(params(students, partial));
+    const withoutUnplaced = await runFullAssessment(params(placedOnly, partial));
+
+    // Same three classes in both runs; the roster's extra student is in no class.
+    expect(withUnplaced.currentCost).toBe(withoutUnplaced.currentCost);
+    expect(withUnplaced.balancedCost).toBe(withoutUnplaced.balancedCost);
+    for (const term of withUnplaced.costTerms) {
+      const twin = withoutUnplaced.costTerms.find(t => t.id === term.id);
+      expect(twin.cost).toBe(term.cost);
+    }
+  });
+
+  test('nobody placed scores 0, not a perfect score', async () => {
+    const students = fixture();
+    const result = await runFullAssessment(params(students, {}));
+
+    expect(result.ready).toBe(true);
+    expect(result.currentCost).toBe(0);
+    expect(result.score).toBe(0);
+  });
+
+  test('a fully placed roster is unaffected by the placed-students rule', async () => {
+    const students = fixture();
+    const full = optimize(students, 3, {}, NUMERIC, FLAGS);
+    const placedOnly = students.filter(s => full[s.id] !== undefined);
+
+    const result = await runFullAssessment(params(students, full));
+    const placedResult = await runFullAssessment(params(placedOnly, full));
+
+    expect(placedOnly).toHaveLength(students.length);
+    expect(result.currentCost).toBe(placedResult.currentCost);
+    expect(result.balancedCost).toBe(placedResult.balancedCost);
   });
 });

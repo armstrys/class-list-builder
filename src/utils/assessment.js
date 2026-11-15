@@ -36,9 +36,10 @@ const RESTARTS_REF = typeof OPTIMIZE_RESTARTS !== 'undefined' ? OPTIMIZE_RESTART
  * @param {number} numClasses - Total number of classes
  * @param {Array<{key: string, label: string}>} numericCriteria - Numeric criteria config
  * @param {Array<{key: string, label: string}>} flagCriteria - Flag criteria config
+ * @param {Array<{key: string, label: string}>} [categoryCriteria] - Categorical criteria config
  * @returns {Array<Object>} Per-class statistics
  */
-function computeClassStats(students, assignment, numClasses, numericCriteria, flagCriteria) {
+function computeClassStats(students, assignment, numClasses, numericCriteria, flagCriteria, categoryCriteria = []) {
   if (!students.length || !numClasses) return [];
 
   const classes = Array.from({ length: numClasses }, (_, i) =>
@@ -58,6 +59,23 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
       return { key, label, count, mean: Math.round(mean * 100) / 100 };
     });
 
+    // Category breakdown, shaped like the class-column footer so the modal and
+    // the board describe the same spread the score charges for. Blank cells are
+    // "no value", not a bucket of their own — same rule the cost function uses.
+    const categoryStats = categoryCriteria.map(({ key, label }) => {
+      const counts = new Map();
+      cls.forEach(s => {
+        const raw = s[key];
+        const value = raw == null ? '' : String(raw).trim();
+        if (value === '') return;
+        counts.set(value, (counts.get(value) || 0) + 1);
+      });
+      const values = [...counts.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+      return { key, label: label || key, values };
+    });
+
     const totalFlags = flagCriteria.reduce((sum, { key }) =>
       sum + cls.filter(s => s[key]).length, 0
     );
@@ -70,6 +88,7 @@ function computeClassStats(students, assignment, numClasses, numericCriteria, fl
       uCount: cls.filter(s => !s.gender || s.gender === 'U').length,
       numericStats,
       flagStats,
+      categoryStats,
       totalFlags,
       totalFlagsMean: cls.length ? totalFlags / cls.length : 0,
     };
@@ -279,6 +298,16 @@ async function runFullAssessment({
   );
   const currentCost = costTerms.reduce((sum, t) => sum + t.cost, 0);
 
+  // The baselines must describe the same students the current cost does (#103).
+  // `computeCostTerms` runs every baseline over placed students, so a baseline
+  // computed over the whole roster would put an unplaced student in the
+  // denominator and not in the numerator — and a roster with nobody placed
+  // would score 100 on a zero cost sitting under a positive range.
+  const placedStudents = students.filter(s => {
+    const c = assignment[s.id];
+    return c !== undefined && c >= 0 && c < numClasses;
+  });
+
   // Step 2: Compute class stats
   reportProgress(10, 'Computing class statistics...');
   const classStats = computeClassStats(
@@ -286,7 +315,8 @@ async function runFullAssessment({
     assignment,
     numClasses,
     numericCriteria,
-    flagCriteria
+    flagCriteria,
+    categoryCriteria
   );
 
   // Step 3: Compute balanced baseline (unconstrained optimal)
@@ -295,7 +325,7 @@ async function runFullAssessment({
   // assignment; otherwise a category term inflates currentCost while the
   // ceiling ignores it, and an optimal result stops scoring 100.
   const balancedCost = computeBaselineBalanced(
-    students,
+    placedStudents,
     numClasses,
     numericCriteria,
     flagCriteria,
@@ -309,7 +339,7 @@ async function runFullAssessment({
   const NUM_RANDOM_TRIALS = 1000; // Fixed number of random trials
 
   const randomCost = await computeBaselineRandomAsync(
-    students,
+    placedStudents,
     numClasses,
     numericCriteria,
     flagCriteria,

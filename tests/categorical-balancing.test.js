@@ -592,3 +592,46 @@ describe('category surfaces render as text, not booleans', () => {
     expect(src).toMatch(/distinct value/);
   });
 });
+
+describe('category criteria reach the roster export', () => {
+  // #107: Setup's Save Students called exportStudentsToCSV with three arguments,
+  // so the function's `categoryCriteria = []` default won and every Current
+  // Class value was dropped from the backup. The app-level export passed it
+  // correctly, so the same roster exported differently depending on the button.
+  test('both export call sites pass category criteria', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const rel of ['../src/components/SetupPage.js', '../src/app.js']) {
+      const src = readFileSync(new URL(rel, import.meta.url), 'utf8');
+      expect(src).toMatch(
+        /exportStudentsToCSV\(\s*students,\s*numericCriteria,\s*flagCriteria,\s*categoryCriteria\s*[,)]/
+      );
+    }
+  });
+});
+
+describe('the assessment modal explains category terms (#108)', () => {
+  // #108: the modal explained numeric and flag terms but stayed silent about
+  // category criteria, even though those carry weight in the score. It now
+  // renders the per-class split the score is charging for.
+  const read = async rel => {
+    const { readFileSync } = await import('node:fs');
+    return readFileSync(new URL(rel, import.meta.url), 'utf8');
+  };
+
+  test('renders the per-class category breakdown the score charges for', async () => {
+    const src = await read('../src/components/AssessmentModal.js');
+    expect(src).toMatch(/cls\.categoryStats/);
+    expect(src).toMatch(/stat\.values\.map/);
+  });
+
+  test('takes the category criteria from criteria state, not a hard-coded list', async () => {
+    const src = await read('../src/components/AssessmentModal.js');
+    expect(src).toMatch(/const \{[^}]*categoryCriteria[^}]*\} = useCriteriaExport\(\)/);
+  });
+
+  test('assessment stats carry a category breakdown per class', async () => {
+    const src = await read('../src/utils/assessment.js');
+    expect(src).toMatch(/categoryStats/);
+    expect(src).toMatch(/computeClassStats\([^)]*categoryCriteria/);
+  });
+});

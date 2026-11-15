@@ -86,7 +86,8 @@ function SetupPage({ onOptimize }) {
     const csv = exportStudentsToCSV(
       students,
       numericCriteria,
-      flagCriteria
+      flagCriteria,
+      categoryCriteria
     );
     triggerDownload(csv, 'students.csv', 'text/csv');
   }
