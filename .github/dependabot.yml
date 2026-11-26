@@ -18,6 +18,14 @@ updates:
         update-types:
           - minor
           - patch
+        # The first scheduled run (2026-11-14) put
+        # @rolldown/binding-linux-x64-gnu inside this group instead of the
+        # rolldown-binding group above, producing exactly the combined diff
+        # the split was meant to prevent. The documented rule is that a
+        # dependency joins the first group it matches, so the cause is not
+        # confirmed; this exclusion makes the split hold either way.
+        exclude-patterns:
+          - '@rolldown/*'
 
   - package-ecosystem: github-actions
     directory: '/'
